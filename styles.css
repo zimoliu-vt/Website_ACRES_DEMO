@@ -19,14 +19,17 @@ body { margin: 0; color: var(--ink); background: var(--cream); font-family: Inte
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 
-.demo-banner { min-height: 34px; padding: 7px 20px; color: #effaf5; background: var(--forest); text-align: center; font-size: 12px; letter-spacing: .01em; }
-.demo-banner span { margin-right: 8px; padding: 3px 8px; border-radius: 999px; color: var(--forest); background: var(--lime); font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.demo-banner { min-height: 48px; padding: 8px 20px; display: flex; align-items: center; justify-content: center; gap: 14px; color: #fff; background: #c52f2f; border-bottom: 3px solid #8f1717; text-align: center; box-shadow: 0 3px 14px rgba(143,23,23,.22); }
+.demo-banner strong { font-size: 13px; font-weight: 950; letter-spacing: .07em; }
+.demo-banner strong span { margin-right: 5px; }
+.demo-banner small { padding-left: 14px; border-left: 1px solid rgba(255,255,255,.5); font-size: 11px; font-weight: 700; }
 .site-header { height: 78px; padding: 0 clamp(20px, 5vw, 72px); display: flex; align-items: center; justify-content: space-between; background: rgba(255, 254, 250, .94); border-bottom: 1px solid var(--line); position: relative; z-index: 10; backdrop-filter: blur(14px); }
 .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--forest); text-decoration: none; }
 .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50% 50% 46% 54%; background: var(--forest); color: var(--lime); font-size: 22px; transform: rotate(-8deg); }
 .brand > span:last-child { display: flex; flex-direction: column; line-height: 1; }
 .brand strong { font-family: Georgia, serif; font-size: 21px; }
 .brand small { margin-top: 5px; font-size: 9px; text-transform: uppercase; letter-spacing: .22em; font-weight: 800; }
+.demo-chip { margin-left: 4px; padding: 5px 8px; border-radius: 7px; color: #fff; background: #c52f2f; font-size: 9px; font-weight: 950; letter-spacing: .12em; box-shadow: 0 3px 8px rgba(197,47,47,.22); }
 .mode-switch { display: flex; gap: 5px; padding: 5px; border-radius: 999px; background: #ecede7; }
 .mode-button { padding: 10px 17px; border: 0; border-radius: 999px; color: #65706b; background: transparent; font-size: 13px; font-weight: 750; }
 .mode-button.active { color: #fff; background: var(--forest); box-shadow: 0 4px 14px rgba(23,63,53,.2); }
@@ -184,9 +187,13 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 }
 
 @media (max-width: 620px) {
+  .demo-banner { min-height: 58px; padding: 8px 12px; flex-direction: column; gap: 2px; }
+  .demo-banner strong { font-size: 11px; }
+  .demo-banner small { padding-left: 0; border-left: 0; font-size: 9px; }
   .site-header { height: auto; padding: 14px 16px; align-items: flex-start; gap: 12px; }
   .brand small { display: none; }
   .brand-mark { width: 36px; height: 36px; }
+  .demo-chip { display: none; }
   .mode-switch { border-radius: 14px; }
   .mode-button { padding: 9px 10px; font-size: 10px; }
   .reporter-layout { min-height: auto; }

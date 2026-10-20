@@ -11,12 +11,16 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="demo-banner"><span>Demo environment</span> No reports are sent to a real rescue team.</div>
+    <div class="demo-banner" role="note" aria-label="Demo warning">
+      <strong><span aria-hidden="true">⚠</span> DEMO ONLY — NOT A REAL RESCUE SERVICE</strong>
+      <small>Reports are not monitored, sent, or acted on.</small>
+    </div>
 
     <header class="site-header">
       <a class="brand" href="#" aria-label="WildCare SG home">
         <span class="brand-mark" aria-hidden="true">✦</span>
         <span><strong>WildCare</strong><small>Singapore</small></span>
+        <b class="demo-chip">DEMO</b>
       </a>
       <nav class="mode-switch" aria-label="Choose interface">
         <button class="mode-button active" data-view="reporter" type="button">Report an animal</button>
