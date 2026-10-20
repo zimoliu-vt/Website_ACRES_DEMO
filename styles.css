@@ -77,6 +77,8 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .search-credit { padding: 7px 12px; border-top: 1px solid var(--line); color: #89928d; font-size: 8px; text-align: right; }
 .live-dot { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: #64a87c; box-shadow: 0 0 0 4px rgba(100,168,124,.14); }
 .icon-button { width: 44px; height: 44px; border: 0; border-radius: 13px; background: rgba(255, 254, 250, .95); color: var(--forest); box-shadow: var(--shadow); font-size: 24px; pointer-events: auto; }
+.icon-button svg { width: 23px; height: 23px; display: block; margin: auto; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.icon-button svg circle { fill: currentColor; stroke: none; }
 .map-hint { position: absolute; left: 50%; bottom: 25px; z-index: 500; transform: translateX(-50%); min-width: max-content; padding: 12px 18px; border-radius: 999px; color: white; background: rgba(23,63,53,.93); box-shadow: var(--shadow); font-size: 12px; font-weight: 750; pointer-events: none; }
 .map-hint span { margin-right: 6px; color: var(--lime); }
 .leaflet-control-zoom { border: 0 !important; box-shadow: var(--shadow) !important; }
