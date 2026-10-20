@@ -6,6 +6,7 @@ A front-end demonstration of a Singapore wildlife reporting and rescue-coordinat
 
 - A clickable Singapore map powered by Leaflet and OpenStreetMap
 - Friendly street or landmark labels from an on-demand OpenStreetMap reverse lookup
+- Submit-based Singapore-only location search with cached results
 - A public wildlife report form
 - A worker dashboard with filters and report details
 - A separate worker login screen using demo PIN `0000`
@@ -15,7 +16,7 @@ A front-end demonstration of a Singapore wildlife reporting and rescue-coordinat
 
 No report leaves the browser. There is no production database, user account system, or real rescue-team connection in this version.
 
-The public OpenStreetMap Nominatim service is queried only after a user selects a location, with a short delay and browser caching. This demo must remain low-volume and follow the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/). A production deployment should use a dedicated geocoding provider or proxy.
+The public OpenStreetMap Nominatim service is queried only after a user selects a location or explicitly submits a search, with browser caching and no autocomplete. Searches and selectable map points are limited to Singapore. This demo must remain low-volume and follow the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/). A production deployment should use a dedicated geocoding provider or proxy.
 
 ## Run locally
 

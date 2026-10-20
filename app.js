@@ -21,6 +21,31 @@ let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "tr
 let reverseLookupTimer = null;
 let selectedPhotoDataUrl = "";
 
+const singaporeBoundary = [
+  [1.145, 103.605], [1.205, 103.605], [1.265, 103.625], [1.325, 103.635],
+  [1.365, 103.675], [1.405, 103.73], [1.475, 103.81], [1.445, 103.875],
+  [1.42, 103.94], [1.405, 104.045], [1.34, 104.105], [1.275, 104.035],
+  [1.235, 103.94], [1.205, 103.835], [1.19, 103.72]
+];
+
+function isSingaporePoint(lat, lng) {
+  let inside = false;
+  for (let i = 0, j = singaporeBoundary.length - 1; i < singaporeBoundary.length; j = i++) {
+    const [latI, lngI] = singaporeBoundary[i];
+    const [latJ, lngJ] = singaporeBoundary[j];
+    const intersects = ((latI > lat) !== (latJ > lat)) && (lng < (lngJ - lngI) * (lat - latI) / (latJ - latI) + lngI);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function rejectOutsideSingapore() {
+  showToast("That location is outside Singapore and cannot be selected.");
+  const hint = document.querySelector("#map-hint");
+  hint.innerHTML = "<span>!</span> Singapore locations only";
+  setTimeout(() => { hint.innerHTML = "<span>＋</span> Select the animal’s location in Singapore"; }, 2600);
+}
+
 function loadReports() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -81,7 +106,10 @@ function initMap() {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(map);
-  map.on("click", (event) => chooseLocation(event.latlng.lat, event.latlng.lng));
+  map.on("click", (event) => {
+    if (!isSingaporePoint(event.latlng.lat, event.latlng.lng)) return rejectOutsideSingapore();
+    chooseLocation(event.latlng.lat, event.latlng.lng);
+  });
   drawReportMarkers();
 }
 
@@ -92,6 +120,11 @@ function chooseLocation(lat, lng) {
     locationMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
     locationMarker.on("dragend", (event) => {
       const point = event.target.getLatLng();
+      if (!isSingaporePoint(point.lat, point.lng)) {
+        event.target.setLatLng([selectedLocation.lat, selectedLocation.lng]);
+        rejectOutsideSingapore();
+        return;
+      }
       selectedLocation = { lat: point.lat, lng: point.lng, name: estimatedArea(point.lat, point.lng) };
       updateCoordinateCopy();
       scheduleReverseLookup(point.lat, point.lng);
@@ -137,6 +170,63 @@ async function reverseGeocode(lat, lng) {
   } catch {
     if (selectedLocation) updateCoordinateCopy();
   }
+}
+
+function searchResultLabel(result) {
+  const address = result.address || {};
+  return result.name || address.road || address.park || address.suburb || result.display_name.split(",")[0];
+}
+
+function renderSearchResults(results, message = "") {
+  const container = document.querySelector("#map-search-results");
+  if (message) {
+    container.innerHTML = `<p class="search-message">${escapeHtml(message)}</p>`;
+    container.hidden = false;
+    return;
+  }
+  container.innerHTML = results.map((result, index) => {
+    const parts = result.display_name.split(",").map(part => part.trim());
+    return `<button class="search-result" data-search-index="${index}" type="button"><strong>${escapeHtml(searchResultLabel(result))}</strong><small>${escapeHtml(parts.slice(1, 4).join(", ") || "Singapore")}</small></button>`;
+  }).join("") + '<div class="search-credit">Search © OpenStreetMap contributors</div>';
+  container.hidden = false;
+  container.querySelectorAll("[data-search-index]").forEach(button => button.addEventListener("click", () => {
+    const result = results[Number(button.dataset.searchIndex)];
+    const lat = Number(result.lat);
+    const lng = Number(result.lon);
+    if (!isSingaporePoint(lat, lng)) {
+      button.disabled = true;
+      button.querySelector("small").textContent = "Outside Singapore — not selectable";
+      return;
+    }
+    container.hidden = true;
+    document.querySelector("#map-search-input").value = searchResultLabel(result);
+    map.flyTo([lat, lng], 17, { duration: .8 });
+    setTimeout(() => chooseLocation(lat, lng), 500);
+  }));
+}
+
+async function searchSingapore(query) {
+  const normalized = query.trim().toLowerCase();
+  const cacheKey = `wildcare-search-${normalized}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return JSON.parse(cached);
+  } catch {}
+  const params = new URLSearchParams({
+    q: query,
+    format: "jsonv2",
+    addressdetails: "1",
+    limit: "5",
+    countrycodes: "sg",
+    viewbox: "103.55,1.49,104.15,1.16",
+    bounded: "1",
+    "accept-language": "en"
+  });
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+  if (!response.ok) throw new Error("Search is temporarily unavailable.");
+  const results = (await response.json()).filter(result => result.address?.country_code === "sg" && isSingaporePoint(Number(result.lat), Number(result.lon)));
+  try { localStorage.setItem(cacheKey, JSON.stringify(results)); } catch {}
+  return results;
 }
 
 function drawReportMarkers() {
@@ -279,6 +369,25 @@ function showToast(message) {
 }
 
 document.querySelectorAll(".mode-button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+document.querySelector("#map-search-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const input = document.querySelector("#map-search-input");
+  const button = event.currentTarget.querySelector("button");
+  const query = input.value.trim();
+  if (!query) return;
+  button.disabled = true;
+  button.textContent = "Searching…";
+  renderSearchResults([], "Searching Singapore…");
+  try {
+    const results = await searchSingapore(query);
+    results.length ? renderSearchResults(results) : renderSearchResults([], "No selectable Singapore locations found. Try a Singapore street, park, landmark, or postcode.");
+  } catch (error) {
+    renderSearchResults([], error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Search";
+  }
+});
 const demoWarningDialog = document.querySelector("#demo-warning-dialog");
 demoWarningDialog.addEventListener("cancel", event => event.preventDefault());
 document.querySelector("#acknowledge-demo").addEventListener("click", () => {
@@ -330,8 +439,8 @@ document.querySelector("#locate-button").addEventListener("click", () => {
   if (!navigator.geolocation) return showToast("Location is not available in this browser.");
   navigator.geolocation.getCurrentPosition(position => {
     const { latitude, longitude } = position.coords;
-    if (latitude < 1.16 || latitude > 1.49 || longitude < 103.55 || longitude > 104.15) {
-      showToast("Your location appears to be outside Singapore. Click the map instead.");
+    if (!isSingaporePoint(latitude, longitude)) {
+      showToast("Your location appears to be outside Singapore and cannot be selected.");
       return;
     }
     map?.setView([latitude, longitude], 16);
