@@ -19,6 +19,7 @@ let selectedReportId = null;
 let currentFilter = "active";
 let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "true";
 let reverseLookupTimer = null;
+let selectedPhotoDataUrl = "";
 
 function loadReports() {
   try {
@@ -31,6 +32,42 @@ function loadReports() {
 
 function saveReports() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+}
+
+function compressPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read this photo."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("This image format could not be previewed."));
+      image.onload = () => {
+        const maxDimension = 1000;
+        const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", .76));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function clearSelectedPhoto() {
+  selectedPhotoDataUrl = "";
+  document.querySelector("#photo-input").value = "";
+  document.querySelector("#photo-preview").hidden = true;
+  document.querySelector("#photo-preview-image").removeAttribute("src");
+}
+
+function validPhotoSource(value) {
+  return typeof value === "string" && /^data:image\/(jpeg|png|webp);base64,/i.test(value) ? value : "";
 }
 
 function initMap() {
@@ -205,6 +242,7 @@ function renderReportDetail(id) {
       <div class="meta-box"><small>Reporter</small><strong>${escapeHtml(report.reporter || "Anonymous")}</strong></div>
     </div>
     <p class="notes-box">${escapeHtml(report.notes)}</p>
+    ${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Photo attached to case ${escapeHtml(report.id)}" /><figcaption>Photo supplied with this demo report</figcaption></figure>` : ""}
     <div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
       ${["New", "Acknowledged", "Assigned", "Resolved"].map(status => `<option ${status === report.status ? "selected" : ""}>${status}</option>`).join("")}
     </select></div>
@@ -319,10 +357,18 @@ document.querySelector("#report-form").addEventListener("submit", event => {
     status: "New",
     createdAt: Date.now()
   };
+  report.photo = selectedPhotoDataUrl;
   reports.unshift(report);
-  saveReports();
+  try {
+    saveReports();
+  } catch {
+    reports.shift();
+    showToast("That photo is too large for browser storage. Try a smaller image.");
+    return;
+  }
   drawReportMarkers();
   event.currentTarget.reset();
+  clearSelectedPhoto();
   document.querySelector("#report-dialog").close();
   if (locationMarker) { locationMarker.remove(); locationMarker = null; }
   selectedReportId = report.id;
@@ -330,11 +376,25 @@ document.querySelector("#report-form").addEventListener("submit", event => {
   setTimeout(() => document.querySelector("#success-dialog").showModal(), 120);
 });
 
-document.querySelector("#photo-input").addEventListener("change", event => {
+document.querySelector("#photo-input").addEventListener("change", async event => {
   const label = event.target.closest("label");
   const helper = label.querySelector("small");
-  helper.textContent = event.target.files[0] ? `${event.target.files[0].name} selected locally` : "Optional — not uploaded in this demo";
+  const file = event.target.files[0];
+  if (!file) return clearSelectedPhoto();
+  helper.textContent = "Preparing photo preview…";
+  try {
+    selectedPhotoDataUrl = await compressPhoto(file);
+    document.querySelector("#photo-preview-image").src = selectedPhotoDataUrl;
+    document.querySelector("#photo-preview-name").textContent = file.name;
+    document.querySelector("#photo-preview").hidden = false;
+    helper.textContent = "Photo added — it will appear in the worker view";
+  } catch (error) {
+    clearSelectedPhoto();
+    helper.textContent = "Optional — saved in this browser for the worker view";
+    showToast(error.message);
+  }
 });
+document.querySelector("#remove-photo").addEventListener("click", clearSelectedPhoto);
 
 initMap();
 renderDashboard();

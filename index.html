@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=3" />
+    <link rel="stylesheet" href="styles.css?v=4" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -174,8 +174,13 @@
 
         <label class="photo-field">
           <input id="photo-input" name="photo" type="file" accept="image/*" />
-          <span>＋</span><strong>Add a photo</strong><small>Optional — not uploaded in this demo</small>
+          <span>＋</span><strong>Add a photo</strong><small>Optional — saved in this browser for the worker view</small>
         </label>
+        <div id="photo-preview" class="photo-preview" hidden>
+          <img id="photo-preview-image" alt="Selected animal photo preview" />
+          <div><strong>Photo ready</strong><small id="photo-preview-name"></small></div>
+          <button id="remove-photo" type="button">Remove</button>
+        </div>
 
         <p class="privacy-copy">This is a demonstration. Details stay in this browser and are not sent anywhere.</p>
         <button class="submit-button" type="submit">Submit demo report <span>→</span></button>
@@ -185,6 +190,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
   </body>
 </html>
