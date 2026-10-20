@@ -1,4 +1,5 @@
 const STORAGE_KEY = "wildcare-demo-reports-v1";
+const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 
 const sampleReports = [
   { id: "WC-1043", animal: "Bird", condition: "Unable to move or fly", notes: "A small green bird is on the grass beside the footpath. It tries to hop but cannot fly.", reporter: "Mei", contact: "", lat: 1.3048, lng: 103.8318, area: "Singapore Botanic Gardens", status: "New", createdAt: Date.now() - 12 * 60 * 1000 },
@@ -240,6 +241,12 @@ function showToast(message) {
 }
 
 document.querySelectorAll(".mode-button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+const demoWarningDialog = document.querySelector("#demo-warning-dialog");
+demoWarningDialog.addEventListener("cancel", event => event.preventDefault());
+document.querySelector("#acknowledge-demo").addEventListener("click", () => {
+  sessionStorage.setItem(DEMO_WARNING_KEY, "true");
+  demoWarningDialog.close();
+});
 document.querySelectorAll("[data-guide-step]").forEach(button => button.addEventListener("click", () => {
   const mapPanel = document.querySelector(".map-panel");
   mapPanel.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -331,3 +338,4 @@ document.querySelector("#photo-input").addEventListener("change", event => {
 
 initMap();
 renderDashboard();
+if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();
