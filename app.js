@@ -352,6 +352,9 @@ function renderDashboard() {
 function selectReport(id) {
   selectedReportId = id;
   renderDashboard();
+  if (window.matchMedia("(max-width: 950px)").matches) {
+    setTimeout(() => document.querySelector("#detail-panel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  }
 }
 
 function renderReportDetail(id) {
