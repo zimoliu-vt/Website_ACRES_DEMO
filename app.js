@@ -11,8 +11,11 @@ const sampleReports = [
 const animalEmoji = { Bird: "🐦", Mammal: "🐒", Reptile: "🦎", Other: "🐾" };
 let reports = loadReports();
 let map;
+let streetLayer = null;
+let satelliteLayer = null;
 let selectedLocation = null;
 let locationMarker = null;
+let searchAreaMarker = null;
 let reportMarkers = [];
 let detailMap = null;
 let selectedReportId = null;
@@ -103,15 +106,36 @@ function initMap() {
   }
   map = L.map("map", { zoomControl: false, minZoom: 10, maxBounds: [[1.16, 103.55], [1.49, 104.15]] }).setView([1.3521, 103.8198], 12);
   L.control.zoom({ position: "bottomright" }).addTo(map);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  });
+  satelliteLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+    maxZoom: 19,
+    attribution: "Esri, Maxar, Earthstar Geographics, and the GIS User Community"
   }).addTo(map);
   map.on("click", (event) => {
     if (!isSingaporePoint(event.latlng.lat, event.latlng.lng)) return rejectOutsideSingapore();
+    if (searchAreaMarker) {
+      searchAreaMarker.remove();
+      searchAreaMarker = null;
+    }
     chooseLocation(event.latlng.lat, event.latlng.lng);
   });
   drawReportMarkers();
+}
+
+function setMapStyle(style) {
+  if (!map || !streetLayer || !satelliteLayer) return;
+  const useSatellite = style === "satellite";
+  if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
+  if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+  (useSatellite ? satelliteLayer : streetLayer).addTo(map);
+  document.querySelectorAll("[data-map-style]").forEach(button => {
+    const active = button.dataset.mapStyle === style;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 }
 
 function chooseLocation(lat, lng) {
@@ -201,8 +225,19 @@ function renderSearchResults(results, message = "") {
     }
     container.hidden = true;
     document.querySelector("#map-search-input").value = searchResultLabel(result);
-    map.flyTo([lat, lng], 17, { duration: .8 });
-    setTimeout(() => chooseLocation(lat, lng), 500);
+    if (searchAreaMarker) searchAreaMarker.remove();
+    searchAreaMarker = L.circle([lat, lng], {
+      radius: 260,
+      color: "#f7ff72",
+      weight: 3,
+      fillColor: "#f7ff72",
+      fillOpacity: .18,
+      interactive: false
+    }).addTo(map);
+    map.flyTo([lat, lng], 15, { duration: .8 });
+    const hint = document.querySelector("#map-hint");
+    hint.innerHTML = `<span>＋</span> ${escapeHtml(searchResultLabel(result))} is highlighted — click the animal’s exact location`;
+    showToast(`Zoomed to ${searchResultLabel(result)}. Now click the exact location on the map.`);
   }));
 }
 
@@ -364,7 +399,7 @@ function renderDetailMap(report) {
   if (!window.L || !document.querySelector("#detail-map")) return;
   if (detailMap) detailMap.remove();
   detailMap = L.map("detail-map", { zoomControl: true, attributionControl: true, dragging: true, scrollWheelZoom: false }).setView([report.lat, report.lng], 16);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(detailMap);
+  L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Esri, Maxar, Earthstar Geographics, and the GIS User Community" }).addTo(detailMap);
   const icon = L.divIcon({ className: "report-marker", html: `<span>${animalEmoji[report.animal] || "🐾"}</span>`, iconSize: [32, 32] });
   L.marker([report.lat, report.lng], { icon }).addTo(detailMap).bindPopup(`<strong>${escapeHtml(report.animal)}</strong><br>${escapeHtml(report.area)}`).openPopup();
 }
@@ -382,6 +417,7 @@ function showToast(message) {
 }
 
 document.querySelectorAll(".mode-button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+document.querySelectorAll("[data-map-style]").forEach(button => button.addEventListener("click", () => setMapStyle(button.dataset.mapStyle)));
 document.querySelector("#map-search-form").addEventListener("submit", async event => {
   event.preventDefault();
   const input = document.querySelector("#map-search-input");

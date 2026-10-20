@@ -54,9 +54,15 @@
                 </form>
                 <div id="map-search-results" class="map-search-results" role="region" aria-live="polite" hidden></div>
               </div>
-              <button id="locate-button" class="icon-button" type="button" title="Use my location" aria-label="Use my location">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.1 7-13A7 7 0 1 0 5 9c0 6.9 7 13 7 13Z"/><circle cx="12" cy="9" r="2.5"/></svg>
-              </button>
+              <div class="map-actions">
+                <div class="map-style-switch" role="group" aria-label="Map appearance">
+                  <button type="button" data-map-style="street">Map</button>
+                  <button class="active" type="button" data-map-style="satellite">Satellite</button>
+                </div>
+                <button id="locate-button" class="icon-button" type="button" title="Use my location" aria-label="Use my location">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.1 7-13A7 7 0 1 0 5 9c0 6.9 7 13 7 13Z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                </button>
+              </div>
             </div>
             <div id="map" role="application" aria-label="Interactive map of Singapore"></div>
             <div class="map-hint" id="map-hint"><span>＋</span> Select the animal’s location on the map</div>
@@ -218,6 +224,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=7"></script>
+    <script src="app.js?v=8"></script>
   </body>
 </html>

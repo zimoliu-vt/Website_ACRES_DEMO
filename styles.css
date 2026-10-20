@@ -76,6 +76,11 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .search-message { margin: 0; padding: 13px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .search-credit { padding: 7px 12px; border-top: 1px solid var(--line); color: #89928d; font-size: 8px; text-align: right; }
 .live-dot { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: #64a87c; box-shadow: 0 0 0 4px rgba(100,168,124,.14); }
+.map-actions { display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+.map-style-switch { padding: 4px; display: flex; border-radius: 13px; background: rgba(255,254,250,.95); box-shadow: var(--shadow); }
+.map-style-switch button { padding: 9px 10px; border: 0; border-radius: 9px; color: var(--muted); background: transparent; font-size: 10px; font-weight: 850; }
+.map-style-switch button.active { color: #fff; background: var(--forest); }
+.map-style-switch button:focus-visible { outline: 3px solid rgba(247,255,114,.65); outline-offset: 1px; }
 .icon-button { width: 44px; height: 44px; border: 0; border-radius: 13px; background: rgba(255, 254, 250, .95); color: var(--forest); box-shadow: var(--shadow); font-size: 24px; pointer-events: auto; }
 .icon-button svg { width: 23px; height: 23px; display: block; margin: auto; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .icon-button svg circle { fill: currentColor; stroke: none; }
@@ -258,6 +263,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .map-toolbar { left: 15px; right: 15px; grid-template-columns: 1fr auto; }
   .map-location-card { display: none; }
   .map-search-wrap { grid-column: 1; }
+  .map-actions { grid-column: 2; grid-row: 1; align-items: flex-end; flex-direction: column-reverse; }
+  .map-style-switch { position: absolute; top: 58px; right: 0; }
   #worker-view { padding: 38px 16px; }
   .dashboard-head { align-items: flex-start; flex-direction: column; }
   .head-actions { width: 100%; }
