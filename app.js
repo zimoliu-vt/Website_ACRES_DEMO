@@ -20,6 +20,7 @@ let currentFilter = "active";
 let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "true";
 let reverseLookupTimer = null;
 let selectedPhotoDataUrl = "";
+let pendingReopen = null;
 
 const singaporeBoundary = [
   [1.145, 103.605], [1.205, 103.605], [1.265, 103.625], [1.325, 103.635],
@@ -338,13 +339,25 @@ function renderReportDetail(id) {
     </select></div>
   </div>`;
   panel.querySelector("#case-status").addEventListener("change", event => {
-    report.status = event.target.value;
-    saveReports();
-    drawReportMarkers();
-    showToast(`Case ${report.id} updated to ${report.status}.`);
-    renderDashboard();
+    const nextStatus = event.target.value;
+    if (report.status === "Resolved" && nextStatus !== "Resolved") {
+      event.target.value = "Resolved";
+      pendingReopen = { report, nextStatus };
+      document.querySelector("#reopen-case-id").textContent = report.id;
+      document.querySelector("#reopen-dialog").showModal();
+      return;
+    }
+    updateReportStatus(report, nextStatus);
   });
   setTimeout(() => renderDetailMap(report), 0);
+}
+
+function updateReportStatus(report, nextStatus) {
+  report.status = nextStatus;
+  saveReports();
+  drawReportMarkers();
+  showToast(`Case ${report.id} updated to ${report.status}.`);
+  renderDashboard();
 }
 
 function renderDetailMap(report) {
@@ -409,6 +422,17 @@ document.querySelectorAll(".filter").forEach(button => button.addEventListener("
 
 document.querySelector("#close-dialog").addEventListener("click", () => document.querySelector("#report-dialog").close());
 document.querySelector("#finish-report").addEventListener("click", () => document.querySelector("#success-dialog").close());
+const reopenDialog = document.querySelector("#reopen-dialog");
+reopenDialog.addEventListener("cancel", () => { pendingReopen = null; });
+document.querySelector("#keep-resolved").addEventListener("click", () => {
+  pendingReopen = null;
+  reopenDialog.close();
+});
+document.querySelector("#confirm-reopen").addEventListener("click", () => {
+  if (pendingReopen) updateReportStatus(pendingReopen.report, pendingReopen.nextStatus);
+  pendingReopen = null;
+  reopenDialog.close();
+});
 document.querySelector("#close-login").addEventListener("click", () => document.querySelector("#login-dialog").close());
 document.querySelector("#login-form").addEventListener("submit", event => {
   event.preventDefault();
