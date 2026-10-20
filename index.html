@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=7" />
+    <link rel="stylesheet" href="styles.css?v=8" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -125,11 +125,15 @@
         <p class="eyebrow">Authorised team access</p>
         <h2>Rescue Team Portal</h2>
         <p class="login-copy">Enter the four-digit demo PIN to view and manage wildlife reports.</p>
+        <div class="demo-pin-callout" role="note">
+          <span>Demo access PIN</span>
+          <strong>0000</strong>
+          <small>Four zeros</small>
+        </div>
         <label class="pin-field" for="worker-pin">Demo PIN</label>
         <input id="worker-pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="••••" required />
         <p id="login-error" class="login-error" role="alert"></p>
         <button class="submit-button" type="submit">Open dashboard <span>→</span></button>
-        <small class="demo-pin-hint">For this demo, use PIN <strong>0000</strong></small>
       </form>
     </dialog>
 
