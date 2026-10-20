@@ -262,7 +262,7 @@ function logoutWorker() {
   workerAuthenticated = false;
   sessionStorage.removeItem("wildcare-worker-auth");
   switchView("reporter");
-  showToast("You have logged out of the worker dashboard.");
+  showToast("You have logged out of the Rescue Team Portal.");
 }
 
 function relativeTime(timestamp) {
@@ -446,7 +446,7 @@ document.querySelector("#login-form").addEventListener("submit", event => {
   sessionStorage.setItem("wildcare-worker-auth", "true");
   document.querySelector("#login-dialog").close();
   switchView("worker");
-  showToast("Worker dashboard unlocked.");
+  showToast("Rescue Team Portal unlocked.");
 });
 document.querySelector("#worker-logout").addEventListener("click", logoutWorker);
 document.querySelector("#new-report-worker").addEventListener("click", () => switchView("reporter"));
@@ -520,10 +520,10 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
     document.querySelector("#photo-preview-image").src = selectedPhotoDataUrl;
     document.querySelector("#photo-preview-name").textContent = file.name;
     document.querySelector("#photo-preview").hidden = false;
-    helper.textContent = "Photo added — it will appear in the worker view";
+    helper.textContent = "Photo added — it will appear in the Rescue Team Portal";
   } catch (error) {
     clearSelectedPhoto();
-    helper.textContent = "Optional — saved in this browser for the worker view";
+    helper.textContent = "Optional — saved in this browser for the Rescue Team Portal";
     showToast(error.message);
   }
 });

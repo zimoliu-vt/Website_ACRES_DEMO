@@ -8,8 +8,8 @@ A front-end demonstration of a Singapore wildlife reporting and rescue-coordinat
 - Friendly street or landmark labels from an on-demand OpenStreetMap reverse lookup
 - Submit-based Singapore-only location search with cached results
 - A public wildlife report form
-- A worker dashboard with filters and report details
-- A separate worker login screen using demo PIN `0000`
+- A Rescue Team Portal with filters and report details
+- A separate rescue team login screen using demo PIN `0000`
 - Case status updates from New through Resolved
 - Browser-local storage and resettable sample reports
 - Responsive layouts for desktop and mobile
