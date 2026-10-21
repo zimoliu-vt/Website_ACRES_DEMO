@@ -1,5 +1,6 @@
 const STORAGE_KEY = "wildcare-demo-reports-v1";
 const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
+const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 
 const sampleReports = [
   { id: "WC-1043", animal: "Bird", condition: "Unable to move or fly", notes: "A small green bird is on the grass beside the footpath. It tries to hop but cannot fly.", reporter: "Mei", contact: "", lat: 1.3048, lng: 103.8318, area: "Singapore Botanic Gardens", status: "New", createdAt: Date.now() - 12 * 60 * 1000 },
@@ -24,6 +25,17 @@ let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "tr
 let reverseLookupTimer = null;
 let selectedPhotoDataUrl = "";
 let pendingReopen = null;
+let volunteer = loadVolunteer();
+let volunteerAssessmentReportId = null;
+let volunteerPhotoDataUrl = "";
+
+const volunteerAreas = {
+  woodlands: { name: "Woodlands / North", lat: 1.4382, lng: 103.7891 },
+  central: { name: "Central Singapore", lat: 1.3521, lng: 103.8198 },
+  east: { name: "Tampines / East", lat: 1.3521, lng: 103.9442 },
+  west: { name: "Jurong / West", lat: 1.3329, lng: 103.7436 },
+  northeast: { name: "Punggol / North-east", lat: 1.4053, lng: 103.9023 }
+};
 
 const singaporeBoundary = [
   [1.145, 103.605], [1.205, 103.605], [1.265, 103.625], [1.325, 103.635],
@@ -61,6 +73,15 @@ function loadReports() {
 
 function saveReports() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+}
+
+function loadVolunteer() {
+  try { return JSON.parse(localStorage.getItem(VOLUNTEER_KEY)) || null; } catch { return null; }
+}
+
+function saveVolunteer() {
+  if (volunteer) localStorage.setItem(VOLUNTEER_KEY, JSON.stringify(volunteer));
+  else localStorage.removeItem(VOLUNTEER_KEY);
 }
 
 function compressPhoto(file) {
@@ -283,6 +304,7 @@ function switchView(viewName) {
   document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `${viewName}-view`));
   if (viewName === "reporter" && map) setTimeout(() => map.invalidateSize(), 80);
   if (viewName === "worker") renderDashboard();
+  if (viewName === "volunteer") renderVolunteerPortal();
 }
 
 function openWorkerLogin() {
@@ -317,16 +339,30 @@ function estimatedArea(lat, lng) {
   return "Central Singapore";
 }
 
+function statusClass(status) {
+  return String(status).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const toRadians = degrees => degrees * Math.PI / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function renderDashboard() {
   const active = reports.filter(report => report.status !== "Resolved");
   const newReports = reports.filter(report => report.status === "New");
   const assigned = reports.filter(report => report.status === "Assigned");
   const resolved = reports.filter(report => report.status === "Resolved");
+  const deceased = reports.filter(report => report.status === "Reported deceased");
   const stats = [
     ["New reports", newReports.length, "●"],
     ["Active cases", active.length, "↗"],
-    ["Assigned", assigned.length, "✓"],
-    ["Resolved", resolved.length, "✦"]
+    ["Volunteer responses", reports.filter(report => report.volunteerStatus).length, "♡"],
+    ["Deceased reports", deceased.length, "!"]
   ];
   document.querySelector("#stats-grid").innerHTML = stats.map(([label, number, icon]) => `<article class="stat-card"><div class="stat-top"><span>${label}</span><span class="stat-icon">${icon}</span></div><div class="stat-number">${number}</div></article>`).join("");
 
@@ -342,7 +378,7 @@ function renderDashboard() {
     <button class="report-card ${selectedReportId === report.id ? "selected" : ""}" data-report-id="${report.id}" type="button">
       <span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span>
       <span class="report-copy"><strong>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</strong><p>${escapeHtml(report.notes)}</p><small>⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)}</small></span>
-      <span class="status-pill status-${report.status.toLowerCase()}">${report.status}</span>
+      <span class="status-pill status-${statusClass(report.status)}">${report.status}</span>
     </button>`).join("") : '<div class="empty-detail"><span>✓</span><h3>No reports here</h3><p>There are no reports matching this filter.</p></div>';
 
   list.querySelectorAll("[data-report-id]").forEach(button => button.addEventListener("click", () => selectReport(button.dataset.reportId)));
@@ -362,7 +398,7 @@ function renderReportDetail(id) {
   if (!report) return;
   const panel = document.querySelector("#detail-panel");
   panel.innerHTML = `<div class="detail-content">
-    <div class="detail-top"><div><span class="case-id">Case ${escapeHtml(report.id)}</span><h2>${animalEmoji[report.animal]} ${escapeHtml(report.animal)}</h2><span class="status-pill status-${report.status.toLowerCase()}">${report.status}</span></div><span class="animal-avatar">${animalEmoji[report.animal]}</span></div>
+    <div class="detail-top"><div><span class="case-id">Case ${escapeHtml(report.id)}</span><h2>${animalEmoji[report.animal]} ${escapeHtml(report.animal)}</h2><span class="status-pill status-${statusClass(report.status)}">${report.status}</span></div><span class="animal-avatar">${animalEmoji[report.animal]}</span></div>
     <div class="detail-map" id="detail-map" aria-label="Map showing the selected report location"></div>
     <div class="detail-meta">
       <div class="meta-box"><small>Location</small><strong>${escapeHtml(report.area)}</strong></div>
@@ -372,8 +408,10 @@ function renderReportDetail(id) {
     </div>
     <p class="notes-box">${escapeHtml(report.notes)}</p>
     ${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Photo attached to case ${escapeHtml(report.id)}" /><figcaption>Photo supplied with this demo report</figcaption></figure>` : ""}
+    ${report.volunteerStatus ? `<section class="volunteer-update"><div><span>♡</span><div><small>Volunteer response</small><strong>${escapeHtml(report.volunteerName || "Demo volunteer")} · ${escapeHtml(report.volunteerStatus)}</strong></div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
+    ${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer observation photo · demo</figcaption></figure>` : ""}
     <div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
-      ${["New", "Acknowledged", "Assigned", "Resolved"].map(status => `<option ${status === report.status ? "selected" : ""}>${status}</option>`).join("")}
+      ${["New", "Acknowledged", "Assigned", "Reported deceased", "Resolved"].map(status => `<option ${status === report.status ? "selected" : ""}>${status}</option>`).join("")}
     </select></div>
   </div>`;
   panel.querySelector("#case-status").addEventListener("change", event => {
@@ -388,6 +426,66 @@ function renderReportDetail(id) {
     updateReportStatus(report, nextStatus);
   });
   setTimeout(() => renderDetailMap(report), 0);
+}
+
+function renderVolunteerPortal() {
+  const registration = document.querySelector("#volunteer-registration");
+  const dashboard = document.querySelector("#volunteer-dashboard");
+  const resetButton = document.querySelector("#volunteer-reset");
+  registration.hidden = Boolean(volunteer);
+  dashboard.hidden = !volunteer;
+  resetButton.hidden = !volunteer;
+  if (!volunteer) return;
+
+  document.querySelector("#volunteer-name").textContent = volunteer.name;
+  document.querySelector("#volunteer-area").textContent = volunteer.areaName;
+  document.querySelector("#volunteer-radius").textContent = `${volunteer.radius} km`;
+  const nearby = reports.map(report => ({ report, distance: distanceKm(volunteer.lat, volunteer.lng, report.lat, report.lng) }))
+    .filter(item => item.report.status !== "Resolved" && item.distance <= volunteer.radius)
+    .sort((a, b) => a.distance - b.distance);
+  document.querySelector("#nearby-count").textContent = nearby.length;
+  const container = document.querySelector("#nearby-cases");
+  container.innerHTML = nearby.length ? nearby.map(({ report, distance }) => {
+    const isMine = report.volunteerId === volunteer.id;
+    const claimedByOther = report.volunteerId && !isMine;
+    const action = !report.volunteerStatus
+      ? `<button class="primary-button volunteer-case-action" data-volunteer-action="claim" data-report-id="${report.id}" type="button">Offer to observe</button>`
+      : isMine && report.volunteerStatus === "On the way"
+        ? `<button class="primary-button volunteer-case-action" data-volunteer-action="arrive" data-report-id="${report.id}" type="button">I’ve arrived</button>`
+        : isMine && report.volunteerStatus === "Arrived"
+          ? `<button class="primary-button volunteer-case-action" data-volunteer-action="assess" data-report-id="${report.id}" type="button">Send on-site update</button>`
+          : `<span class="volunteer-state">${claimedByOther ? "Another volunteer is responding" : escapeHtml(report.volunteerStatus)}</span>`;
+    return `<article class="nearby-case ${isMine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(report.status)}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
+  }).join("") : '<div class="empty-detail"><span>✓</span><h3>No active cases nearby</h3><p>There are currently no demo reports inside your selected travel radius.</p></div>';
+  container.querySelectorAll("[data-volunteer-action]").forEach(button => button.addEventListener("click", () => handleVolunteerAction(button.dataset.volunteerAction, button.dataset.reportId)));
+}
+
+function handleVolunteerAction(action, reportId) {
+  const report = reports.find(item => item.id === reportId);
+  if (!report || !volunteer) return;
+  if (action === "claim") {
+    report.volunteerId = volunteer.id;
+    report.volunteerName = volunteer.name;
+    report.volunteerStatus = "On the way";
+    report.status = report.status === "New" ? "Acknowledged" : report.status;
+    saveReports();
+    renderVolunteerPortal();
+    showToast(`You are now observing case ${report.id}. Travel safely.`);
+  } else if (action === "arrive") {
+    report.volunteerStatus = "Arrived";
+    report.volunteerArrivedAt = Date.now();
+    saveReports();
+    renderVolunteerPortal();
+    showToast("Arrival shared with the rescue team. Keep a safe distance.");
+  } else if (action === "assess") {
+    volunteerAssessmentReportId = report.id;
+    volunteerPhotoDataUrl = "";
+    document.querySelector("#volunteer-assessment-form").reset();
+    document.querySelector("#volunteer-photo-preview").hidden = true;
+    document.querySelector("#assessment-case-id").textContent = `Case ${report.id}`;
+    document.querySelector("#assessment-location").textContent = report.area;
+    document.querySelector("#volunteer-assessment-dialog").showModal();
+  }
 }
 
 function updateReportStatus(report, nextStatus) {
@@ -568,6 +666,96 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
 });
 document.querySelector("#remove-photo").addEventListener("click", clearSelectedPhoto);
 
+document.querySelector("#volunteer-form").addEventListener("submit", event => {
+  event.preventDefault();
+  const data = new FormData(event.currentTarget);
+  const area = volunteerAreas[data.get("base")];
+  if (!area) return showToast("Choose your approximate area.");
+  volunteer = {
+    id: `VOL-${Date.now()}`,
+    name: data.get("name").trim(),
+    contact: data.get("contact").trim(),
+    areaName: area.name,
+    lat: area.lat,
+    lng: area.lng,
+    radius: Number(data.get("radius")),
+    registeredAt: Date.now()
+  };
+  saveVolunteer();
+  renderVolunteerPortal();
+  showToast("Demo volunteer profile created. Nearby cases are ready.");
+});
+
+document.querySelector("#volunteer-reset").addEventListener("click", () => {
+  volunteer = null;
+  saveVolunteer();
+  document.querySelector("#volunteer-form").reset();
+  renderVolunteerPortal();
+  showToast("Volunteer profile cleared from this browser.");
+});
+
+document.querySelector("#close-volunteer-assessment").addEventListener("click", () => document.querySelector("#volunteer-assessment-dialog").close());
+
+function clearVolunteerPhoto() {
+  volunteerPhotoDataUrl = "";
+  document.querySelector("#volunteer-photo-input").value = "";
+  document.querySelector("#volunteer-photo-preview").hidden = true;
+  document.querySelector("#volunteer-photo-preview-image").removeAttribute("src");
+}
+
+document.querySelector("#volunteer-photo-input").addEventListener("change", async event => {
+  const file = event.target.files[0];
+  if (!file) return clearVolunteerPhoto();
+  const helper = document.querySelector("#volunteer-photo-help");
+  helper.textContent = "Preparing photo preview…";
+  try {
+    volunteerPhotoDataUrl = await compressPhoto(file);
+    document.querySelector("#volunteer-photo-preview-image").src = volunteerPhotoDataUrl;
+    document.querySelector("#volunteer-photo-preview-name").textContent = file.name;
+    document.querySelector("#volunteer-photo-preview").hidden = false;
+    helper.textContent = "Photo ready for the rescue team";
+  } catch (error) {
+    clearVolunteerPhoto();
+    helper.textContent = "Required if the animal looks serious";
+    showToast(error.message);
+  }
+});
+document.querySelector("#remove-volunteer-photo").addEventListener("click", clearVolunteerPhoto);
+
+document.querySelector("#volunteer-assessment-form").addEventListener("submit", event => {
+  event.preventDefault();
+  const report = reports.find(item => item.id === volunteerAssessmentReportId);
+  if (!report) return showToast("This demo case could not be found.");
+  const data = new FormData(event.currentTarget);
+  const outcome = data.get("outcome");
+  if (outcome === "serious" && !volunteerPhotoDataUrl) return showToast("Please add a photo for a serious case.");
+  report.volunteerStatus = "Assessment sent";
+  report.volunteerNotes = data.get("notes").trim();
+  report.volunteerPhoto = volunteerPhotoDataUrl;
+  report.volunteerUpdatedAt = Date.now();
+  if (outcome === "deceased") {
+    report.volunteerAssessment = "Animal appears deceased";
+    report.status = "Reported deceased";
+  } else if (outcome === "serious") {
+    report.volunteerAssessment = "Alive — serious condition reported";
+    report.status = "Assigned";
+  } else {
+    report.volunteerAssessment = "Alive — currently stable";
+    if (report.status === "New") report.status = "Acknowledged";
+  }
+  try {
+    saveReports();
+  } catch {
+    return showToast("That photo is too large for browser storage. Try a smaller image.");
+  }
+  document.querySelector("#volunteer-assessment-dialog").close();
+  clearVolunteerPhoto();
+  renderVolunteerPortal();
+  drawReportMarkers();
+  showToast(`Update for ${report.id} is now visible to the rescue team.`);
+});
+
 initMap();
 renderDashboard();
+renderVolunteerPortal();
 if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();

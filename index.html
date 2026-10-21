@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=9" />
+    <link rel="stylesheet" href="styles.css?v=10" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -24,6 +24,7 @@
       </a>
       <nav class="mode-switch" aria-label="Choose interface">
         <button class="mode-button active" data-view="reporter" type="button">Report an animal</button>
+        <button class="mode-button" data-view="volunteer" type="button">Volunteer Portal</button>
         <button class="mode-button" data-view="worker" type="button">Rescue Team Portal</button>
       </nav>
     </header>
@@ -66,6 +67,72 @@
             </div>
             <div id="map" role="application" aria-label="Interactive map of Singapore"></div>
             <div class="map-hint" id="map-hint"><span>＋</span> Select the animal’s location on the map</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="volunteer-view" class="view" aria-labelledby="volunteer-heading">
+        <div class="volunteer-shell">
+          <div class="volunteer-head">
+            <div>
+              <p class="eyebrow">Community response · demo</p>
+              <h1 id="volunteer-heading">Help safely, from nearby.</h1>
+              <p>Registered volunteers can observe an animal from a safe distance and send updates to the rescue team. Never touch, feed, chase, or move an animal.</p>
+            </div>
+            <button id="volunteer-reset" class="secondary-button" type="button" hidden>Change volunteer profile</button>
+          </div>
+
+          <section id="volunteer-registration" class="volunteer-registration">
+            <div class="registration-copy">
+              <span class="volunteer-icon" aria-hidden="true">♡</span>
+              <h2>Register as a demo volunteer</h2>
+              <p>Choose your approximate area and how far you are willing to travel. This demo does not contact or dispatch real people.</p>
+              <div class="safety-note"><strong>Observe only</strong><span>Keep a safe distance and wait for trained rescuers.</span></div>
+            </div>
+            <form id="volunteer-form" class="volunteer-form">
+              <label class="field">Your name<input name="name" type="text" autocomplete="name" placeholder="How should we address you?" required /></label>
+              <label class="field">Contact number <span>(demo only)</span><input name="contact" type="tel" autocomplete="tel" placeholder="For rescue-team updates" required /></label>
+              <label class="field">Your approximate area
+                <select name="base" required>
+                  <option value="">Choose an area</option>
+                  <option value="woodlands">Woodlands / North</option>
+                  <option value="central">Central Singapore</option>
+                  <option value="east">Tampines / East</option>
+                  <option value="west">Jurong / West</option>
+                  <option value="northeast">Punggol / North-east</option>
+                </select>
+              </label>
+              <label class="field">Maximum travel distance
+                <select name="radius" required>
+                  <option value="3">Within 3 km</option>
+                  <option value="5" selected>Within 5 km</option>
+                  <option value="10">Within 10 km</option>
+                  <option value="20">Within 20 km</option>
+                </select>
+              </label>
+              <label class="volunteer-agreement"><input name="agreement" type="checkbox" required /><span>I understand this is a demo and I will only observe from a safe distance.</span></label>
+              <button class="submit-button" type="submit">Create volunteer profile <span>→</span></button>
+            </form>
+          </section>
+
+          <section id="volunteer-dashboard" class="volunteer-dashboard" hidden>
+            <div class="volunteer-summary">
+              <div><small>Volunteer</small><strong id="volunteer-name"></strong></div>
+              <div><small>Based near</small><strong id="volunteer-area"></strong></div>
+              <div><small>Travel radius</small><strong id="volunteer-radius"></strong></div>
+              <div class="volunteer-ready"><span></span><strong>Ready to observe</strong></div>
+            </div>
+            <div class="volunteer-grid">
+              <section class="nearby-panel">
+                <div class="panel-heading"><div><h2>Cases near you</h2><span id="nearby-count" class="count-pill">0</span></div></div>
+                <div id="nearby-cases" class="nearby-cases"></div>
+              </section>
+              <aside class="volunteer-guide">
+                <p class="eyebrow">Safe volunteer steps</p>
+                <ol><li><span>1</span><div><strong>Offer to observe</strong><small>Only choose a case you can reach safely.</small></div></li><li><span>2</span><div><strong>Confirm arrival</strong><small>Stay back and watch the animal.</small></div></li><li><span>3</span><div><strong>Send an update</strong><small>Serious cases require a clear photo from a safe distance.</small></div></li></ol>
+                <p class="emergency-note"><strong>Do not attempt a rescue.</strong> Volunteers in this demo only provide observations to the rescue team.</p>
+              </aside>
+            </div>
           </section>
         </div>
       </section>
@@ -221,9 +288,29 @@
       </form>
     </dialog>
 
+    <dialog id="volunteer-assessment-dialog" class="report-dialog volunteer-assessment-dialog">
+      <form id="volunteer-assessment-form">
+        <div class="dialog-head"><div><p class="eyebrow">Volunteer on-site update</p><h2>What can you safely observe?</h2></div><button class="close-button" id="close-volunteer-assessment" type="button" aria-label="Close">×</button></div>
+        <div class="selected-location"><span>⌖</span><div><strong id="assessment-case-id">Selected case</strong><small id="assessment-location"></small></div></div>
+        <fieldset>
+          <legend>Choose the clearest description</legend>
+          <div class="assessment-options">
+            <label><input type="radio" name="outcome" value="serious" required /><span>!</span><div><strong>Alive, but looks serious</strong><small>A photo is required for the rescue team.</small></div></label>
+            <label><input type="radio" name="outcome" value="deceased" required /><span>×</span><div><strong>Animal appears deceased</strong><small>Do not touch or move the animal.</small></div></label>
+            <label><input type="radio" name="outcome" value="stable" required /><span>✓</span><div><strong>Alive and currently stable</strong><small>Continue observing from a distance.</small></div></label>
+          </div>
+        </fieldset>
+        <label class="field">What do you see?<textarea name="notes" rows="3" maxlength="280" placeholder="Describe movement, visible injuries, and nearby hazards…" required></textarea></label>
+        <label class="photo-field volunteer-photo-field"><input id="volunteer-photo-input" name="photo" type="file" accept="image/*" /><span>＋</span><strong>Add observation photo</strong><small id="volunteer-photo-help">Required if the animal looks serious</small></label>
+        <div id="volunteer-photo-preview" class="photo-preview" hidden><img id="volunteer-photo-preview-image" alt="Volunteer observation photo preview" /><div><strong>Photo ready</strong><small id="volunteer-photo-preview-name"></small></div><button id="remove-volunteer-photo" type="button">Remove</button></div>
+        <p class="privacy-copy">Demo only. Do not approach the animal to take a photo.</p>
+        <button class="submit-button" type="submit">Send update to rescue team <span>→</span></button>
+      </form>
+    </dialog>
+
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
   </body>
 </html>
