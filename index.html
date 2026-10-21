@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=13" />
+    <link rel="stylesheet" href="styles.css?v=14" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -92,24 +92,13 @@
             <form id="volunteer-form" class="volunteer-form">
               <label class="field">Your name<input name="name" type="text" autocomplete="name" placeholder="How should we address you?" required /></label>
               <label class="field">Contact number <span>(demo only)</span><input name="contact" type="tel" autocomplete="tel" placeholder="For rescue-team updates" required /></label>
-              <label class="field">Your approximate area
-                <select name="base" required>
-                  <option value="">Choose an area</option>
-                  <option value="woodlands">Woodlands / North</option>
-                  <option value="central">Central Singapore</option>
-                  <option value="east">Tampines / East</option>
-                  <option value="west">Jurong / West</option>
-                  <option value="northeast">Punggol / North-east</option>
-                </select>
-              </label>
-              <label class="field">Maximum travel distance
-                <select name="radius" required>
-                  <option value="3">Within 3 km</option>
-                  <option value="5" selected>Within 5 km</option>
-                  <option value="10">Within 10 km</option>
-                  <option value="20">Within 20 km</option>
-                </select>
-              </label>
+              <div class="volunteer-location-field">
+                <div class="volunteer-location-title"><strong>Choose your approximate starting location</strong><small>Tap the map, then drag the pin if needed.</small></div>
+                <div id="volunteer-map" class="volunteer-map" role="application" aria-label="Choose volunteer starting location on a Singapore map"></div>
+                <div id="volunteer-location-label" class="volunteer-location-label"><span>⌖</span><div><strong>No location selected</strong><small>Tap anywhere within Singapore</small></div></div>
+              </div>
+              <label class="radius-field" for="volunteer-radius"><span><strong>Maximum travel distance</strong><output id="volunteer-radius-output" for="volunteer-radius">5 km</output></span><input id="volunteer-radius" name="radius" type="range" min="1" max="30" step="1" value="5" /><small>Customize between 1 and 30 km. The shaded circle shows your coverage.</small></label>
+              <p id="volunteer-form-error" class="form-error" role="alert" hidden></p>
               <label class="volunteer-agreement"><input name="agreement" type="checkbox" required /><span>I understand this is a demo and I will only observe from a safe distance.</span></label>
               <button class="submit-button" type="submit">Create volunteer profile <span>→</span></button>
             </form>
@@ -119,7 +108,7 @@
             <div class="volunteer-summary">
               <div><small>Volunteer</small><strong id="volunteer-name"></strong></div>
               <div><small>Based near</small><strong id="volunteer-area"></strong></div>
-              <div><small>Travel radius</small><strong id="volunteer-radius"></strong></div>
+              <div><small>Travel radius</small><strong id="volunteer-radius-summary"></strong></div>
               <div class="volunteer-ready"><span></span><strong>Ready to observe</strong></div>
             </div>
             <div class="volunteer-grid">
@@ -314,6 +303,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=13"></script>
+    <script src="app.js?v=14"></script>
   </body>
 </html>

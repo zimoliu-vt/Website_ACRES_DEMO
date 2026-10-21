@@ -28,14 +28,10 @@ let pendingReopen = null;
 let volunteer = loadVolunteer();
 let volunteerAssessmentReportId = null;
 let volunteerPhotoDataUrl = "";
-
-const volunteerAreas = {
-  woodlands: { name: "Woodlands / North", lat: 1.4382, lng: 103.7891 },
-  central: { name: "Central Singapore", lat: 1.3521, lng: 103.8198 },
-  east: { name: "Tampines / East", lat: 1.3521, lng: 103.9442 },
-  west: { name: "Jurong / West", lat: 1.3329, lng: 103.7436 },
-  northeast: { name: "Punggol / North-east", lat: 1.4053, lng: 103.9023 }
-};
+let volunteerMap = null;
+let volunteerLocationMarker = null;
+let volunteerRadiusCircle = null;
+let pendingVolunteerLocation = null;
 
 const singaporeBoundary = [
   [1.145, 103.605], [1.205, 103.605], [1.265, 103.625], [1.325, 103.635],
@@ -469,11 +465,14 @@ function renderVolunteerPortal() {
   registration.hidden = Boolean(volunteer);
   dashboard.hidden = !volunteer;
   resetButton.hidden = !volunteer;
-  if (!volunteer) return;
+  if (!volunteer) {
+    setTimeout(initVolunteerMap, 80);
+    return;
+  }
 
   document.querySelector("#volunteer-name").textContent = volunteer.name;
   document.querySelector("#volunteer-area").textContent = volunteer.areaName;
-  document.querySelector("#volunteer-radius").textContent = `${volunteer.radius} km`;
+  document.querySelector("#volunteer-radius-summary").textContent = `${volunteer.radius} km`;
   const nearby = reports.map(report => ({ report, distance: distanceKm(volunteer.lat, volunteer.lng, report.lat, report.lng) }))
     .filter(item => item.report.status !== "Resolved" && item.distance <= volunteer.radius)
     .sort((a, b) => a.distance - b.distance);
@@ -492,6 +491,66 @@ function renderVolunteerPortal() {
     return `<article class="nearby-case ${isMine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
   }).join("") : '<div class="empty-detail"><span>✓</span><h3>No active cases nearby</h3><p>There are currently no demo reports inside your selected travel radius.</p></div>';
   container.querySelectorAll("[data-volunteer-action]").forEach(button => button.addEventListener("click", () => handleVolunteerAction(button.dataset.volunteerAction, button.dataset.reportId)));
+}
+
+function initVolunteerMap() {
+  const container = document.querySelector("#volunteer-map");
+  if (!container || container.offsetParent === null || !window.L) return;
+  if (!volunteerMap) {
+    volunteerMap = L.map("volunteer-map", { zoomControl: true, minZoom: 10, maxBounds: [[1.16, 103.55], [1.49, 104.15]] }).setView([1.3521, 103.8198], 11);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Esri, Maxar, Earthstar Geographics, and the GIS User Community" }).addTo(volunteerMap);
+    volunteerMap.on("click", event => setVolunteerLocation(event.latlng.lat, event.latlng.lng));
+  }
+  volunteerMap.invalidateSize();
+}
+
+function setVolunteerLocation(lat, lng) {
+  const error = document.querySelector("#volunteer-form-error");
+  if (!isSingaporePoint(lat, lng)) {
+    error.textContent = "Choose a starting location within Singapore.";
+    error.hidden = false;
+    return;
+  }
+  error.hidden = true;
+  pendingVolunteerLocation = { lat, lng, name: estimatedArea(lat, lng) };
+  if (volunteerLocationMarker) volunteerLocationMarker.remove();
+  volunteerLocationMarker = L.marker([lat, lng], { draggable: true }).addTo(volunteerMap);
+  volunteerLocationMarker.on("dragend", event => {
+    const point = event.target.getLatLng();
+    if (!isSingaporePoint(point.lat, point.lng)) {
+      event.target.setLatLng([pendingVolunteerLocation.lat, pendingVolunteerLocation.lng]);
+      showToast("Choose a starting location within Singapore.");
+      return;
+    }
+    setVolunteerLocation(point.lat, point.lng);
+  });
+  updateVolunteerRadiusCircle();
+  const label = document.querySelector("#volunteer-location-label");
+  label.innerHTML = `<span>⌖</span><div><strong>Finding the nearest street…</strong><small>${lat.toFixed(4)}, ${lng.toFixed(4)}</small></div>`;
+  reverseVolunteerLocation(lat, lng);
+}
+
+function updateVolunteerRadiusCircle() {
+  const radius = Number(document.querySelector("#volunteer-radius").value);
+  document.querySelector("#volunteer-radius-output").textContent = `${radius} km`;
+  if (!pendingVolunteerLocation || !volunteerMap) return;
+  if (volunteerRadiusCircle) volunteerRadiusCircle.remove();
+  volunteerRadiusCircle = L.circle([pendingVolunteerLocation.lat, pendingVolunteerLocation.lng], { radius: radius * 1000, color: "#d7f36c", weight: 2, fillColor: "#d7f36c", fillOpacity: .18, interactive: false }).addTo(volunteerMap);
+  volunteerRadiusCircle.bringToBack();
+}
+
+async function reverseVolunteerLocation(lat, lng) {
+  try {
+    const params = new URLSearchParams({ format: "jsonv2", lat, lon: lng, zoom: "18", addressdetails: "1", "accept-language": "en" });
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`);
+    if (!response.ok) throw new Error();
+    const result = await response.json();
+    const address = result.address || {};
+    const place = address.road || address.neighbourhood || address.suburb || address.city_district || result.name || estimatedArea(lat, lng);
+    if (pendingVolunteerLocation && Math.abs(pendingVolunteerLocation.lat - lat) < .0001 && Math.abs(pendingVolunteerLocation.lng - lng) < .0001) pendingVolunteerLocation.name = place;
+  } catch {}
+  if (!pendingVolunteerLocation || Math.abs(pendingVolunteerLocation.lat - lat) >= .0001 || Math.abs(pendingVolunteerLocation.lng - lng) >= .0001) return;
+  document.querySelector("#volunteer-location-label").innerHTML = `<span>⌖</span><div><strong>${escapeHtml(pendingVolunteerLocation.name)}</strong><small>${lat.toFixed(4)}, ${lng.toFixed(4)}</small></div>`;
 }
 
 function handleVolunteerAction(action, reportId) {
@@ -719,15 +778,21 @@ document.querySelector("#remove-photo").addEventListener("click", clearSelectedP
 document.querySelector("#volunteer-form").addEventListener("submit", event => {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
-  const area = volunteerAreas[data.get("base")];
-  if (!area) return showToast("Choose your approximate area.");
+  const error = document.querySelector("#volunteer-form-error");
+  if (!pendingVolunteerLocation) {
+    error.textContent = "Tap the map to choose your approximate starting location.";
+    error.hidden = false;
+    document.querySelector("#volunteer-map").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  error.hidden = true;
   volunteer = {
     id: `VOL-${Date.now()}`,
     name: data.get("name").trim(),
     contact: data.get("contact").trim(),
-    areaName: area.name,
-    lat: area.lat,
-    lng: area.lng,
+    areaName: pendingVolunteerLocation.name,
+    lat: pendingVolunteerLocation.lat,
+    lng: pendingVolunteerLocation.lng,
     radius: Number(data.get("radius")),
     registeredAt: Date.now()
   };
@@ -740,9 +805,15 @@ document.querySelector("#volunteer-reset").addEventListener("click", () => {
   volunteer = null;
   saveVolunteer();
   document.querySelector("#volunteer-form").reset();
+  pendingVolunteerLocation = null;
+  if (volunteerLocationMarker) { volunteerLocationMarker.remove(); volunteerLocationMarker = null; }
+  if (volunteerRadiusCircle) { volunteerRadiusCircle.remove(); volunteerRadiusCircle = null; }
+  document.querySelector("#volunteer-radius-output").textContent = "5 km";
+  document.querySelector("#volunteer-location-label").innerHTML = '<span>⌖</span><div><strong>No location selected</strong><small>Tap anywhere within Singapore</small></div>';
   renderVolunteerPortal();
   showToast("Volunteer profile cleared from this browser.");
 });
+document.querySelector("#volunteer-radius").addEventListener("input", updateVolunteerRadiusCircle);
 
 document.querySelector("#close-volunteer-assessment").addEventListener("click", () => document.querySelector("#volunteer-assessment-dialog").close());
 

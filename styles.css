@@ -274,6 +274,23 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .safety-note strong { color: var(--lime); }
 .safety-note span { color: #e6efea; font-size: 12px; }
 .volunteer-form { padding: 34px 40px; }
+.volunteer-location-field { margin: 13px 0; }
+.volunteer-location-title { margin-bottom: 9px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.volunteer-location-title strong { color: #293b35; font-size: 12px; }
+.volunteer-location-title small { color: var(--muted); font-size: 9px; }
+.volunteer-map { height: 285px; position: relative; z-index: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #d6dfd4; }
+.volunteer-map .leaflet-control-attribution { max-width: 80%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.volunteer-location-label { margin-top: 8px; padding: 11px 13px; display: flex; align-items: center; gap: 10px; border-radius: 11px; color: var(--forest); background: var(--mint); }
+.volunteer-location-label > span { font-size: 20px; }
+.volunteer-location-label div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.volunteer-location-label strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.volunteer-location-label small { color: #587068; font-size: 9px; }
+.radius-field { margin: 18px 0; display: block; }
+.radius-field > span { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.radius-field strong { color: #293b35; font-size: 12px; }
+.radius-field output { min-width: 58px; padding: 6px 9px; border-radius: 99px; color: var(--forest); background: var(--lime); font-size: 11px; font-weight: 900; text-align: center; }
+.radius-field input { width: 100%; margin: 13px 0 7px; accent-color: var(--forest); cursor: pointer; }
+.radius-field small { display: block; color: var(--muted); font-size: 9px; line-height: 1.45; }
 .volunteer-agreement { margin: 18px 0; display: flex; align-items: flex-start; gap: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; cursor: pointer; }
 .volunteer-agreement input { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--forest); }
 .volunteer-summary { margin-bottom: 18px; padding: 18px 20px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 8px 24px rgba(23,63,53,.06); }
@@ -444,6 +461,9 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .registration-copy { padding: 28px 20px; }
   .registration-copy h2 { font-size: 29px; }
   .volunteer-form { padding: 20px 16px; }
+  .volunteer-location-title { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .volunteer-map { height: 310px; }
+  .radius-field input { min-height: 32px; }
   .volunteer-summary { padding: 13px; grid-template-columns: 1fr 1fr; }
   .volunteer-ready { min-height: 46px; }
   .nearby-cases { padding: 8px; }
