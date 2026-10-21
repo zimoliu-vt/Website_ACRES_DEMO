@@ -123,6 +123,7 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .report-copy strong { display: block; margin-bottom: 5px; color: var(--forest); }
 .report-copy p { margin: 0 0 5px; color: var(--muted); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .report-copy small { color: #8b948f; font-size: 10px; }
+.volunteer-card-badge { width: max-content; margin: 2px 0 6px; padding: 4px 7px; display: block; border-radius: 99px; color: var(--forest); background: var(--lime); font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
 .status-pill { padding: 5px 8px; border-radius: 99px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
 .status-new { color: #974036; background: #ffe1dc; }
 .status-acknowledged { color: #82611c; background: #fff0bd; }

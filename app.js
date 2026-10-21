@@ -303,7 +303,11 @@ function switchView(viewName) {
   document.querySelectorAll(".mode-button").forEach(button => button.classList.toggle("active", button.dataset.view === viewName));
   document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `${viewName}-view`));
   if (viewName === "reporter" && map) setTimeout(() => map.invalidateSize(), 80);
-  if (viewName === "worker") renderDashboard();
+  if (viewName === "worker") {
+    const latestVolunteerReport = reports.filter(report => report.volunteerStatus).sort((a, b) => (b.volunteerUpdatedAt || b.volunteerArrivedAt || 0) - (a.volunteerUpdatedAt || a.volunteerArrivedAt || 0))[0];
+    if (latestVolunteerReport) selectedReportId = latestVolunteerReport.id;
+    renderDashboard();
+  }
   if (viewName === "volunteer") renderVolunteerPortal();
 }
 
@@ -368,6 +372,7 @@ function renderDashboard() {
 
   const visible = reports.filter(report => {
     if (currentFilter === "active") return report.status !== "Resolved";
+    if (currentFilter === "volunteers") return Boolean(report.volunteerStatus);
     if (currentFilter === "resolved") return report.status === "Resolved";
     return true;
   }).sort((a, b) => b.createdAt - a.createdAt);
@@ -377,7 +382,7 @@ function renderDashboard() {
   list.innerHTML = visible.length ? visible.map(report => `
     <button class="report-card ${selectedReportId === report.id ? "selected" : ""}" data-report-id="${report.id}" type="button">
       <span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span>
-      <span class="report-copy"><strong>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</strong><p>${escapeHtml(report.notes)}</p><small>⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)}</small></span>
+      <span class="report-copy"><strong>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</strong><p>${escapeHtml(report.notes)}</p>${report.volunteerStatus ? `<span class="volunteer-card-badge">♡ ${escapeHtml(report.volunteerStatus)}</span>` : ""}<small>⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)}</small></span>
       <span class="status-pill status-${statusClass(report.status)}">${report.status}</span>
     </button>`).join("") : '<div class="empty-detail"><span>✓</span><h3>No reports here</h3><p>There are no reports matching this filter.</p></div>';
 
