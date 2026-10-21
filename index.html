@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=11" />
+    <link rel="stylesheet" href="styles.css?v=12" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -129,7 +129,7 @@
               </section>
               <aside class="volunteer-guide">
                 <p class="eyebrow">Safe volunteer steps</p>
-                <ol><li><span>1</span><div><strong>Offer to observe</strong><small>Only choose a case you can reach safely.</small></div></li><li><span>2</span><div><strong>Confirm arrival</strong><small>Stay back and watch the animal.</small></div></li><li><span>3</span><div><strong>Send an update</strong><small>Serious cases require a clear photo from a safe distance.</small></div></li></ol>
+                <ol><li><span>1</span><div><strong>Offer to observe</strong><small>Only choose a case you can reach safely.</small></div></li><li><span>2</span><div><strong>Confirm arrival</strong><small>Stay back and watch the animal.</small></div></li><li><span>3</span><div><strong>Send an update</strong><small>Serious or deceased reports require a clear photo from a safe distance.</small></div></li></ol>
                 <p class="emergency-note"><strong>Do not attempt a rescue.</strong> Volunteers in this demo only provide observations to the rescue team.</p>
               </aside>
             </div>
@@ -297,12 +297,12 @@
           <legend>Choose the clearest description</legend>
           <div class="assessment-options">
             <label><input type="radio" name="outcome" value="serious" required /><span>!</span><div><strong>Alive, but looks serious</strong><small>A photo is required for the rescue team.</small></div></label>
-            <label><input type="radio" name="outcome" value="deceased" required /><span>×</span><div><strong>Animal appears deceased</strong><small>Do not touch or move the animal.</small></div></label>
+            <label><input type="radio" name="outcome" value="deceased" required /><span>×</span><div><strong>Animal appears deceased</strong><small>A photo is required. Do not touch or move the animal.</small></div></label>
             <label><input type="radio" name="outcome" value="stable" required /><span>✓</span><div><strong>Alive and currently stable</strong><small>Continue observing from a distance.</small></div></label>
           </div>
         </fieldset>
         <label class="field">What do you see?<textarea name="notes" rows="3" maxlength="280" placeholder="Describe movement, visible injuries, and nearby hazards…" required></textarea></label>
-        <label class="photo-field volunteer-photo-field"><input id="volunteer-photo-input" name="photo" type="file" accept="image/*" /><span>＋</span><strong>Add observation photo</strong><small id="volunteer-photo-help">Required if the animal looks serious</small></label>
+        <label class="photo-field volunteer-photo-field"><input id="volunteer-photo-input" name="photo" type="file" accept="image/*" /><span>＋</span><strong>Add observation photo</strong><small id="volunteer-photo-help">Required for serious or deceased reports</small></label>
         <div id="volunteer-photo-preview" class="photo-preview" hidden><img id="volunteer-photo-preview-image" alt="Volunteer observation photo preview" /><div><strong>Photo ready</strong><small id="volunteer-photo-preview-name"></small></div><button id="remove-volunteer-photo" type="button">Remove</button></div>
         <p class="privacy-copy">Demo only. Do not approach the animal to take a photo.</p>
         <button class="submit-button" type="submit">Send update to rescue team <span>→</span></button>
@@ -312,6 +312,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=11"></script>
+    <script src="app.js?v=12"></script>
   </body>
 </html>

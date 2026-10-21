@@ -130,6 +130,7 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .status-assigned { color: #275d80; background: #d9edfa; }
 .status-resolved { color: #2e694c; background: #dcefe4; }
 .status-reported-deceased { color: #fff; background: #4a4a4a; }
+.status-urgent { color: #fff; background: #c52f2f; box-shadow: 0 0 0 3px rgba(197,47,47,.12); }
 .detail-panel { min-height: 300px; position: sticky; top: 18px; }
 .empty-detail { min-height: 430px; padding: 50px; display: grid; place-content: center; justify-items: center; text-align: center; color: var(--muted); }
 .empty-detail > span { width: 54px; height: 54px; margin-bottom: 15px; display: grid; place-items: center; border-radius: 50%; background: var(--mint); color: var(--forest); font-size: 22px; }

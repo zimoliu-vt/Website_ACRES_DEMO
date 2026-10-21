@@ -347,6 +347,10 @@ function statusClass(status) {
   return String(status).toLowerCase().replace(/[^a-z0-9]+/g, "-");
 }
 
+function casePriority(report) {
+  return ({ "Urgent": 0, "Reported deceased": 0, "Assigned": 1, "Acknowledged": 2, "New": 3, "Resolved": 4 })[report.status] ?? 3;
+}
+
 function distanceKm(lat1, lng1, lat2, lng2) {
   const toRadians = degrees => degrees * Math.PI / 180;
   const earthRadiusKm = 6371;
@@ -375,7 +379,7 @@ function renderDashboard() {
     if (currentFilter === "volunteers") return Boolean(report.volunteerStatus);
     if (currentFilter === "resolved") return report.status === "Resolved";
     return true;
-  }).sort((a, b) => b.createdAt - a.createdAt);
+  }).sort((a, b) => casePriority(a) - casePriority(b) || (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt));
 
   document.querySelector("#queue-count").textContent = visible.length;
   const list = document.querySelector("#report-list");
@@ -416,7 +420,7 @@ function renderReportDetail(id) {
     ${report.volunteerStatus ? `<section class="volunteer-update"><div><span>♡</span><div><small>Volunteer response</small><strong>${escapeHtml(report.volunteerName || "Demo volunteer")} · ${escapeHtml(report.volunteerStatus)}</strong></div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
     ${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer observation photo · demo</figcaption></figure>` : ""}
     <div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
-      ${["New", "Acknowledged", "Assigned", "Reported deceased", "Resolved"].map(status => `<option ${status === report.status ? "selected" : ""}>${status}</option>`).join("")}
+      ${["New", "Acknowledged", "Assigned", "Urgent", "Reported deceased", "Resolved"].map(status => `<option ${status === report.status ? "selected" : ""}>${status}</option>`).join("")}
     </select></div>
   </div>`;
   panel.querySelector("#case-status").addEventListener("change", event => {
@@ -721,7 +725,7 @@ document.querySelector("#volunteer-photo-input").addEventListener("change", asyn
     helper.textContent = "Photo ready for the rescue team";
   } catch (error) {
     clearVolunteerPhoto();
-    helper.textContent = "Required if the animal looks serious";
+    helper.textContent = "Required for serious or deceased reports";
     showToast(error.message);
   }
 });
@@ -733,7 +737,7 @@ document.querySelector("#volunteer-assessment-form").addEventListener("submit", 
   if (!report) return showToast("This demo case could not be found.");
   const data = new FormData(event.currentTarget);
   const outcome = data.get("outcome");
-  if (outcome === "serious" && !volunteerPhotoDataUrl) return showToast("Please add a photo for a serious case.");
+  if (["serious", "deceased"].includes(outcome) && !volunteerPhotoDataUrl) return showToast("Please add a photo for a serious or deceased report.");
   report.volunteerStatus = "Assessment sent";
   report.volunteerNotes = data.get("notes").trim();
   report.volunteerPhoto = volunteerPhotoDataUrl;
@@ -743,7 +747,7 @@ document.querySelector("#volunteer-assessment-form").addEventListener("submit", 
     report.status = "Reported deceased";
   } else if (outcome === "serious") {
     report.volunteerAssessment = "Alive — serious condition reported";
-    report.status = "Assigned";
+    report.status = "Urgent";
   } else {
     report.volunteerAssessment = "Alive — currently stable";
     if (report.status === "New") report.status = "Acknowledged";
