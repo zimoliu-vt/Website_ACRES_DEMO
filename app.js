@@ -65,9 +65,16 @@ function rejectOutsideSingapore() {
 function loadReports() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : structuredClone(sampleReports);
+    const loaded = stored ? JSON.parse(stored) : structuredClone(sampleReports);
+    return loaded.map(report => {
+      if (!Array.isArray(report.history)) {
+        report.history = [{ label: "Report submitted", at: report.createdAt }];
+        if (report.status !== "New") report.history.push({ label: `Status changed to ${statusLabel(report.status)}`, at: report.createdAt + 60000 });
+      }
+      return report;
+    });
   } catch {
-    return structuredClone(sampleReports);
+    return structuredClone(sampleReports).map(report => ({ ...report, history: [{ label: "Report submitted", at: report.createdAt }] }));
   }
 }
 
@@ -161,6 +168,7 @@ function setMapStyle(style) {
 
 function chooseLocation(lat, lng) {
   selectedLocation = { lat, lng, name: estimatedArea(lat, lng) };
+  document.querySelector("#report-form-error").hidden = true;
   if (map) {
     if (locationMarker) locationMarker.remove();
     locationMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
@@ -347,6 +355,22 @@ function statusClass(status) {
   return String(status).toLowerCase().replace(/[^a-z0-9]+/g, "-");
 }
 
+function statusLabel(status) {
+  return ({
+    "New": "Submitted",
+    "Acknowledged": "Response accepted",
+    "Assigned": "Rescue team assigned",
+    "Urgent": "Urgent attention",
+    "Reported deceased": "Possible deceased animal",
+    "Resolved": "Closed"
+  })[status] || status;
+}
+
+function addCaseEvent(report, label) {
+  report.history = Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }];
+  report.history.push({ label, at: Date.now() });
+}
+
 function casePriority(report) {
   return ({ "Urgent": 0, "Reported deceased": 0, "Assigned": 1, "Acknowledged": 2, "New": 3, "Resolved": 4 })[report.status] ?? 3;
 }
@@ -367,7 +391,7 @@ function renderDashboard() {
   const resolved = reports.filter(report => report.status === "Resolved");
   const deceased = reports.filter(report => report.status === "Reported deceased");
   const stats = [
-    ["New reports", newReports.length, "●"],
+    ["Submitted", newReports.length, "●"],
     ["Active cases", active.length, "↗"],
     ["Volunteer responses", reports.filter(report => report.volunteerStatus).length, "♡"],
     ["Deceased reports", deceased.length, "!"]
@@ -387,7 +411,7 @@ function renderDashboard() {
     <button class="report-card ${selectedReportId === report.id ? "selected" : ""}" data-report-id="${report.id}" type="button">
       <span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span>
       <span class="report-copy"><strong>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</strong><p>${escapeHtml(report.notes)}</p>${report.volunteerStatus ? `<span class="volunteer-card-badge">♡ ${escapeHtml(report.volunteerStatus)}</span>` : ""}<small>⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)}</small></span>
-      <span class="status-pill status-${statusClass(report.status)}">${report.status}</span>
+      <span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span>
     </button>`).join("") : '<div class="empty-detail"><span>✓</span><h3>No reports here</h3><p>There are no reports matching this filter.</p></div>';
 
   list.querySelectorAll("[data-report-id]").forEach(button => button.addEventListener("click", () => selectReport(button.dataset.reportId)));
@@ -407,7 +431,7 @@ function renderReportDetail(id) {
   if (!report) return;
   const panel = document.querySelector("#detail-panel");
   panel.innerHTML = `<div class="detail-content">
-    <div class="detail-top"><div><span class="case-id">Case ${escapeHtml(report.id)}</span><h2>${animalEmoji[report.animal]} ${escapeHtml(report.animal)}</h2><span class="status-pill status-${statusClass(report.status)}">${report.status}</span></div><span class="animal-avatar">${animalEmoji[report.animal]}</span></div>
+    <div class="detail-top"><div><span class="case-id">Case ${escapeHtml(report.id)}</span><h2>${animalEmoji[report.animal]} ${escapeHtml(report.animal)}</h2><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><span class="animal-avatar">${animalEmoji[report.animal]}</span></div>
     <div class="detail-map" id="detail-map" aria-label="Map showing the selected report location"></div>
     <div class="detail-meta">
       <div class="meta-box"><small>Location</small><strong>${escapeHtml(report.area)}</strong></div>
@@ -419,8 +443,9 @@ function renderReportDetail(id) {
     ${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Photo attached to case ${escapeHtml(report.id)}" /><figcaption>Photo supplied with this demo report</figcaption></figure>` : ""}
     ${report.volunteerStatus ? `<section class="volunteer-update"><div><span>♡</span><div><small>Volunteer response</small><strong>${escapeHtml(report.volunteerName || "Demo volunteer")} · ${escapeHtml(report.volunteerStatus)}</strong></div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
     ${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer observation photo · demo</figcaption></figure>` : ""}
+    <section class="case-timeline"><div class="timeline-heading"><span>Case progress</span><small>Newest update last</small></div><ol>${(Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }]).map((event, index, history) => `<li class="${index === history.length - 1 ? "current" : ""}"><span></span><div><strong>${escapeHtml(event.label)}</strong><small>${relativeTime(event.at)}</small></div></li>`).join("")}</ol></section>
     <div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
-      ${["New", "Acknowledged", "Assigned", "Urgent", "Reported deceased", "Resolved"].map(status => `<option ${status === report.status ? "selected" : ""}>${status}</option>`).join("")}
+      ${["New", "Acknowledged", "Assigned", "Urgent", "Reported deceased", "Resolved"].map(status => `<option value="${status}" ${status === report.status ? "selected" : ""}>${escapeHtml(statusLabel(status))}</option>`).join("")}
     </select></div>
   </div>`;
   panel.querySelector("#case-status").addEventListener("change", event => {
@@ -464,7 +489,7 @@ function renderVolunteerPortal() {
         : isMine && report.volunteerStatus === "Arrived"
           ? `<button class="primary-button volunteer-case-action" data-volunteer-action="assess" data-report-id="${report.id}" type="button">Send on-site update</button>`
           : `<span class="volunteer-state">${claimedByOther ? "Another volunteer is responding" : escapeHtml(report.volunteerStatus)}</span>`;
-    return `<article class="nearby-case ${isMine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(report.status)}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
+    return `<article class="nearby-case ${isMine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
   }).join("") : '<div class="empty-detail"><span>✓</span><h3>No active cases nearby</h3><p>There are currently no demo reports inside your selected travel radius.</p></div>';
   container.querySelectorAll("[data-volunteer-action]").forEach(button => button.addEventListener("click", () => handleVolunteerAction(button.dataset.volunteerAction, button.dataset.reportId)));
 }
@@ -477,12 +502,14 @@ function handleVolunteerAction(action, reportId) {
     report.volunteerName = volunteer.name;
     report.volunteerStatus = "On the way";
     report.status = report.status === "New" ? "Acknowledged" : report.status;
+    addCaseEvent(report, `${volunteer.name} offered to observe`);
     saveReports();
     renderVolunteerPortal();
     showToast(`You are now observing case ${report.id}. Travel safely.`);
   } else if (action === "arrive") {
     report.volunteerStatus = "Arrived";
     report.volunteerArrivedAt = Date.now();
+    addCaseEvent(report, "Volunteer arrived nearby");
     saveReports();
     renderVolunteerPortal();
     showToast("Arrival shared with the rescue team. Keep a safe distance.");
@@ -499,6 +526,7 @@ function handleVolunteerAction(action, reportId) {
 
 function updateReportStatus(report, nextStatus) {
   report.status = nextStatus;
+  addCaseEvent(report, `Status changed to ${statusLabel(nextStatus)}`);
   saveReports();
   drawReportMarkers();
   showToast(`Case ${report.id} updated to ${report.status}.`);
@@ -597,7 +625,7 @@ document.querySelector("#login-form").addEventListener("submit", event => {
 document.querySelector("#worker-logout").addEventListener("click", logoutWorker);
 document.querySelector("#new-report-worker").addEventListener("click", () => switchView("reporter"));
 document.querySelector("#reset-demo").addEventListener("click", () => {
-  reports = structuredClone(sampleReports);
+  reports = structuredClone(sampleReports).map(report => ({ ...report, history: [{ label: "Report submitted", at: report.createdAt }, ...(report.status !== "New" ? [{ label: `Status changed to ${statusLabel(report.status)}`, at: report.createdAt + 60000 }] : [])] }));
   selectedReportId = null;
   saveReports();
   drawReportMarkers();
@@ -621,6 +649,18 @@ document.querySelector("#locate-button").addEventListener("click", () => {
 document.querySelector("#report-form").addEventListener("submit", event => {
   event.preventDefault();
   if (!selectedLocation) return showToast("Please choose a location on the map first.");
+  const error = document.querySelector("#report-form-error");
+  const selectedAnimal = event.currentTarget.querySelector('[name="animal"]:checked');
+  const condition = event.currentTarget.elements.condition.value;
+  const notes = event.currentTarget.elements.notes.value.trim();
+  if (!selectedAnimal || !condition || !notes) {
+    error.textContent = !selectedAnimal ? "Choose the animal type." : !condition ? "Select what seems to be wrong." : "Describe what you can safely observe.";
+    error.hidden = false;
+    const target = !selectedAnimal ? event.currentTarget.querySelector(".animal-options") : !condition ? event.currentTarget.elements.condition : event.currentTarget.elements.notes;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  error.hidden = true;
   const data = new FormData(event.currentTarget);
   const nextNumber = Math.max(...reports.map(report => Number(report.id.split("-")[1]) || 1000), 1000) + 1;
   const report = {
@@ -634,7 +674,8 @@ document.querySelector("#report-form").addEventListener("submit", event => {
     lng: selectedLocation.lng,
     area: selectedLocation.name || estimatedArea(selectedLocation.lat, selectedLocation.lng),
     status: "New",
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    history: [{ label: "Report submitted", at: Date.now() }]
   };
   report.photo = selectedPhotoDataUrl;
   reports.unshift(report);
@@ -745,12 +786,15 @@ document.querySelector("#volunteer-assessment-form").addEventListener("submit", 
   if (outcome === "deceased") {
     report.volunteerAssessment = "Animal appears deceased";
     report.status = "Reported deceased";
+    addCaseEvent(report, "Volunteer reported a possible deceased animal");
   } else if (outcome === "serious") {
     report.volunteerAssessment = "Alive — serious condition reported";
     report.status = "Urgent";
+    addCaseEvent(report, "Volunteer reported urgent attention needed");
   } else {
     report.volunteerAssessment = "Alive — currently stable";
     if (report.status === "New") report.status = "Acknowledged";
+    addCaseEvent(report, "Volunteer reported the animal is currently stable");
   }
   try {
     saveReports();

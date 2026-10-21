@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=12" />
+    <link rel="stylesheet" href="styles.css?v=13" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -161,7 +161,7 @@
                 <button class="filter active" data-filter="active" type="button">Active</button>
                 <button class="filter" data-filter="volunteers" type="button">Volunteers</button>
                 <button class="filter" data-filter="all" type="button">All</button>
-                <button class="filter" data-filter="resolved" type="button">Resolved</button>
+                <button class="filter" data-filter="resolved" type="button">Closed</button>
               </div>
             </div>
             <div id="report-list" class="report-list"></div>
@@ -218,6 +218,7 @@
         <h2>Thank you for reporting it.</h2>
         <p class="success-copy">Your report <strong id="success-case-id"></strong> is now visible to the rescue team in this browser.</p>
         <div class="post-report-safety"><span aria-hidden="true">!</span><p><strong>Now, keep a safe distance.</strong> Do not touch, feed, chase, or try to restrain the animal. Observe only if it is safe to do so.</p></div>
+        <div class="success-next-steps"><strong>What happens next in this demo?</strong><ol><li>Save the case number shown above.</li><li>The case appears in the Volunteer and Rescue Team portals in this browser.</li><li>Status changes are simulated and do not contact a real rescue service.</li></ol></div>
         <button id="finish-report" class="submit-button" type="button">Back to the map <span>→</span></button>
       </div>
     </dialog>
@@ -236,12 +237,13 @@
     </dialog>
 
     <dialog id="report-dialog" class="report-dialog">
-      <form id="report-form" method="dialog">
+      <form id="report-form" method="dialog" novalidate>
         <div class="dialog-head">
           <div><p class="eyebrow">New wildlife report</p><h2>Tell us what you found</h2></div>
           <button class="close-button" id="close-dialog" type="button" aria-label="Close">×</button>
         </div>
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
+        <p id="report-form-error" class="form-error" role="alert" hidden></p>
 
         <fieldset>
           <legend>What kind of animal is it?</legend>
@@ -312,6 +314,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=12"></script>
+    <script src="app.js?v=13"></script>
   </body>
 </html>
