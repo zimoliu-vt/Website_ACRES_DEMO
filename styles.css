@@ -272,6 +272,11 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .volunteer-head { margin-bottom: 30px; display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 .volunteer-head h1 { margin-bottom: 14px; font-size: clamp(42px, 5vw, 68px); }
 .volunteer-head > div > p:last-child { max-width: 720px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.6; }
+.volunteer-account-actions { display: flex; align-items: center; gap: 10px; }
+.volunteer-account-actions[hidden] { display: none; }
+.text-danger-button { padding: 12px 6px; border: 0; color: #9a312b; background: transparent; font-weight: 800; }
+.text-danger-button:hover, .text-danger-button:focus-visible { color: #741f1a; text-decoration: underline; outline: 0; }
+.delete-icon { color: #fff; background: var(--red); }
 .volunteer-registration { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 300px minmax(0,1fr); border: 1px solid var(--line); border-radius: 24px; background: var(--paper); box-shadow: var(--shadow); overflow: hidden; }
 .volunteer-registration[hidden], .volunteer-dashboard[hidden] { display: none; }
 .registration-copy { padding: 45px; color: #fff; background: var(--forest); }
@@ -299,6 +304,11 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .radius-field output { min-width: 58px; padding: 6px 9px; border-radius: 99px; color: var(--forest); background: var(--lime); font-size: 11px; font-weight: 900; text-align: center; }
 .radius-field input { width: 100%; margin: 13px 0 7px; accent-color: var(--forest); cursor: pointer; }
 .radius-field small { display: block; color: var(--muted); font-size: 9px; line-height: 1.45; }
+.island-choice { margin: 16px 0; padding: 14px; display: flex; align-items: flex-start; gap: 11px; border: 1px solid var(--line); border-radius: 13px; color: var(--forest); background: #f4f8f4; cursor: pointer; }
+.island-choice input, .volunteer-islands-summary input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--forest); }
+.island-choice span { display: flex; flex-direction: column; gap: 4px; }
+.island-choice strong { font-size: 12px; }
+.island-choice small { color: var(--muted); font-size: 10px; line-height: 1.4; }
 .volunteer-agreement { margin: 18px 0; display: flex; align-items: flex-start; gap: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; cursor: pointer; }
 .volunteer-agreement input { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--forest); }
 .volunteer-summary { margin-bottom: 18px; padding: 18px 20px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 8px 24px rgba(23,63,53,.06); }
@@ -307,6 +317,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .volunteer-summary strong { color: var(--forest); }
 .volunteer-ready { padding: 12px; align-items: center; flex-direction: row !important; justify-content: center; border-radius: 12px; color: var(--forest); background: var(--mint); font-size: 12px; }
 .volunteer-ready span { width: 9px; height: 9px; border-radius: 50%; background: #51a26d; box-shadow: 0 0 0 4px rgba(81,162,109,.14); }
+.volunteer-islands-summary { min-height: 58px; padding: 10px 12px; display: flex !important; align-items: center; flex-direction: row !important; gap: 10px; border-radius: 12px; background: var(--mint); cursor: pointer; }
+.volunteer-islands-summary > span { display: flex; flex-direction: column; gap: 4px; }
 .volunteer-grid { display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 18px; align-items: start; }
 .nearby-panel, .volunteer-guide { border: 1px solid var(--line); border-radius: 20px; background: var(--paper); box-shadow: 0 10px 30px rgba(23,63,53,.05); overflow: hidden; }
 .nearby-cases { padding: 14px; display: grid; gap: 12px; }
@@ -465,6 +477,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .volunteer-head h1 { font-size: 39px; }
   .volunteer-head > div > p:last-child { font-size: 14px; }
   .volunteer-head .secondary-button { min-height: 46px; }
+  .volunteer-account-actions { width: 100%; justify-content: space-between; }
   .volunteer-registration { border-radius: 18px; }
   .registration-copy { padding: 28px 20px; }
   .registration-copy h2 { font-size: 29px; }

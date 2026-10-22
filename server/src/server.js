@@ -170,6 +170,7 @@ app.post("/auth/volunteer-signup", async (request, response) => {
   if (!/^[a-z0-9._-]{3,32}$/.test(username)) return response.status(400).json({ error: "Use 3–32 letters, numbers, dots, dashes, or underscores for the username" });
   if (password.length < 10 || password.length > 128) return response.status(400).json({ error: "Password must contain 10–128 characters" });
   if (!profile?.name || !profile?.contact || !Number.isFinite(Number(profile?.lat)) || !Number.isFinite(Number(profile?.lng))) return response.status(400).json({ error: "Complete all volunteer profile fields" });
+  if (!Number.isFinite(profile?.demoAgreementAcceptedAt) || profile.demoAgreementAcceptedAt <= 0) return response.status(400).json({ error: "You must agree that this is strictly a demo and no travel or real-world action is required" });
 
   const id = crypto.randomUUID();
   const saved = { ...profile, id, username };

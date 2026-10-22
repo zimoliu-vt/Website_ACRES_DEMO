@@ -506,10 +506,10 @@ function renderReportDetail(id) {
 function renderVolunteerPortal() {
   const registration = document.querySelector("#volunteer-registration");
   const dashboard = document.querySelector("#volunteer-dashboard");
-  const resetButton = document.querySelector("#volunteer-reset");
+  const accountActions = document.querySelector("#volunteer-account-actions");
   registration.hidden = Boolean(volunteer);
   dashboard.hidden = !volunteer;
-  resetButton.hidden = !volunteer;
+  accountActions.hidden = !volunteer;
   if (!volunteer) {
     setTimeout(initVolunteerMap, 80);
     return;
@@ -518,8 +518,10 @@ function renderVolunteerPortal() {
   document.querySelector("#volunteer-name").textContent = volunteer.name;
   document.querySelector("#volunteer-area").textContent = volunteer.areaName;
   document.querySelector("#volunteer-radius-summary").textContent = `${volunteer.radius} km`;
+  document.querySelector("#volunteer-islands-toggle").checked = Boolean(volunteer.canTravelToIslands);
+  document.querySelector("#volunteer-islands-label").textContent = volunteer.canTravelToIslands ? "Available" : "Mainland only";
   const nearby = reports.map(report => ({ report, distance: distanceKm(volunteer.lat, volunteer.lng, report.lat, report.lng) }))
-    .filter(item => item.report.status !== "Resolved" && item.distance <= volunteer.radius)
+    .filter(item => item.report.status !== "Resolved" && item.distance <= volunteer.radius && (volunteer.canTravelToIslands || !isOffshoreLocation(item.report)))
     .sort((a, b) => a.distance - b.distance);
   document.querySelector("#nearby-count").textContent = nearby.length;
   const container = document.querySelector("#nearby-cases");
@@ -536,6 +538,17 @@ function renderVolunteerPortal() {
     return `<article class="nearby-case ${isMine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
   }).join("") : '<div class="empty-detail"><span>✓</span><h3>No active cases nearby</h3><p>There are currently no demo reports inside your selected travel radius.</p></div>';
   container.querySelectorAll("[data-volunteer-action]").forEach(button => button.addEventListener("click", () => handleVolunteerAction(button.dataset.volunteerAction, button.dataset.reportId)));
+}
+
+function isOffshoreLocation(report) {
+  const area = String(report.area || "");
+  if (/\b(pulau|island|sentosa|ubin|tekong|kusu|lazarus|st\.? john|sisters?)\b/i.test(area)) return true;
+  const lat = Number(report.lat);
+  const lng = Number(report.lng);
+  return lat < 1.257 ||
+    (lat < 1.275 && lng > 103.79 && lng < 103.88) ||
+    (lat > 1.38 && lng > 103.91) ||
+    (lat < 1.27 && lng < 103.73);
 }
 
 function initVolunteerMap() {
@@ -896,6 +909,8 @@ document.querySelector("#volunteer-form").addEventListener("submit", async event
     lat: pendingVolunteerLocation.lat,
     lng: pendingVolunteerLocation.lng,
     radius: Number(data.get("radius")),
+    canTravelToIslands: data.get("canTravelToIslands") === "on",
+    demoAgreementAcceptedAt: data.get("agreement") === "on" ? Date.now() : null,
     registeredAt: Date.now()
   };
   try {
@@ -931,7 +946,40 @@ document.querySelector("#volunteer-reset").addEventListener("click", () => {
   setVolunteerAccountMode("signin");
   showToast("Signed out of the volunteer account.");
 });
+const deleteVolunteerDialog = document.querySelector("#delete-volunteer-dialog");
+document.querySelector("#volunteer-delete").addEventListener("click", () => deleteVolunteerDialog.showModal());
+document.querySelector("#cancel-volunteer-delete").addEventListener("click", () => deleteVolunteerDialog.close());
+document.querySelector("#confirm-volunteer-delete").addEventListener("click", async event => {
+  if (!volunteer) return deleteVolunteerDialog.close();
+  const button = event.currentTarget;
+  button.disabled = true;
+  button.textContent = "Deleting…";
+  try {
+    await apiFetch(`/volunteers/${encodeURIComponent(volunteer.id)}`, { method: "DELETE" });
+    volunteer = null;
+    volunteerToken = "";
+    localStorage.removeItem(VOLUNTEER_KEY);
+    localStorage.removeItem("wildcare-volunteer-token");
+    deleteVolunteerDialog.close();
+    document.querySelector("#volunteer-form").reset();
+    setVolunteerAccountMode("signup");
+    renderVolunteerPortal();
+    showToast("Volunteer account deleted.");
+  } catch (deleteError) {
+    showToast(deleteError.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Delete account";
+  }
+});
 document.querySelector("#volunteer-radius").addEventListener("input", updateVolunteerRadiusCircle);
+document.querySelector("#volunteer-islands-toggle").addEventListener("change", event => {
+  if (!volunteer) return;
+  volunteer.canTravelToIslands = event.currentTarget.checked;
+  saveVolunteer();
+  renderVolunteerPortal();
+  showToast(volunteer.canTravelToIslands ? "Offshore island cases are now included." : "Showing mainland cases only.");
+});
 
 document.querySelector("#close-volunteer-assessment").addEventListener("click", () => document.querySelector("#volunteer-assessment-dialog").close());
 

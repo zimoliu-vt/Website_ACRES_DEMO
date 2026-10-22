@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=17" />
+    <link rel="stylesheet" href="styles.css?v=19" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -76,7 +76,10 @@
               <h1 id="volunteer-heading">Help from a safe distance.</h1>
               <p>Sign in to view nearby cases or create a volunteer account.</p>
             </div>
-            <button id="volunteer-reset" class="secondary-button" type="button" hidden>Sign out</button>
+            <div id="volunteer-account-actions" class="volunteer-account-actions" hidden>
+              <button id="volunteer-reset" class="secondary-button" type="button">Sign out</button>
+              <button id="volunteer-delete" class="text-danger-button" type="button">Delete account</button>
+            </div>
           </div>
 
           <section id="volunteer-registration" class="volunteer-registration">
@@ -109,8 +112,9 @@
                 <div id="volunteer-location-label" class="volunteer-location-label"><span>⌖</span><div><strong>No location selected</strong><small>Tap anywhere within Singapore</small></div></div>
               </div>
               <label class="radius-field" for="volunteer-radius"><span><strong>How far can you travel?</strong><output id="volunteer-radius-output" for="volunteer-radius">5 km</output></span><input id="volunteer-radius" name="radius" type="range" min="1" max="30" step="1" value="5" /><small>Choose 1–30 km.</small></label>
+              <label class="island-choice"><input name="canTravelToIslands" type="checkbox" /><span><strong>I can travel to Singapore’s offshore islands</strong><small>For example: Pulau Ubin, Sentosa, or the southern islands.</small></span></label>
               <p id="volunteer-form-error" class="form-error" role="alert" hidden></p>
-              <label class="volunteer-agreement"><input name="agreement" type="checkbox" required /><span>I understand this is a demo and I will only observe from a safe distance.</span></label>
+              <label class="volunteer-agreement"><input name="agreement" type="checkbox" required /><span><strong>I understand this is strictly a demo.</strong> I do not need to travel anywhere, respond to any case, or take any real-world action.</span></label>
               <button class="submit-button" type="submit">Create volunteer profile <span>→</span></button>
               </div>
             </form>
@@ -121,7 +125,7 @@
               <div><small>Volunteer</small><strong id="volunteer-name"></strong></div>
               <div><small>Based near</small><strong id="volunteer-area"></strong></div>
               <div><small>Travel radius</small><strong id="volunteer-radius-summary"></strong></div>
-              <div class="volunteer-ready"><span></span><strong>Ready to observe</strong></div>
+              <label class="volunteer-islands-summary"><input id="volunteer-islands-toggle" type="checkbox" /><span><small>Offshore islands</small><strong id="volunteer-islands-label">Mainland only</strong></span></label>
             </div>
             <div class="volunteer-grid">
               <section class="nearby-panel">
@@ -237,6 +241,19 @@
       </div>
     </dialog>
 
+    <dialog id="delete-volunteer-dialog" class="reopen-dialog">
+      <div class="reopen-content">
+        <div class="reopen-icon delete-icon" aria-hidden="true">×</div>
+        <p class="eyebrow">Delete volunteer account?</p>
+        <h2>This cannot be undone.</h2>
+        <p>Your volunteer profile and login will be permanently removed from this demo.</p>
+        <div class="reopen-actions">
+          <button id="cancel-volunteer-delete" class="secondary-button" type="button">Keep account</button>
+          <button id="confirm-volunteer-delete" class="danger-button" type="button">Delete account</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="report-dialog" class="report-dialog">
       <form id="report-form" method="dialog" novalidate>
         <div class="dialog-head">
@@ -315,6 +332,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=19"></script>
   </body>
 </html>
