@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=28" />
+    <link rel="stylesheet" href="styles.css?v=29" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -25,6 +25,7 @@
       <nav class="mode-switch" aria-label="Choose interface">
         <button class="mode-button active" data-view="reporter" type="button">Report</button>
         <button class="mode-button" data-view="volunteer" type="button">Volunteer</button>
+        <a class="rescue-shortcut" href="/rescue" title="Rescue team sign-in" aria-label="Rescue team sign-in"><span aria-hidden="true">⌘</span> Team</a>
       </nav>
     </header>
 
@@ -331,6 +332,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=28"></script>
+    <script src="app.js?v=29"></script>
   </body>
 </html>
