@@ -775,15 +775,39 @@ document.querySelector("#reset-demo").addEventListener("click", async () => {
 
 document.querySelector("#locate-button").addEventListener("click", () => {
   if (!navigator.geolocation) return showToast("Location is not available in this browser.");
+  if (!map || !window.L) return showToast("The map is not ready yet.");
   navigator.geolocation.getCurrentPosition(position => {
     const { latitude, longitude } = position.coords;
     if (!isSingaporePoint(latitude, longitude)) {
       showToast("Your location appears to be outside Singapore and cannot be selected.");
       return;
     }
-    map?.setView([latitude, longitude], 16);
-    chooseLocation(latitude, longitude);
-  }, () => showToast("We could not access your location. Click the map instead."));
+    const approximateLat = Number(latitude.toFixed(3));
+    const approximateLng = Number(longitude.toFixed(3));
+    const radius = Math.min(500, Math.max(150, Number(position.coords.accuracy) || 200));
+    selectedLocation = null;
+    if (locationMarker) {
+      locationMarker.remove();
+      locationMarker = null;
+    }
+    if (searchAreaMarker) searchAreaMarker.remove();
+    searchAreaMarker = L.circle([approximateLat, approximateLng], {
+      radius,
+      color: "#173f35",
+      weight: 3,
+      fillColor: "#d7f36c",
+      fillOpacity: .24,
+      interactive: false
+    }).addTo(map);
+    map?.flyTo([approximateLat, approximateLng], 15, { duration: .8 });
+    const hint = document.querySelector("#map-hint");
+    hint.innerHTML = "<span>＋</span> Your nearby area is highlighted — tap the animal’s location";
+    showToast("Nearby area found. Now tap the map where you saw the animal.");
+  }, () => showToast("We could not access your location. Tap the map instead."), {
+    enableHighAccuracy: false,
+    maximumAge: 60000,
+    timeout: 10000
+  });
 });
 
 document.querySelector("#report-form").addEventListener("submit", async event => {
