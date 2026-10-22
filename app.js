@@ -2,7 +2,7 @@ const STORAGE_KEY = "wildcare-demo-reports-v1";
 const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
-const RESCUE_ENTRY_PATH = "/8f3c6a91d2";
+const RESCUE_ENTRY_PATH = "/rescue";
 const isRescueEntry = window.location.pathname === RESCUE_ENTRY_PATH;
 
 const sampleReports = [
