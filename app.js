@@ -111,17 +111,21 @@ async function apiFetch(path, options = {}) {
   return response.status === 204 ? null : response.json();
 }
 
-async function loadBackendReports() {
+async function loadBackendReports(silent = false) {
+  let latestReports;
   try {
-    reports = await apiFetch("/reports");
-    backendReady = true;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-    drawReportMarkers();
-    renderDashboard();
-    renderVolunteerPortal();
+    latestReports = await apiFetch("/reports");
   } catch {
-    showToast("Using this browser’s cached demo data while the backend reconnects.");
+    if (!silent) showToast("Using this browser’s cached demo data while the backend reconnects.");
+    return false;
   }
+  reports = latestReports;
+  backendReady = true;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); } catch {}
+  drawReportMarkers();
+  renderDashboard();
+  renderVolunteerPortal();
+  return true;
 }
 
 function persistReport(report) {
@@ -832,6 +836,7 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   submitButton.querySelector("span").textContent = "Sending…";
   const data = new FormData(event.currentTarget);
   const reportDraft = {
+    clientRequestId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     animal: data.get("animal"),
     condition: data.get("condition"),
     notes: data.get("notes"),
@@ -844,19 +849,32 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   reportDraft.photo = selectedPhotoDataUrl;
   let report;
   try {
-    report = await apiFetch("/reports", { method: "POST", body: JSON.stringify(reportDraft) });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      try {
+        report = await apiFetch("/reports", { method: "POST", body: JSON.stringify(reportDraft), signal: controller.signal });
+        break;
+      } catch (sendError) {
+        if (sendError.name !== "AbortError" || attempt === 1) throw sendError;
+        submitButton.querySelector("span").textContent = "Confirming…";
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
     backendReady = true;
   } catch (backendError) {
     error.textContent = backendError.message;
     error.hidden = false;
+    return;
+  } finally {
     submitButton.disabled = false;
     submitButton.removeAttribute("aria-busy");
     submitButton.querySelector("span").textContent = "Send report";
-    return;
   }
   reports.unshift(report);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-  drawReportMarkers();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); } catch {}
+  try { drawReportMarkers(); } catch {}
   event.currentTarget.reset();
   clearSelectedPhoto();
   document.querySelector("#report-dialog").close();
@@ -864,12 +882,11 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   if (searchAreaMarker) { searchAreaMarker.remove(); searchAreaMarker = null; }
   selectedReportId = report.id;
   document.querySelector("#success-case-id").textContent = report.id;
-  submitButton.disabled = false;
-  submitButton.removeAttribute("aria-busy");
-  submitButton.querySelector("span").textContent = "Send report";
   showToast(`Report ${report.id} sent successfully.`);
   const successDialog = document.querySelector("#success-dialog");
-  setTimeout(() => { if (!successDialog.open) successDialog.showModal(); }, 80);
+  setTimeout(() => {
+    if (!successDialog.open) successDialog.showModal();
+  }, 80);
 });
 
 document.querySelector("#photo-input").addEventListener("change", async event => {
@@ -1100,4 +1117,12 @@ initMap();
 renderDashboard();
 renderVolunteerPortal();
 loadBackendReports();
+setInterval(() => {
+  const livePortalOpen = document.querySelector("#volunteer-view.active, #worker-view.active");
+  if (document.visibilityState === "visible" && livePortalOpen) loadBackendReports(true);
+}, 10000);
+document.addEventListener("visibilitychange", () => {
+  const livePortalOpen = document.querySelector("#volunteer-view.active, #worker-view.active");
+  if (document.visibilityState === "visible" && livePortalOpen) loadBackendReports(true);
+});
 if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();

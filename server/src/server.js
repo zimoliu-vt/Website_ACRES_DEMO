@@ -29,9 +29,12 @@ async function initialiseDatabase() {
     CREATE TABLE IF NOT EXISTS reports (
       id text PRIMARY KEY,
       payload jsonb NOT NULL,
+      request_key text UNIQUE,
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );
+    ALTER TABLE reports ADD COLUMN IF NOT EXISTS request_key text;
+    CREATE UNIQUE INDEX IF NOT EXISTS reports_request_key_idx ON reports(request_key) WHERE request_key IS NOT NULL;
     CREATE TABLE IF NOT EXISTS volunteers (
       id text PRIMARY KEY,
       payload jsonb NOT NULL,
@@ -111,7 +114,7 @@ function isWorkerRequest(request) {
 }
 
 function publicReport(report) {
-  const { contact, reporter, photo, volunteerPhoto, ...safe } = report;
+  const { contact, reporter, photo, volunteerPhoto, clientRequestId, ...safe } = report;
   return { ...safe, reporter: reporter ? "Name hidden" : "Anonymous", hasPhoto: Boolean(photo), hasVolunteerPhoto: Boolean(volunteerPhoto) };
 }
 
@@ -137,10 +140,23 @@ app.post("/reports", async (request, response) => {
   if (!report || !report.animal || !report.condition || !report.notes || !Number.isFinite(Number(report.lat)) || !Number.isFinite(Number(report.lng))) {
     return response.status(400).json({ error: "Missing required report fields" });
   }
+  const requestKey = typeof report.clientRequestId === "string" && /^[a-zA-Z0-9-]{16,80}$/.test(report.clientRequestId) ? report.clientRequestId : null;
+  if (requestKey) {
+    const existing = await pool.query("SELECT payload FROM reports WHERE request_key = $1", [requestKey]);
+    if (existing.rows[0]) return response.json(existing.rows[0].payload);
+  }
   const { rows } = await pool.query("SELECT coalesce(max(substring(id from 4)::int), 1000) + 1 AS next FROM reports WHERE id ~ '^WC-[0-9]+$'");
   const now = Date.now();
   const saved = { ...report, id: `WC-${rows[0].next}`, status: "New", createdAt: now, history: [{ label: "Report submitted", at: now }] };
-  await pool.query("INSERT INTO reports (id, payload) VALUES ($1, $2)", [saved.id, saved]);
+  try {
+    await pool.query("INSERT INTO reports (id, payload, request_key) VALUES ($1, $2, $3)", [saved.id, saved, requestKey]);
+  } catch (error) {
+    if (requestKey && error.code === "23505") {
+      const existing = await pool.query("SELECT payload FROM reports WHERE request_key = $1", [requestKey]);
+      if (existing.rows[0]) return response.json(existing.rows[0].payload);
+    }
+    throw error;
+  }
   response.status(201).json(saved);
 });
 
