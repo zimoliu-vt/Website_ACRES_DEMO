@@ -384,6 +384,19 @@ function relativeTime(timestamp) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
+function exactTime(timestamp) {
+  return new Intl.DateTimeFormat("en-SG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Singapore",
+    timeZoneName: "short"
+  }).format(new Date(timestamp));
+}
+
 function estimatedArea(lat, lng) {
   if (lng < 103.79) return "Western Singapore";
   if (lng > 103.9) return "Eastern Singapore";
@@ -451,7 +464,7 @@ function renderDashboard() {
   list.innerHTML = visible.length ? visible.map(report => `
     <button class="report-card ${selectedReportId === report.id ? "selected" : ""}" data-report-id="${report.id}" type="button">
       <span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span>
-      <span class="report-copy"><strong>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</strong><p>${escapeHtml(report.notes)}</p>${report.volunteerStatus ? `<span class="volunteer-card-badge">♡ ${escapeHtml(report.volunteerStatus)}</span>` : ""}<small>⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)}</small></span>
+      <span class="report-copy"><strong>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</strong><p>${escapeHtml(report.notes)}</p>${report.volunteerStatus ? `<span class="volunteer-card-badge">♡ ${escapeHtml(report.volunteerStatus)}</span>` : ""}<small>⌖ ${escapeHtml(report.area)}</small><small class="report-time">${relativeTime(report.createdAt)} · ${exactTime(report.createdAt)}</small></span>
       <span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span>
     </button>`).join("") : '<div class="empty-detail"><span>✓</span><h3>No reports here</h3><p>There are no reports matching this filter.</p></div>';
 
@@ -476,7 +489,7 @@ function renderReportDetail(id) {
     <div class="detail-map" id="detail-map" aria-label="Map showing the selected report location"></div>
     <div class="detail-meta">
       <div class="meta-box"><small>Location</small><strong>${escapeHtml(report.area)}</strong></div>
-      <div class="meta-box"><small>Reported</small><strong>${relativeTime(report.createdAt)}</strong></div>
+      <div class="meta-box"><small>Reported</small><strong>${relativeTime(report.createdAt)}</strong><span class="exact-time">${exactTime(report.createdAt)}</span></div>
       <div class="meta-box"><small>Condition</small><strong>${escapeHtml(report.condition)}</strong></div>
       <div class="meta-box"><small>Reporter</small><strong>${escapeHtml(report.reporter || "Anonymous")}</strong></div>
     </div>
@@ -484,7 +497,7 @@ function renderReportDetail(id) {
     ${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Photo attached to case ${escapeHtml(report.id)}" /><figcaption>Photo supplied with this demo report</figcaption></figure>` : ""}
     ${report.volunteerStatus ? `<section class="volunteer-update"><div><span>♡</span><div><small>Volunteer response</small><strong>${escapeHtml(report.volunteerName || "Demo volunteer")} · ${escapeHtml(report.volunteerStatus)}</strong></div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
     ${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer observation photo · demo</figcaption></figure>` : ""}
-    <section class="case-timeline"><div class="timeline-heading"><span>Case progress</span><small>Newest update last</small></div><ol>${(Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }]).map((event, index, history) => `<li class="${index === history.length - 1 ? "current" : ""}"><span></span><div><strong>${escapeHtml(event.label)}</strong><small>${relativeTime(event.at)}</small></div></li>`).join("")}</ol></section>
+    <section class="case-timeline"><div class="timeline-heading"><span>Case progress</span><small>Newest update last</small></div><ol>${(Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }]).map((event, index, history) => `<li class="${index === history.length - 1 ? "current" : ""}"><span></span><div><strong>${escapeHtml(event.label)}</strong><small>${relativeTime(event.at)} · ${exactTime(event.at)}</small></div></li>`).join("")}</ol></section>
     <div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
       ${["New", "Acknowledged", "Assigned", "Urgent", "Reported deceased", "Resolved"].map(status => `<option value="${status}" ${status === report.status ? "selected" : ""}>${escapeHtml(statusLabel(status))}</option>`).join("")}
     </select></div>
@@ -535,7 +548,7 @@ function renderVolunteerPortal() {
         : isMine && report.volunteerStatus === "Arrived"
           ? `<button class="primary-button volunteer-case-action" data-volunteer-action="assess" data-report-id="${report.id}" type="button">Send on-site update</button>`
           : `<span class="volunteer-state">${claimedByOther ? "Another volunteer is responding" : escapeHtml(report.volunteerStatus)}</span>`;
-    return `<article class="nearby-case ${isMine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
+    return `<article class="nearby-case ${isMine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)} · ${exactTime(report.createdAt)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
   }).join("") : '<div class="empty-detail"><span>✓</span><h3>No active cases nearby</h3><p>There are currently no demo reports inside your selected travel radius.</p></div>';
   container.querySelectorAll("[data-volunteer-action]").forEach(button => button.addEventListener("click", () => handleVolunteerAction(button.dataset.volunteerAction, button.dataset.reportId)));
 }
