@@ -834,6 +834,9 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   submitButton.disabled = true;
   submitButton.setAttribute("aria-busy", "true");
   submitButton.querySelector("span").textContent = "Sending…";
+  const reportDialog = document.querySelector("#report-dialog");
+  reportDialog.close();
+  showToast("Sending your report…");
   const data = new FormData(event.currentTarget);
   const reportDraft = {
     clientRequestId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -866,6 +869,8 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   } catch (backendError) {
     error.textContent = backendError.message;
     error.hidden = false;
+    if (!reportDialog.open) reportDialog.showModal();
+    error.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   } finally {
     submitButton.disabled = false;
@@ -877,7 +882,6 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   try { drawReportMarkers(); } catch {}
   event.currentTarget.reset();
   clearSelectedPhoto();
-  document.querySelector("#report-dialog").close();
   if (locationMarker) { locationMarker.remove(); locationMarker = null; }
   if (searchAreaMarker) { searchAreaMarker.remove(); searchAreaMarker = null; }
   selectedReportId = report.id;
