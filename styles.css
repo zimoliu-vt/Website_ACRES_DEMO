@@ -44,6 +44,9 @@ button, a, input, select, textarea { touch-action: manipulation; }
 h1, h2, h3, p { margin-top: 0; }
 h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98 Georgia, serif; letter-spacing: -.045em; color: var(--forest); }
 .lede { max-width: 520px; margin-bottom: 34px; color: var(--muted); font-size: 17px; line-height: 1.65; }
+.start-report-button { width: 100%; max-width: 360px; min-height: 54px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; border: 0; border-radius: 14px; color: #fff; background: var(--forest); font-weight: 850; box-shadow: 0 8px 22px rgba(23,63,53,.18); }
+.start-report-button:hover, .start-report-button:focus-visible { background: var(--forest-2); outline: 3px solid rgba(34,91,75,.16); }
+.safety-line { max-width: 380px; margin: 18px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .steps li { border-radius: 15px; }
 .steps button { width: 100%; padding: 11px 12px; display: flex; align-items: center; gap: 14px; border: 1px solid transparent; border-radius: 15px; color: inherit; background: transparent; text-align: left; transition: background .15s, border-color .15s; }
@@ -191,7 +194,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .password-note { margin: -4px 0 14px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .account-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 22px; border-radius: 12px; background: #eef3ef; }
 .account-mode-button { border: 0; border-radius: 9px; padding: 10px; color: var(--muted); background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
-.account-mode-button.active { color: #fff; background: var(--green); box-shadow: 0 3px 10px rgba(15, 86, 62, .18); }
+.account-mode-button.active { color: #fff; background: var(--forest); box-shadow: 0 3px 10px rgba(15, 86, 62, .2); }
+.account-mode-button:focus-visible { outline: 3px solid rgba(34,91,75,.18); outline-offset: 2px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .photo-field { padding: 14px; display: grid; grid-template-columns: auto 1fr; column-gap: 10px; border: 1px dashed #aebbb3; border-radius: 12px; cursor: pointer; }
 .photo-field input { display: none; }
@@ -268,7 +272,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .volunteer-head { margin-bottom: 30px; display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 .volunteer-head h1 { margin-bottom: 14px; font-size: clamp(42px, 5vw, 68px); }
 .volunteer-head > div > p:last-child { max-width: 720px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.6; }
-.volunteer-registration { display: grid; grid-template-columns: .9fr 1.1fr; border: 1px solid var(--line); border-radius: 24px; background: var(--paper); box-shadow: var(--shadow); overflow: hidden; }
+.volunteer-registration { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 300px minmax(0,1fr); border: 1px solid var(--line); border-radius: 24px; background: var(--paper); box-shadow: var(--shadow); overflow: hidden; }
 .volunteer-registration[hidden], .volunteer-dashboard[hidden] { display: none; }
 .registration-copy { padding: 45px; color: #fff; background: var(--forest); }
 .volunteer-icon { width: 58px; height: 58px; margin-bottom: 24px; display: grid; place-items: center; border-radius: 18px; color: var(--forest); background: var(--lime); font-size: 31px; font-weight: 900; transform: rotate(-5deg); }
@@ -277,7 +281,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .safety-note { margin-top: 30px; padding: 16px; display: flex; flex-direction: column; gap: 5px; border: 1px solid rgba(255,255,255,.18); border-radius: 14px; background: rgba(255,255,255,.08); }
 .safety-note strong { color: var(--lime); }
 .safety-note span { color: #e6efea; font-size: 12px; }
-.volunteer-form { padding: 34px 40px; }
+.volunteer-form { padding: 30px 36px; }
 .volunteer-location-field { margin: 13px 0; }
 .volunteer-location-title { margin-bottom: 9px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .volunteer-location-title strong { color: #293b35; font-size: 12px; }

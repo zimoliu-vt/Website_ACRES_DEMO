@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=16" />
+    <link rel="stylesheet" href="styles.css?v=17" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -23,9 +23,9 @@
         <b class="demo-chip">DEMO</b>
       </a>
       <nav class="mode-switch" aria-label="Choose interface">
-        <button class="mode-button active" data-view="reporter" type="button">Report an animal</button>
-        <button class="mode-button" data-view="volunteer" type="button">Volunteer Portal</button>
-        <button class="mode-button" data-view="worker" type="button">Rescue Team Portal</button>
+        <button class="mode-button active" data-view="reporter" type="button">Report</button>
+        <button class="mode-button" data-view="volunteer" type="button">Volunteer</button>
+        <button class="mode-button" data-view="worker" type="button">Rescue team</button>
       </nav>
     </header>
 
@@ -33,14 +33,11 @@
       <section id="reporter-view" class="view active" aria-labelledby="reporter-heading">
         <div class="reporter-layout">
           <aside class="intro-panel">
-            <p class="eyebrow">Wildlife needs a hand</p>
-            <h1 id="reporter-heading">Spotted an animal in distress?</h1>
-            <p class="lede">Pin its location and tell the rescue team what you can see. Your report helps them arrive prepared.</p>
-            <ol class="steps">
-              <li><button type="button" data-guide-step="location"><span>1</span><div><strong>Choose the location</strong><small>Go to the Singapore map</small></div><b>→</b></button></li>
-              <li><button type="button" data-guide-step="describe"><span>2</span><div><strong>Describe the animal</strong><small>Start by selecting its location</small></div><b>→</b></button></li>
-              <li><button type="button" data-guide-step="send"><span>3</span><div><strong>Send the report</strong><small>Complete the short report form</small></div><b>→</b></button></li>
-            </ol>
+            <p class="eyebrow">Wildlife report</p>
+            <h1 id="reporter-heading">Report an animal in three steps.</h1>
+            <p class="lede">Choose its location, describe what you see, and send the report.</p>
+            <button class="start-report-button" type="button" data-guide-step="location">Choose a location <span>→</span></button>
+            <p class="safety-line"><strong>Stay safe:</strong> do not touch, feed, chase, or move the animal.</p>
           </aside>
 
           <section class="map-panel" aria-label="Singapore reporting map">
@@ -57,8 +54,8 @@
               </div>
               <div class="map-actions">
                 <div class="map-style-switch" role="group" aria-label="Map appearance">
-                  <button type="button" data-map-style="street">Map</button>
-                  <button class="active" type="button" data-map-style="satellite">Satellite</button>
+                  <button class="active" type="button" data-map-style="street">Map</button>
+                  <button type="button" data-map-style="satellite">Satellite</button>
                 </div>
                 <button id="locate-button" class="icon-button" type="button" title="Use my location" aria-label="Use my location">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.1 7-13A7 7 0 1 0 5 9c0 6.9 7 13 7 13Z"/><circle cx="12" cy="9" r="2.5"/></svg>
@@ -75,9 +72,9 @@
         <div class="volunteer-shell">
           <div class="volunteer-head">
             <div>
-              <p class="eyebrow">Community response · demo</p>
-              <h1 id="volunteer-heading">Help safely, from nearby.</h1>
-              <p>Registered volunteers can observe an animal from a safe distance and send updates to the rescue team. Never touch, feed, chase, or move an animal.</p>
+              <p class="eyebrow">Volunteer</p>
+              <h1 id="volunteer-heading">Help from a safe distance.</h1>
+              <p>Sign in to view nearby cases or create a volunteer account.</p>
             </div>
             <button id="volunteer-reset" class="secondary-button" type="button" hidden>Sign out</button>
           </div>
@@ -85,8 +82,8 @@
           <section id="volunteer-registration" class="volunteer-registration">
             <div class="registration-copy">
               <span class="volunteer-icon" aria-hidden="true">♡</span>
-              <h2>Register as a demo volunteer</h2>
-              <p>Choose your approximate area and how far you are willing to travel. This demo does not contact or dispatch real people.</p>
+              <h2>Volunteer account</h2>
+              <p>See nearby cases and send safe observations.</p>
               <div class="safety-note"><strong>Observe only</strong><span>Keep a safe distance and wait for trained rescuers.</span></div>
             </div>
             <form id="volunteer-form" class="volunteer-form">
@@ -105,13 +102,13 @@
                 <label class="field">Password<input name="password" type="password" autocomplete="new-password" minlength="10" placeholder="At least 10 characters" required /></label>
               </div>
               <label class="field">Confirm password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="10" placeholder="Enter the password again" required /></label>
-              <p class="password-note">Your password is sent over HTTPS and stored only as a salted cryptographic hash. It cannot be viewed by the rescue team.</p>
+              <p class="password-note">Use at least 10 characters. We store a secure password hash, never your password.</p>
               <div class="volunteer-location-field">
-                <div class="volunteer-location-title"><strong>Choose your approximate starting location</strong><small>Tap the map, then drag the pin if needed.</small></div>
+                <div class="volunteer-location-title"><strong>Your approximate area</strong><small>Tap the map.</small></div>
                 <div id="volunteer-map" class="volunteer-map" role="application" aria-label="Choose volunteer starting location on a Singapore map"></div>
                 <div id="volunteer-location-label" class="volunteer-location-label"><span>⌖</span><div><strong>No location selected</strong><small>Tap anywhere within Singapore</small></div></div>
               </div>
-              <label class="radius-field" for="volunteer-radius"><span><strong>Maximum travel distance</strong><output id="volunteer-radius-output" for="volunteer-radius">5 km</output></span><input id="volunteer-radius" name="radius" type="range" min="1" max="30" step="1" value="5" /><small>Customize between 1 and 30 km. The shaded circle shows your coverage.</small></label>
+              <label class="radius-field" for="volunteer-radius"><span><strong>How far can you travel?</strong><output id="volunteer-radius-output" for="volunteer-radius">5 km</output></span><input id="volunteer-radius" name="radius" type="range" min="1" max="30" step="1" value="5" /><small>Choose 1–30 km.</small></label>
               <p id="volunteer-form-error" class="form-error" role="alert" hidden></p>
               <label class="volunteer-agreement"><input name="agreement" type="checkbox" required /><span>I understand this is a demo and I will only observe from a safe distance.</span></label>
               <button class="submit-button" type="submit">Create volunteer profile <span>→</span></button>
@@ -144,9 +141,9 @@
       <section id="worker-view" class="view" aria-labelledby="worker-heading">
         <div class="dashboard-head">
           <div>
-            <p class="eyebrow">Rescue operations</p>
-            <h1 id="worker-heading">Good afternoon, response team.</h1>
-            <p>Review incoming reports and coordinate the next response.</p>
+            <p class="eyebrow">Rescue team</p>
+            <h1 id="worker-heading">Wildlife reports</h1>
+            <p>Review cases and update their status.</p>
           </div>
           <div class="head-actions">
             <button id="reset-demo" class="secondary-button" type="button">Reset demo data</button>
@@ -243,7 +240,7 @@
     <dialog id="report-dialog" class="report-dialog">
       <form id="report-form" method="dialog" novalidate>
         <div class="dialog-head">
-          <div><p class="eyebrow">New wildlife report</p><h2>Tell us what you found</h2></div>
+          <div><p class="eyebrow">Step 2 of 3</p><h2>Describe the animal</h2></div>
           <button class="close-button" id="close-dialog" type="button" aria-label="Close">×</button>
         </div>
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
@@ -290,8 +287,8 @@
           <button id="remove-photo" type="button">Remove</button>
         </div>
 
-        <p class="privacy-copy">This is a demonstration. Details stay in this browser and are not sent anywhere.</p>
-        <button class="submit-button" type="submit">Submit demo report <span>→</span></button>
+        <p class="privacy-copy">Demo only. This does not contact a real rescue service.</p>
+        <button class="submit-button" type="submit">Send report <span>→</span></button>
       </form>
     </dialog>
 
@@ -318,6 +315,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=16"></script>
+    <script src="app.js?v=17"></script>
   </body>
 </html>
