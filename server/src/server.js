@@ -87,6 +87,52 @@ function requireVolunteerOwner(request, response, next) {
   }
 }
 
+function requireVolunteer(request, response, next) {
+  const token = request.headers.authorization?.replace(/^Bearer\s+/i, "");
+  try {
+    const claims = jwt.verify(token || "", jwtSecret);
+    if (claims.role !== "volunteer" || !claims.sub) throw new Error("Invalid account");
+    request.auth = claims;
+    next();
+  } catch {
+    response.status(401).json({ error: "Volunteer sign-in required" });
+  }
+}
+
+function reportResponders(report) {
+  if (Array.isArray(report.responders)) return report.responders;
+  if (!report.volunteerId) return [];
+  return [{
+    id: report.volunteerId,
+    name: report.volunteerName || "Volunteer",
+    status: report.volunteerStatus || "On the way",
+    offeredAt: report.volunteerOfferedAt || report.volunteerArrivedAt || Date.now(),
+    arrivedAt: report.volunteerArrivedAt || null
+  }];
+}
+
+function applyResponders(report, responders) {
+  report.responders = responders;
+  const first = responders[0];
+  if (first) {
+    report.volunteerId = first.id;
+    report.volunteerName = first.name;
+    report.volunteerStatus = responders.length > 1 ? `${responders.length} volunteers responding` : first.status;
+    report.volunteerArrivedAt = first.arrivedAt || null;
+  } else {
+    delete report.volunteerId;
+    delete report.volunteerName;
+    delete report.volunteerStatus;
+    delete report.volunteerArrivedAt;
+  }
+  return report;
+}
+
+function addHistory(report, label) {
+  report.history = Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }];
+  report.history.push({ label, at: Date.now() });
+}
+
 async function seedDatabase() {
   for (const report of seedReports) {
     await pool.query("INSERT INTO reports (id, payload) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET payload = excluded.payload, updated_at = now()", [report.id, report]);
@@ -215,6 +261,88 @@ app.post("/auth/volunteer-signin", async (request, response) => {
   const volunteerResult = await pool.query("SELECT payload FROM volunteers WHERE id = $1", [rows[0].id]);
   if (!volunteerResult.rows[0]) return response.status(404).json({ error: "Volunteer profile not found" });
   response.json({ token: volunteerToken(rows[0].id), volunteer: volunteerResult.rows[0].payload });
+});
+
+app.post("/reports/:id/volunteer-offer", requireVolunteer, async (request, response) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const allResult = await client.query("SELECT id, payload FROM reports WHERE payload->>'status' <> 'Resolved' FOR UPDATE");
+    const targetRow = allResult.rows.find(row => row.id === request.params.id);
+    if (!targetRow) {
+      await client.query("ROLLBACK");
+      return response.status(404).json({ error: "Active case not found" });
+    }
+    const existingCase = allResult.rows.find(row => reportResponders(row.payload).some(item => item.id === request.auth.sub));
+    if (existingCase && existingCase.id !== request.params.id) {
+      await client.query("ROLLBACK");
+      return response.status(409).json({ error: `You are already responding to ${existingCase.id}. Cancel that response before choosing another case.` });
+    }
+    const responders = reportResponders(targetRow.payload);
+    if (responders.some(item => item.id === request.auth.sub)) {
+      await client.query("COMMIT");
+      return response.json(targetRow.payload);
+    }
+    if (responders.length >= 3) {
+      await client.query("ROLLBACK");
+      return response.status(409).json({ error: "This case already has three volunteers" });
+    }
+    const volunteerResult = await client.query("SELECT payload FROM volunteers WHERE id = $1", [request.auth.sub]);
+    const name = volunteerResult.rows[0]?.payload?.name || "Volunteer";
+    responders.push({ id: request.auth.sub, name, status: "On the way", offeredAt: Date.now(), arrivedAt: null });
+    const report = applyResponders(targetRow.payload, responders);
+    if (report.status === "New") report.status = "Acknowledged";
+    addHistory(report, `${name} offered to observe`);
+    await client.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1", [request.params.id, report]);
+    await client.query("COMMIT");
+    response.json(report);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally { client.release(); }
+});
+
+app.post("/reports/:id/volunteer-cancel", requireVolunteer, async (request, response) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query("SELECT payload FROM reports WHERE id = $1 FOR UPDATE", [request.params.id]);
+    if (!result.rows[0]) {
+      await client.query("ROLLBACK");
+      return response.status(404).json({ error: "Case not found" });
+    }
+    const report = result.rows[0].payload;
+    const responders = reportResponders(report);
+    const leaving = responders.find(item => item.id === request.auth.sub);
+    if (!leaving) {
+      await client.query("ROLLBACK");
+      return response.status(409).json({ error: "You are not assigned to this case" });
+    }
+    applyResponders(report, responders.filter(item => item.id !== request.auth.sub));
+    if (report.responders.length === 0 && report.status === "Acknowledged") report.status = "New";
+    addHistory(report, `${leaving.name} cancelled their response`);
+    await client.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1", [request.params.id, report]);
+    await client.query("COMMIT");
+    response.json(report);
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally { client.release(); }
+});
+
+app.post("/reports/:id/volunteer-arrive", requireVolunteer, async (request, response) => {
+  const result = await pool.query("SELECT payload FROM reports WHERE id = $1", [request.params.id]);
+  if (!result.rows[0]) return response.status(404).json({ error: "Case not found" });
+  const report = result.rows[0].payload;
+  const responders = reportResponders(report);
+  const responder = responders.find(item => item.id === request.auth.sub);
+  if (!responder) return response.status(409).json({ error: "You are not assigned to this case" });
+  responder.status = "Arrived";
+  responder.arrivedAt = Date.now();
+  applyResponders(report, responders);
+  addHistory(report, `${responder.name} arrived nearby`);
+  await pool.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1", [request.params.id, report]);
+  response.json(report);
 });
 
 app.put("/volunteers/:id", requireVolunteerOwner, async (request, response) => {

@@ -103,7 +103,8 @@ function saveVolunteer() {
 
 async function apiFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-  const token = workerToken || volunteerToken;
+  const needsVolunteerToken = path.startsWith("/volunteers/") || /\/volunteer-(offer|cancel|arrive)$/.test(path);
+  const token = needsVolunteerToken ? volunteerToken : workerToken || volunteerToken;
   if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!response.ok) {
@@ -444,6 +445,12 @@ function distanceKm(lat1, lng1, lat2, lng2) {
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function reportResponders(report) {
+  if (Array.isArray(report.responders)) return report.responders;
+  if (!report.volunteerId) return [];
+  return [{ id: report.volunteerId, name: report.volunteerName || "Volunteer", status: report.volunteerStatus || "On the way", arrivedAt: report.volunteerArrivedAt || null }];
+}
+
 function renderDashboard() {
   const active = reports.filter(report => report.status !== "Resolved");
   const newReports = reports.filter(report => report.status === "New");
@@ -501,7 +508,7 @@ function renderReportDetail(id) {
     </div>
     <p class="notes-box">${escapeHtml(report.notes)}</p>
     ${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Photo attached to case ${escapeHtml(report.id)}" /><figcaption>Photo supplied with this demo report</figcaption></figure>` : ""}
-    ${report.volunteerStatus ? `<section class="volunteer-update"><div><span>♡</span><div><small>Volunteer response</small><strong>${escapeHtml(report.volunteerName || "Demo volunteer")} · ${escapeHtml(report.volunteerStatus)}</strong></div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
+    ${reportResponders(report).length ? `<section class="volunteer-update"><div><span>♡</span><div><small>Volunteer responses · ${reportResponders(report).length}/3</small><strong>${reportResponders(report).map(item => `${escapeHtml(item.name)} · ${escapeHtml(item.status)}`).join("<br>")}</strong></div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
     ${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer observation photo · demo</figcaption></figure>` : ""}
     <section class="case-timeline"><div class="timeline-heading"><span>Case progress</span><small>Newest update last</small></div><ol>${(Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }]).map((event, index, history) => `<li class="${index === history.length - 1 ? "current" : ""}"><span></span><div><strong>${escapeHtml(event.label)}</strong><small>${relativeTime(event.at)} · ${exactTime(event.at)}</small></div></li>`).join("")}</ol></section>
     <div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
@@ -544,17 +551,27 @@ function renderVolunteerPortal() {
     .sort((a, b) => a.distance - b.distance);
   document.querySelector("#nearby-count").textContent = nearby.length;
   const container = document.querySelector("#nearby-cases");
+  const myActiveCase = reports.find(report => report.status !== "Resolved" && reportResponders(report).some(item => item.id === volunteer.id));
   container.innerHTML = nearby.length ? nearby.map(({ report, distance }) => {
-    const isMine = report.volunteerId === volunteer.id;
-    const claimedByOther = report.volunteerId && !isMine;
-    const action = !report.volunteerStatus
-      ? `<button class="primary-button volunteer-case-action" data-volunteer-action="claim" data-report-id="${report.id}" type="button">Offer to observe</button>`
-      : isMine && report.volunteerStatus === "On the way"
+    const responders = reportResponders(report);
+    const mine = responders.find(item => item.id === volunteer.id);
+    const full = responders.length >= 3;
+    let action;
+    if (mine) {
+      const nextAction = mine.status === "On the way"
         ? `<button class="primary-button volunteer-case-action" data-volunteer-action="arrive" data-report-id="${report.id}" type="button">I’ve arrived</button>`
-        : isMine && report.volunteerStatus === "Arrived"
-          ? `<button class="primary-button volunteer-case-action" data-volunteer-action="assess" data-report-id="${report.id}" type="button">Send on-site update</button>`
-          : `<span class="volunteer-state">${claimedByOther ? "Another volunteer is responding" : escapeHtml(report.volunteerStatus)}</span>`;
-    return `<article class="nearby-case ${isMine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)} · ${exactTime(report.createdAt)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
+        : mine.status === "Arrived"
+          ? `<button class="primary-button volunteer-case-action" data-volunteer-action="assess" data-report-id="${report.id}" type="button">Send update</button>`
+          : `<span class="volunteer-state">${escapeHtml(mine.status)}</span>`;
+      action = `<div class="volunteer-case-actions">${nextAction}<button class="cancel-response-button" data-volunteer-action="cancel" data-report-id="${report.id}" type="button">Cancel</button></div>`;
+    } else if (myActiveCase) {
+      action = `<button class="primary-button volunteer-case-action" type="button" disabled>Already responding to ${escapeHtml(myActiveCase.id)}</button>`;
+    } else if (full) {
+      action = '<button class="primary-button volunteer-case-action" type="button" disabled>3 volunteers already responding</button>';
+    } else {
+      action = `<button class="primary-button volunteer-case-action" data-volunteer-action="claim" data-report-id="${report.id}" type="button">Offer to observe · ${responders.length}/3</button>`;
+    }
+    return `<article class="nearby-case ${mine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away · ${responders.length}/3 volunteers</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)} · ${exactTime(report.createdAt)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
   }).join("") : '<div class="empty-detail"><span>✓</span><h3>No active cases nearby</h3><p>There are currently no demo reports inside your selected travel radius.</p></div>';
   container.querySelectorAll("[data-volunteer-action]").forEach(button => button.addEventListener("click", () => handleVolunteerAction(button.dataset.volunteerAction, button.dataset.reportId)));
 }
@@ -630,25 +647,30 @@ async function reverseVolunteerLocation(lat, lng) {
   document.querySelector("#volunteer-location-label").innerHTML = `<span>⌖</span><div><strong>${escapeHtml(pendingVolunteerLocation.name)}</strong><small>${lat.toFixed(4)}, ${lng.toFixed(4)}</small></div>`;
 }
 
-function handleVolunteerAction(action, reportId) {
+async function handleVolunteerAction(action, reportId) {
   const report = reports.find(item => item.id === reportId);
   if (!report || !volunteer) return;
   if (action === "claim") {
-    report.volunteerId = volunteer.id;
-    report.volunteerName = volunteer.name;
-    report.volunteerStatus = "On the way";
-    report.status = report.status === "New" ? "Acknowledged" : report.status;
-    addCaseEvent(report, `${volunteer.name} offered to observe`);
-    saveReports();
-    renderVolunteerPortal();
-    showToast(`You are now observing case ${report.id}. Travel safely.`);
+    try {
+      const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/volunteer-offer`, { method: "POST" });
+      reports[reports.indexOf(report)] = updated;
+      renderVolunteerPortal();
+      showToast(`You are now observing case ${report.id}. Travel safely.`);
+    } catch (error) { showToast(error.message); await loadBackendReports(true); }
+  } else if (action === "cancel") {
+    try {
+      const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/volunteer-cancel`, { method: "POST" });
+      reports[reports.indexOf(report)] = updated;
+      renderVolunteerPortal();
+      showToast(`Your response to ${report.id} was cancelled.`);
+    } catch (error) { showToast(error.message); await loadBackendReports(true); }
   } else if (action === "arrive") {
-    report.volunteerStatus = "Arrived";
-    report.volunteerArrivedAt = Date.now();
-    addCaseEvent(report, "Volunteer arrived nearby");
-    saveReports();
-    renderVolunteerPortal();
-    showToast("Arrival shared with the rescue team. Keep a safe distance.");
+    try {
+      const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/volunteer-arrive`, { method: "POST" });
+      reports[reports.indexOf(report)] = updated;
+      renderVolunteerPortal();
+      showToast("Arrival shared with the rescue team. Keep a safe distance.");
+    } catch (error) { showToast(error.message); await loadBackendReports(true); }
   } else if (action === "assess") {
     volunteerAssessmentReportId = report.id;
     volunteerPhotoDataUrl = "";
@@ -1092,6 +1114,8 @@ document.querySelector("#volunteer-assessment-form").addEventListener("submit", 
   const outcome = data.get("outcome");
   if (["serious", "deceased"].includes(outcome) && !volunteerPhotoDataUrl) return showToast("Please add a photo for a serious or deceased report.");
   report.volunteerStatus = "Assessment sent";
+  const ownResponder = reportResponders(report).find(item => item.id === volunteer?.id);
+  if (ownResponder) ownResponder.status = "Assessment sent";
   report.volunteerNotes = data.get("notes").trim();
   report.volunteerPhoto = volunteerPhotoDataUrl;
   report.volunteerUpdatedAt = Date.now();

@@ -335,6 +335,10 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .nearby-location { color: var(--forest-2); font-size: 11px; font-weight: 750; }
 .safe-task { margin: 13px 0; padding: 10px 12px; border-radius: 10px; color: #62552f; background: #fff8db; font-size: 11px; line-height: 1.45; }
 .volunteer-case-action { width: 100%; min-height: 44px; margin-top: 3px; }
+.volunteer-case-actions { margin-top: 3px; display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.volunteer-case-actions .volunteer-case-action { margin: 0; }
+.cancel-response-button { padding: 10px 13px; border: 1px solid #d8b1ad; border-radius: 12px; color: #96372f; background: #fff; font-weight: 800; }
+.volunteer-case-action:disabled { cursor: not-allowed; color: var(--muted); background: #e8ece8; opacity: .85; }
 .volunteer-state { display: block; margin-top: 12px; padding: 11px; border-radius: 10px; color: var(--forest); background: var(--mint); font-size: 11px; font-weight: 800; text-align: center; }
 .volunteer-guide { padding: 24px; position: sticky; top: 18px; }
 .volunteer-guide ol { margin: 0; padding: 0; display: grid; gap: 18px; list-style: none; }
