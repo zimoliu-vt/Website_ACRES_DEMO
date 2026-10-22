@@ -11,10 +11,11 @@ A front-end demonstration of a Singapore wildlife reporting and rescue-coordinat
 - A Rescue Team Portal with filters and report details
 - A separate rescue team login screen using demo PIN `0000`
 - Case status updates from New through Resolved
-- Browser-local storage and resettable sample reports
+- Shared PostgreSQL storage and resettable sample reports
+- A containerized Node.js API with server-side demo worker authentication
 - Responsive layouts for desktop and mobile
 
-No report leaves the browser. There is no production database, user account system, or real rescue-team connection in this version.
+Reports are stored in the project's private demo database so multiple browsers can share the same simulated case queue. There is no real rescue-team connection, dispatch process, or emergency monitoring in this version.
 
 The public OpenStreetMap Nominatim service is queried only after a user selects a location or explicitly submits a search, with browser caching and no autocomplete. Searches and selectable map points are limited to Singapore. This demo must remain low-volume and follow the [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/). A production deployment should use a dedicated geocoding provider or proxy.
 
@@ -28,6 +29,16 @@ python3 -m http.server 4173
 
 Then open `http://localhost:4173`.
 
+## Run the backend
+
+Copy `.env.example` to `.env`, replace both generated-secret placeholders, then run:
+
+```sh
+docker compose up --build
+```
+
+The API listens on `127.0.0.1:3000`. In deployment, Nginx serves the frontend and forwards `/api/` to that private port. PostgreSQL is available only inside the Docker network.
+
 ## Publish with GitHub Pages
 
 1. Create an empty GitHub repository.
@@ -39,4 +50,4 @@ The included workflow will deploy the site whenever `main` is updated.
 
 ## Future production path
 
-For a real deployment, replace browser storage with a backend such as Supabase. That would provide a shared reports database, image storage, worker authentication, access rules, and real-time dashboard updates.
+This remains a demo. Before accepting real reports, add verified user accounts, role-based access controls, dedicated object storage, retention policies, abuse prevention, monitoring, notifications, and an operational rescue-team workflow.

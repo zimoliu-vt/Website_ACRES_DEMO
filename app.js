@@ -1,6 +1,7 @@
 const STORAGE_KEY = "wildcare-demo-reports-v1";
 const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
+const API_BASE = "/api";
 
 const sampleReports = [
   { id: "WC-1043", animal: "Bird", condition: "Unable to move or fly", notes: "A small green bird is on the grass beside the footpath. It tries to hop but cannot fly.", reporter: "Mei", contact: "", lat: 1.3048, lng: 103.8318, area: "Singapore Botanic Gardens", status: "New", createdAt: Date.now() - 12 * 60 * 1000 },
@@ -22,6 +23,8 @@ let detailMap = null;
 let selectedReportId = null;
 let currentFilter = "active";
 let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "true";
+let workerToken = sessionStorage.getItem("wildcare-worker-token") || "";
+let backendReady = false;
 let reverseLookupTimer = null;
 let selectedPhotoDataUrl = "";
 let pendingReopen = null;
@@ -76,6 +79,7 @@ function loadReports() {
 
 function saveReports() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+  if (backendReady) reports.forEach(report => persistReport(report));
 }
 
 function loadVolunteer() {
@@ -85,6 +89,37 @@ function loadVolunteer() {
 function saveVolunteer() {
   if (volunteer) localStorage.setItem(VOLUNTEER_KEY, JSON.stringify(volunteer));
   else localStorage.removeItem(VOLUNTEER_KEY);
+  if (backendReady && volunteer) {
+    apiFetch(`/volunteers/${encodeURIComponent(volunteer.id)}`, { method: "PUT", body: JSON.stringify(volunteer) }).catch(() => {});
+  }
+}
+
+async function apiFetch(path, options = {}) {
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (workerToken) headers.Authorization = `Bearer ${workerToken}`;
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.error || "The demo backend is unavailable.");
+  }
+  return response.status === 204 ? null : response.json();
+}
+
+async function loadBackendReports() {
+  try {
+    reports = await apiFetch("/reports");
+    backendReady = true;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+    drawReportMarkers();
+    renderDashboard();
+    renderVolunteerPortal();
+  } catch {
+    showToast("Using this browser’s cached demo data while the backend reconnects.");
+  }
+}
+
+function persistReport(report) {
+  return apiFetch(`/reports/${encodeURIComponent(report.id)}`, { method: "PUT", body: JSON.stringify(report) });
 }
 
 function compressPhoto(file) {
@@ -326,6 +361,9 @@ function openWorkerLogin() {
 function logoutWorker() {
   workerAuthenticated = false;
   sessionStorage.removeItem("wildcare-worker-auth");
+  sessionStorage.removeItem("wildcare-worker-token");
+  workerToken = "";
+  loadBackendReports();
   switchView("reporter");
   showToast("You have logged out of the Rescue Team Portal.");
 }
@@ -667,29 +705,39 @@ document.querySelector("#confirm-reopen").addEventListener("click", () => {
   reopenDialog.close();
 });
 document.querySelector("#close-login").addEventListener("click", () => document.querySelector("#login-dialog").close());
-document.querySelector("#login-form").addEventListener("submit", event => {
+document.querySelector("#login-form").addEventListener("submit", async event => {
   event.preventDefault();
   const pinInput = document.querySelector("#worker-pin");
-  if (pinInput.value !== "0000") {
-    document.querySelector("#login-error").textContent = "That PIN is incorrect. Try 0000 for this demo.";
+  try {
+    const result = await apiFetch("/auth/worker", { method: "POST", body: JSON.stringify({ pin: pinInput.value }) });
+    workerToken = result.token;
+  } catch {
+    document.querySelector("#login-error").textContent = "That PIN is incorrect or the demo backend is unavailable.";
     pinInput.select();
     return;
   }
   workerAuthenticated = true;
   sessionStorage.setItem("wildcare-worker-auth", "true");
+  sessionStorage.setItem("wildcare-worker-token", workerToken);
+  await loadBackendReports();
   document.querySelector("#login-dialog").close();
   switchView("worker");
   showToast("Rescue Team Portal unlocked.");
 });
 document.querySelector("#worker-logout").addEventListener("click", logoutWorker);
 document.querySelector("#new-report-worker").addEventListener("click", () => switchView("reporter"));
-document.querySelector("#reset-demo").addEventListener("click", () => {
-  reports = structuredClone(sampleReports).map(report => ({ ...report, history: [{ label: "Report submitted", at: report.createdAt }, ...(report.status !== "New" ? [{ label: `Status changed to ${statusLabel(report.status)}`, at: report.createdAt + 60000 }] : [])] }));
-  selectedReportId = null;
-  saveReports();
-  drawReportMarkers();
-  renderDashboard();
-  showToast("Demo reports have been reset.");
+document.querySelector("#reset-demo").addEventListener("click", async () => {
+  try {
+    reports = await apiFetch("/reports/reset", { method: "POST" });
+    selectedReportId = null;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+    drawReportMarkers();
+    renderDashboard();
+    renderVolunteerPortal();
+    showToast("Shared demo reports have been reset.");
+  } catch (error) {
+    showToast(error.message);
+  }
 });
 
 document.querySelector("#locate-button").addEventListener("click", () => {
@@ -705,7 +753,7 @@ document.querySelector("#locate-button").addEventListener("click", () => {
   }, () => showToast("We could not access your location. Click the map instead."));
 });
 
-document.querySelector("#report-form").addEventListener("submit", event => {
+document.querySelector("#report-form").addEventListener("submit", async event => {
   event.preventDefault();
   if (!selectedLocation) return showToast("Please choose a location on the map first.");
   const error = document.querySelector("#report-form-error");
@@ -721,9 +769,7 @@ document.querySelector("#report-form").addEventListener("submit", event => {
   }
   error.hidden = true;
   const data = new FormData(event.currentTarget);
-  const nextNumber = Math.max(...reports.map(report => Number(report.id.split("-")[1]) || 1000), 1000) + 1;
-  const report = {
-    id: `WC-${nextNumber}`,
+  const reportDraft = {
     animal: data.get("animal"),
     condition: data.get("condition"),
     notes: data.get("notes"),
@@ -731,20 +777,20 @@ document.querySelector("#report-form").addEventListener("submit", event => {
     contact: data.get("contact") || "",
     lat: selectedLocation.lat,
     lng: selectedLocation.lng,
-    area: selectedLocation.name || estimatedArea(selectedLocation.lat, selectedLocation.lng),
-    status: "New",
-    createdAt: Date.now(),
-    history: [{ label: "Report submitted", at: Date.now() }]
+    area: selectedLocation.name || estimatedArea(selectedLocation.lat, selectedLocation.lng)
   };
-  report.photo = selectedPhotoDataUrl;
-  reports.unshift(report);
+  reportDraft.photo = selectedPhotoDataUrl;
+  let report;
   try {
-    saveReports();
-  } catch {
-    reports.shift();
-    showToast("That photo is too large for browser storage. Try a smaller image.");
+    report = await apiFetch("/reports", { method: "POST", body: JSON.stringify(reportDraft) });
+    backendReady = true;
+  } catch (backendError) {
+    error.textContent = backendError.message;
+    error.hidden = false;
     return;
   }
+  reports.unshift(report);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
   drawReportMarkers();
   event.currentTarget.reset();
   clearSelectedPhoto();
@@ -769,7 +815,7 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
     helper.textContent = "Photo added — it will appear in the Rescue Team Portal";
   } catch (error) {
     clearSelectedPhoto();
-    helper.textContent = "Optional — saved in this browser for the Rescue Team Portal";
+    helper.textContent = "Optional — stored in the shared demo for the Rescue Team Portal";
     showToast(error.message);
   }
 });
@@ -802,6 +848,7 @@ document.querySelector("#volunteer-form").addEventListener("submit", event => {
 });
 
 document.querySelector("#volunteer-reset").addEventListener("click", () => {
+  const previousVolunteerId = volunteer?.id;
   volunteer = null;
   saveVolunteer();
   document.querySelector("#volunteer-form").reset();
@@ -811,6 +858,7 @@ document.querySelector("#volunteer-reset").addEventListener("click", () => {
   document.querySelector("#volunteer-radius-output").textContent = "5 km";
   document.querySelector("#volunteer-location-label").innerHTML = '<span>⌖</span><div><strong>No location selected</strong><small>Tap anywhere within Singapore</small></div>';
   renderVolunteerPortal();
+  if (backendReady && previousVolunteerId) apiFetch(`/volunteers/${encodeURIComponent(previousVolunteerId)}`, { method: "DELETE" }).catch(() => {});
   showToast("Volunteer profile cleared from this browser.");
 });
 document.querySelector("#volunteer-radius").addEventListener("input", updateVolunteerRadiusCircle);
@@ -882,4 +930,5 @@ document.querySelector("#volunteer-assessment-form").addEventListener("submit", 
 initMap();
 renderDashboard();
 renderVolunteerPortal();
+loadBackendReports();
 if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();

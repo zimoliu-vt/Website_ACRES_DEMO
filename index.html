@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=14" />
+    <link rel="stylesheet" href="styles.css?v=15" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -175,7 +175,7 @@
         <p>No reports are monitored, sent to, or acted on by a real animal rescue team. Do not use this website in an emergency.</p>
         <div class="warning-details">
           <span aria-hidden="true">●</span>
-          <p>All reports and status changes are simulated and stay in your browser.</p>
+          <p>All reports and status changes are simulated and stored only for this shared demo.</p>
         </div>
         <button id="acknowledge-demo" class="warning-button" type="button">I understand — enter the demo</button>
       </div>
@@ -205,7 +205,7 @@
         <div class="success-mark" aria-hidden="true">✓</div>
         <p class="eyebrow">Demo report received</p>
         <h2>Thank you for reporting it.</h2>
-        <p class="success-copy">Your report <strong id="success-case-id"></strong> is now visible to the rescue team in this browser.</p>
+        <p class="success-copy">Your report <strong id="success-case-id"></strong> is now visible in the shared demo rescue portal.</p>
         <div class="post-report-safety"><span aria-hidden="true">!</span><p><strong>Now, keep a safe distance.</strong> Do not touch, feed, chase, or try to restrain the animal. Observe only if it is safe to do so.</p></div>
         <div class="success-next-steps"><strong>What happens next in this demo?</strong><ol><li>Save the case number shown above.</li><li>The case appears in the Volunteer and Rescue Team portals in this browser.</li><li>Status changes are simulated and do not contact a real rescue service.</li></ol></div>
         <button id="finish-report" class="submit-button" type="button">Back to the map <span>→</span></button>
@@ -267,7 +267,7 @@
 
         <label class="photo-field">
           <input id="photo-input" name="photo" type="file" accept="image/*" />
-          <span>＋</span><strong>Add a photo</strong><small>Optional — saved in this browser for the Rescue Team Portal</small>
+          <span>＋</span><strong>Add a photo</strong><small>Optional — stored in the shared demo for the Rescue Team Portal</small>
         </label>
         <div id="photo-preview" class="photo-preview" hidden>
           <img id="photo-preview-image" alt="Selected animal photo preview" />
@@ -303,6 +303,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=14"></script>
+    <script src="app.js?v=15"></script>
   </body>
 </html>

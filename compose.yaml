@@ -1,0 +1,33 @@
+services:
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wildcare
+      POSTGRES_USER: wildcare
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - wildcare_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wildcare -d wildcare"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./server
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://wildcare:${POSTGRES_PASSWORD}@database:5432/wildcare
+      JWT_SECRET: ${JWT_SECRET}
+      DEMO_PIN: ${DEMO_PIN:-0000}
+      PORT: 3000
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  wildcare_database:
+
