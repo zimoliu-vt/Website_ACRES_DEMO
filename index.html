@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=31" />
+    <link rel="stylesheet" href="styles.css?v=33" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -169,11 +169,14 @@
                 <button class="filter" data-filter="resolved" type="button">Closed</button>
               </div>
             </div>
-            <label class="case-search" for="case-search-input">
-              <span aria-hidden="true">⌕</span>
-              <input id="case-search-input" type="search" autocomplete="off" placeholder="Search case ID, animal, location, status…" />
-              <button id="clear-case-search" type="button" aria-label="Clear search" hidden>×</button>
-            </label>
+            <div class="queue-tools">
+              <label class="case-search" for="case-search-input">
+                <span aria-hidden="true">⌕</span>
+                <input id="case-search-input" type="search" autocomplete="off" placeholder="Search case ID, animal, location, status…" />
+                <button id="clear-case-search" type="button" aria-label="Clear search" hidden>×</button>
+              </label>
+              <label class="case-sort">Order by<select id="case-sort-select"><option value="priority">Importance</option><option value="newest">Newest</option></select></label>
+            </div>
             <div id="report-list" class="report-list"></div>
           </section>
 
@@ -337,6 +340,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=32"></script>
+    <script src="app.js?v=33"></script>
   </body>
 </html>

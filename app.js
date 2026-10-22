@@ -27,6 +27,7 @@ let currentFilter = "active";
 let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "true";
 let workerToken = sessionStorage.getItem("wildcare-worker-token") || "";
 let caseSearch = "";
+let caseSort = "priority";
 let volunteerToken = localStorage.getItem("wildcare-volunteer-token") || "";
 let backendReady = false;
 let reverseLookupTimer = null;
@@ -479,7 +480,9 @@ function renderDashboard() {
       .join(" ")
       .toLocaleLowerCase()
       .includes(caseSearch);
-  }).sort((a, b) => casePriority(a) - casePriority(b) || (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt));
+  }).sort((a, b) => caseSort === "newest"
+    ? (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt)
+    : casePriority(a) - casePriority(b) || (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt));
 
   document.querySelector("#queue-count").textContent = visible.length;
   const list = document.querySelector("#report-list");
@@ -555,12 +558,12 @@ function renderVolunteerPortal() {
   document.querySelector("#volunteer-radius-summary").textContent = `${volunteer.radius} km`;
   document.querySelector("#volunteer-islands-toggle").checked = Boolean(volunteer.canTravelToIslands);
   document.querySelector("#volunteer-islands-label").textContent = volunteer.canTravelToIslands ? "Available" : "Mainland only";
+  const myActiveCase = reports.find(report => report.status !== "Resolved" && reportResponders(report).some(item => item.id === volunteer.id));
   const nearby = reports.map(report => ({ report, distance: distanceKm(volunteer.lat, volunteer.lng, report.lat, report.lng) }))
-    .filter(item => item.report.status !== "Resolved" && item.distance <= volunteer.radius && (volunteer.canTravelToIslands || !isOffshoreLocation(item.report)))
-    .sort((a, b) => a.distance - b.distance);
+    .filter(item => item.report.status !== "Resolved" && (item.report.id === myActiveCase?.id || (item.distance <= volunteer.radius && (volunteer.canTravelToIslands || !isOffshoreLocation(item.report)))))
+    .sort((a, b) => Number(b.report.id === myActiveCase?.id) - Number(a.report.id === myActiveCase?.id) || a.distance - b.distance);
   document.querySelector("#nearby-count").textContent = nearby.length;
   const container = document.querySelector("#nearby-cases");
-  const myActiveCase = reports.find(report => report.status !== "Resolved" && reportResponders(report).some(item => item.id === volunteer.id));
   container.innerHTML = nearby.length ? nearby.map(({ report, distance }) => {
     const responders = reportResponders(report);
     const mine = responders.find(item => item.id === volunteer.id);
@@ -777,6 +780,10 @@ clearCaseSearch.addEventListener("click", () => {
   clearCaseSearch.hidden = true;
   renderDashboard();
   caseSearchInput.focus();
+});
+document.querySelector("#case-sort-select").addEventListener("change", event => {
+  caseSort = event.target.value;
+  renderDashboard();
 });
 
 document.querySelector("#close-dialog").addEventListener("click", () => document.querySelector("#report-dialog").close());
