@@ -26,6 +26,7 @@ let selectedReportId = null;
 let currentFilter = "active";
 let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "true";
 let workerToken = sessionStorage.getItem("wildcare-worker-token") || "";
+let caseSearch = "";
 let volunteerToken = localStorage.getItem("wildcare-volunteer-token") || "";
 let backendReady = false;
 let reverseLookupTimer = null;
@@ -470,6 +471,14 @@ function renderDashboard() {
     if (currentFilter === "volunteers") return Boolean(report.volunteerStatus);
     if (currentFilter === "resolved") return report.status === "Resolved";
     return true;
+  }).filter(report => {
+    if (!caseSearch) return true;
+    const responders = reportResponders(report).map(item => `${item.name || ""} ${item.status || ""}`).join(" ");
+    return [report.id, report.animal, report.condition, report.notes, report.area, report.status, report.volunteerStatus, responders]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(caseSearch);
   }).sort((a, b) => casePriority(a) - casePriority(b) || (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt));
 
   document.querySelector("#queue-count").textContent = visible.length;
@@ -479,7 +488,7 @@ function renderDashboard() {
       <span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span>
       <span class="report-copy"><strong>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</strong><p>${escapeHtml(report.notes)}</p>${report.volunteerStatus ? `<span class="volunteer-card-badge">♡ ${escapeHtml(report.volunteerStatus)}</span>` : ""}<small>⌖ ${escapeHtml(report.area)}</small><small class="report-time">${relativeTime(report.createdAt)} · ${exactTime(report.createdAt)}</small></span>
       <span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span>
-    </button>`).join("") : '<div class="empty-detail"><span>✓</span><h3>No reports here</h3><p>There are no reports matching this filter.</p></div>';
+    </button>`).join("") : `<div class="empty-detail"><span>${caseSearch ? "⌕" : "✓"}</span><h3>${caseSearch ? "No matching reports" : "No reports here"}</h3><p>${caseSearch ? "Try another case number or keyword." : "There are no reports matching this filter."}</p></div>`;
 
   list.querySelectorAll("[data-report-id]").forEach(button => button.addEventListener("click", () => selectReport(button.dataset.reportId)));
   if (selectedReportId && reports.some(report => report.id === selectedReportId)) renderReportDetail(selectedReportId);
@@ -658,6 +667,8 @@ async function handleVolunteerAction(action, reportId) {
       showToast(`You are now observing case ${report.id}. Travel safely.`);
     } catch (error) { showToast(error.message); await loadBackendReports(true); }
   } else if (action === "cancel") {
+    const confirmed = window.confirm(`Cancel your response to ${report.id}?\n\nYou will be removed from this case. If nobody else is responding, the case will return to New.`);
+    if (!confirmed) return;
     try {
       const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/volunteer-cancel`, { method: "POST" });
       reports[reports.indexOf(report)] = updated;
@@ -752,6 +763,21 @@ document.querySelectorAll(".filter").forEach(button => button.addEventListener("
   document.querySelectorAll(".filter").forEach(item => item.classList.toggle("active", item === button));
   renderDashboard();
 }));
+
+const caseSearchInput = document.querySelector("#case-search-input");
+const clearCaseSearch = document.querySelector("#clear-case-search");
+caseSearchInput.addEventListener("input", event => {
+  caseSearch = event.target.value.trim().toLocaleLowerCase();
+  clearCaseSearch.hidden = !event.target.value;
+  renderDashboard();
+});
+clearCaseSearch.addEventListener("click", () => {
+  caseSearchInput.value = "";
+  caseSearch = "";
+  clearCaseSearch.hidden = true;
+  renderDashboard();
+  caseSearchInput.focus();
+});
 
 document.querySelector("#close-dialog").addEventListener("click", () => document.querySelector("#report-dialog").close());
 document.querySelector("#finish-report").addEventListener("click", () => document.querySelector("#success-dialog").close());
