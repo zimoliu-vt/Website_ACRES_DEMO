@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=15" />
+    <link rel="stylesheet" href="styles.css?v=16" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -79,7 +79,7 @@
               <h1 id="volunteer-heading">Help safely, from nearby.</h1>
               <p>Registered volunteers can observe an animal from a safe distance and send updates to the rescue team. Never touch, feed, chase, or move an animal.</p>
             </div>
-            <button id="volunteer-reset" class="secondary-button" type="button" hidden>Change volunteer profile</button>
+            <button id="volunteer-reset" class="secondary-button" type="button" hidden>Sign out</button>
           </div>
 
           <section id="volunteer-registration" class="volunteer-registration">
@@ -90,8 +90,22 @@
               <div class="safety-note"><strong>Observe only</strong><span>Keep a safe distance and wait for trained rescuers.</span></div>
             </div>
             <form id="volunteer-form" class="volunteer-form">
+              <div class="account-mode" role="group" aria-label="Volunteer account action"><button class="account-mode-button active" type="button" data-account-mode="signup">Create account</button><button class="account-mode-button" type="button" data-account-mode="signin">Sign in</button></div>
+              <div id="volunteer-signin-fields" hidden>
+                <label class="field">Username<input name="signinUsername" type="text" autocomplete="username" placeholder="Your username" /></label>
+                <label class="field">Password<input name="signinPassword" type="password" autocomplete="current-password" placeholder="Your password" /></label>
+                <p id="volunteer-signin-error" class="form-error" role="alert" hidden></p>
+                <button id="volunteer-signin-button" class="submit-button" type="button">Sign in <span>→</span></button>
+              </div>
+              <div id="volunteer-signup-fields">
               <label class="field">Your name<input name="name" type="text" autocomplete="name" placeholder="How should we address you?" required /></label>
               <label class="field">Contact number <span>(demo only)</span><input name="contact" type="tel" autocomplete="tel" placeholder="For rescue-team updates" required /></label>
+              <div class="field-row">
+                <label class="field">Username<input name="username" type="text" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9._-]+" placeholder="Choose a username" required /></label>
+                <label class="field">Password<input name="password" type="password" autocomplete="new-password" minlength="10" placeholder="At least 10 characters" required /></label>
+              </div>
+              <label class="field">Confirm password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="10" placeholder="Enter the password again" required /></label>
+              <p class="password-note">Your password is sent over HTTPS and stored only as a salted cryptographic hash. It cannot be viewed by the rescue team.</p>
               <div class="volunteer-location-field">
                 <div class="volunteer-location-title"><strong>Choose your approximate starting location</strong><small>Tap the map, then drag the pin if needed.</small></div>
                 <div id="volunteer-map" class="volunteer-map" role="application" aria-label="Choose volunteer starting location on a Singapore map"></div>
@@ -101,6 +115,7 @@
               <p id="volunteer-form-error" class="form-error" role="alert" hidden></p>
               <label class="volunteer-agreement"><input name="agreement" type="checkbox" required /><span>I understand this is a demo and I will only observe from a safe distance.</span></label>
               <button class="submit-button" type="submit">Create volunteer profile <span>→</span></button>
+              </div>
             </form>
           </section>
 
@@ -303,6 +318,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=15"></script>
+    <script src="app.js?v=16"></script>
   </body>
 </html>

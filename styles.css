@@ -188,6 +188,10 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .field > span { color: var(--muted); font-weight: 500; }
 .field input, .field select, .field textarea { width: 100%; margin-top: 7px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 10px; outline: 0; color: var(--ink); background: #fff; resize: vertical; }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--forest-2); box-shadow: 0 0 0 3px rgba(34,91,75,.09); }
+.password-note { margin: -4px 0 14px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.account-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 22px; border-radius: 12px; background: #eef3ef; }
+.account-mode-button { border: 0; border-radius: 9px; padding: 10px; color: var(--muted); background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
+.account-mode-button.active { color: #fff; background: var(--green); box-shadow: 0 3px 10px rgba(15, 86, 62, .18); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .photo-field { padding: 14px; display: grid; grid-template-columns: auto 1fr; column-gap: 10px; border: 1px dashed #aebbb3; border-radius: 12px; cursor: pointer; }
 .photo-field input { display: none; }

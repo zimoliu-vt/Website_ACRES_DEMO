@@ -24,11 +24,16 @@ let selectedReportId = null;
 let currentFilter = "active";
 let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "true";
 let workerToken = sessionStorage.getItem("wildcare-worker-token") || "";
+let volunteerToken = localStorage.getItem("wildcare-volunteer-token") || "";
 let backendReady = false;
 let reverseLookupTimer = null;
 let selectedPhotoDataUrl = "";
 let pendingReopen = null;
 let volunteer = loadVolunteer();
+if (volunteer && !volunteerToken) {
+  volunteer = null;
+  localStorage.removeItem(VOLUNTEER_KEY);
+}
 let volunteerAssessmentReportId = null;
 let volunteerPhotoDataUrl = "";
 let volunteerMap = null;
@@ -96,7 +101,8 @@ function saveVolunteer() {
 
 async function apiFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-  if (workerToken) headers.Authorization = `Bearer ${workerToken}`;
+  const token = workerToken || volunteerToken;
+  if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!response.ok) {
     const result = await response.json().catch(() => ({}));
@@ -821,7 +827,51 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
 });
 document.querySelector("#remove-photo").addEventListener("click", clearSelectedPhoto);
 
-document.querySelector("#volunteer-form").addEventListener("submit", event => {
+function setVolunteerAccountMode(mode) {
+  const signingIn = mode === "signin";
+  document.querySelector("#volunteer-signin-fields").hidden = !signingIn;
+  document.querySelector("#volunteer-signup-fields").hidden = signingIn;
+  document.querySelectorAll("[data-account-mode]").forEach(button => button.classList.toggle("active", button.dataset.accountMode === mode));
+  document.querySelectorAll("#volunteer-signup-fields input").forEach(input => {
+    if (input.dataset.wasRequired === "true") input.required = !signingIn;
+  });
+  const username = document.querySelector('[name="signinUsername"]');
+  const password = document.querySelector('[name="signinPassword"]');
+  username.required = signingIn;
+  password.required = signingIn;
+  document.querySelector("#volunteer-form-error").hidden = true;
+  document.querySelector("#volunteer-signin-error").hidden = true;
+  (signingIn ? username : document.querySelector('[name="name"]')).focus();
+}
+
+document.querySelectorAll("#volunteer-signup-fields input[required]").forEach(input => { input.dataset.wasRequired = "true"; });
+document.querySelectorAll("[data-account-mode]").forEach(button => button.addEventListener("click", () => setVolunteerAccountMode(button.dataset.accountMode)));
+
+document.querySelector("#volunteer-signin-button").addEventListener("click", async () => {
+  const username = document.querySelector('[name="signinUsername"]');
+  const password = document.querySelector('[name="signinPassword"]');
+  const error = document.querySelector("#volunteer-signin-error");
+  if (!username.value.trim() || !password.value) {
+    error.textContent = "Enter your username and password.";
+    error.hidden = false;
+    return;
+  }
+  try {
+    const result = await apiFetch("/auth/volunteer-signin", { method: "POST", body: JSON.stringify({ username: username.value.trim(), password: password.value }) });
+    volunteer = result.volunteer;
+    volunteerToken = result.token;
+    localStorage.setItem("wildcare-volunteer-token", volunteerToken);
+    saveVolunteer();
+    renderVolunteerPortal();
+    document.querySelector("#volunteer-form").reset();
+    showToast(`Welcome back, ${volunteer.name}.`);
+  } catch (signinError) {
+    error.textContent = signinError.message;
+    error.hidden = false;
+  }
+});
+
+document.querySelector("#volunteer-form").addEventListener("submit", async event => {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
   const error = document.querySelector("#volunteer-form-error");
@@ -831,9 +881,14 @@ document.querySelector("#volunteer-form").addEventListener("submit", event => {
     document.querySelector("#volunteer-map").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
+  if (data.get("password") !== data.get("confirmPassword")) {
+    error.textContent = "The passwords do not match.";
+    error.hidden = false;
+    event.currentTarget.elements.confirmPassword.focus();
+    return;
+  }
   error.hidden = true;
-  volunteer = {
-    id: `VOL-${Date.now()}`,
+  const profile = {
     name: data.get("name").trim(),
     contact: data.get("contact").trim(),
     areaName: pendingVolunteerLocation.name,
@@ -842,13 +897,25 @@ document.querySelector("#volunteer-form").addEventListener("submit", event => {
     radius: Number(data.get("radius")),
     registeredAt: Date.now()
   };
+  try {
+    const result = await apiFetch("/auth/volunteer-signup", {
+      method: "POST",
+      body: JSON.stringify({ username: data.get("username").trim(), password: data.get("password"), profile })
+    });
+    volunteer = result.volunteer;
+    volunteerToken = result.token;
+    localStorage.setItem("wildcare-volunteer-token", volunteerToken);
+  } catch (signupError) {
+    error.textContent = signupError.message;
+    error.hidden = false;
+    return;
+  }
   saveVolunteer();
   renderVolunteerPortal();
   showToast("Demo volunteer profile created. Nearby cases are ready.");
 });
 
 document.querySelector("#volunteer-reset").addEventListener("click", () => {
-  const previousVolunteerId = volunteer?.id;
   volunteer = null;
   saveVolunteer();
   document.querySelector("#volunteer-form").reset();
@@ -858,8 +925,10 @@ document.querySelector("#volunteer-reset").addEventListener("click", () => {
   document.querySelector("#volunteer-radius-output").textContent = "5 km";
   document.querySelector("#volunteer-location-label").innerHTML = '<span>⌖</span><div><strong>No location selected</strong><small>Tap anywhere within Singapore</small></div>';
   renderVolunteerPortal();
-  if (backendReady && previousVolunteerId) apiFetch(`/volunteers/${encodeURIComponent(previousVolunteerId)}`, { method: "DELETE" }).catch(() => {});
-  showToast("Volunteer profile cleared from this browser.");
+  volunteerToken = "";
+  localStorage.removeItem("wildcare-volunteer-token");
+  setVolunteerAccountMode("signin");
+  showToast("Signed out of the volunteer account.");
 });
 document.querySelector("#volunteer-radius").addEventListener("input", updateVolunteerRadiusCircle);
 

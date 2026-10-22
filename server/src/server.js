@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { promisify } from "node:util";
 import express from "express";
 import jwt from "jsonwebtoken";
 import pg from "pg";
@@ -9,6 +10,7 @@ const port = Number(process.env.PORT || 3000);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const jwtSecret = process.env.JWT_SECRET;
 const demoPin = process.env.DEMO_PIN || "0000";
+const scrypt = promisify(crypto.scrypt);
 
 if (!jwtSecret || jwtSecret.length < 24) throw new Error("JWT_SECRET must contain at least 24 characters");
 
@@ -35,10 +37,50 @@ async function initialiseDatabase() {
       payload jsonb NOT NULL,
       updated_at timestamptz NOT NULL DEFAULT now()
     );
+    CREATE TABLE IF NOT EXISTS accounts (
+      id text PRIMARY KEY,
+      username text UNIQUE NOT NULL,
+      password_hash text NOT NULL,
+      role text NOT NULL CHECK (role IN ('volunteer', 'worker')),
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
   `);
   const { rows } = await pool.query("SELECT count(*)::int AS count FROM reports");
   if (rows[0].count === 0) {
     await seedDatabase();
+  }
+}
+
+function normaliseUsername(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+async function hashPassword(password) {
+  const salt = crypto.randomBytes(16);
+  const derived = await scrypt(password, salt, 64);
+  return `scrypt$${salt.toString("hex")}$${derived.toString("hex")}`;
+}
+
+async function verifyPassword(password, encoded) {
+  const [algorithm, saltHex, hashHex] = String(encoded).split("$");
+  if (algorithm !== "scrypt" || !saltHex || !hashHex) return false;
+  const expected = Buffer.from(hashHex, "hex");
+  const actual = await scrypt(password, Buffer.from(saltHex, "hex"), expected.length);
+  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+
+function volunteerToken(id) {
+  return jwt.sign({ sub: id, role: "volunteer" }, jwtSecret, { expiresIn: "30d" });
+}
+
+function requireVolunteerOwner(request, response, next) {
+  const token = request.headers.authorization?.replace(/^Bearer\s+/i, "");
+  try {
+    const claims = jwt.verify(token || "", jwtSecret);
+    if (claims.role !== "worker" && (claims.role !== "volunteer" || claims.sub !== request.params.id)) throw new Error("Invalid account");
+    next();
+  } catch {
+    response.status(401).json({ error: "Please sign in to manage this volunteer profile" });
   }
 }
 
@@ -121,15 +163,63 @@ app.post("/auth/worker", (request, response) => {
   response.json({ token: jwt.sign({ role: "worker" }, jwtSecret, { expiresIn: "8h" }) });
 });
 
-app.put("/volunteers/:id", async (request, response) => {
+app.post("/auth/volunteer-signup", async (request, response) => {
+  const username = normaliseUsername(request.body?.username);
+  const password = String(request.body?.password || "");
+  const profile = request.body?.profile;
+  if (!/^[a-z0-9._-]{3,32}$/.test(username)) return response.status(400).json({ error: "Use 3–32 letters, numbers, dots, dashes, or underscores for the username" });
+  if (password.length < 10 || password.length > 128) return response.status(400).json({ error: "Password must contain 10–128 characters" });
+  if (!profile?.name || !profile?.contact || !Number.isFinite(Number(profile?.lat)) || !Number.isFinite(Number(profile?.lng))) return response.status(400).json({ error: "Complete all volunteer profile fields" });
+
+  const id = crypto.randomUUID();
+  const saved = { ...profile, id, username };
+  const passwordHash = await hashPassword(password);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("INSERT INTO accounts (id, username, password_hash, role) VALUES ($1, $2, $3, 'volunteer')", [id, username, passwordHash]);
+    await client.query("INSERT INTO volunteers (id, payload) VALUES ($1, $2)", [id, saved]);
+    await client.query("COMMIT");
+    response.status(201).json({ token: volunteerToken(id), volunteer: saved });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    if (error.code === "23505") return response.status(409).json({ error: "That username is already in use" });
+    throw error;
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/auth/volunteer-signin", async (request, response) => {
+  const username = normaliseUsername(request.body?.username);
+  const password = String(request.body?.password || "");
+  const { rows } = await pool.query("SELECT id, password_hash FROM accounts WHERE username = $1 AND role = 'volunteer'", [username]);
+  if (!rows[0] || !(await verifyPassword(password, rows[0].password_hash))) return response.status(401).json({ error: "Incorrect username or password" });
+  const volunteerResult = await pool.query("SELECT payload FROM volunteers WHERE id = $1", [rows[0].id]);
+  if (!volunteerResult.rows[0]) return response.status(404).json({ error: "Volunteer profile not found" });
+  response.json({ token: volunteerToken(rows[0].id), volunteer: volunteerResult.rows[0].payload });
+});
+
+app.put("/volunteers/:id", requireVolunteerOwner, async (request, response) => {
   const volunteer = { ...request.body, id: request.params.id };
   await pool.query(`INSERT INTO volunteers (id, payload) VALUES ($1, $2)
     ON CONFLICT (id) DO UPDATE SET payload = excluded.payload, updated_at = now()`, [volunteer.id, volunteer]);
   response.json(volunteer);
 });
 
-app.delete("/volunteers/:id", async (request, response) => {
-  await pool.query("DELETE FROM volunteers WHERE id = $1", [request.params.id]);
+app.delete("/volunteers/:id", requireVolunteerOwner, async (request, response) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("DELETE FROM volunteers WHERE id = $1", [request.params.id]);
+    await client.query("DELETE FROM accounts WHERE id = $1", [request.params.id]);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
   response.status(204).end();
 });
 
