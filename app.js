@@ -814,6 +814,8 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   event.preventDefault();
   if (!selectedLocation) return showToast("Please choose a location on the map first.");
   const error = document.querySelector("#report-form-error");
+  const submitButton = document.querySelector("#send-report-button");
+  if (submitButton.disabled) return;
   const selectedAnimal = event.currentTarget.querySelector('[name="animal"]:checked');
   const condition = event.currentTarget.elements.condition.value;
   const notes = event.currentTarget.elements.notes.value.trim();
@@ -825,6 +827,9 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     return;
   }
   error.hidden = true;
+  submitButton.disabled = true;
+  submitButton.setAttribute("aria-busy", "true");
+  submitButton.querySelector("span").textContent = "Sending…";
   const data = new FormData(event.currentTarget);
   const reportDraft = {
     animal: data.get("animal"),
@@ -844,6 +849,9 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   } catch (backendError) {
     error.textContent = backendError.message;
     error.hidden = false;
+    submitButton.disabled = false;
+    submitButton.removeAttribute("aria-busy");
+    submitButton.querySelector("span").textContent = "Send report";
     return;
   }
   reports.unshift(report);
@@ -853,9 +861,15 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   clearSelectedPhoto();
   document.querySelector("#report-dialog").close();
   if (locationMarker) { locationMarker.remove(); locationMarker = null; }
+  if (searchAreaMarker) { searchAreaMarker.remove(); searchAreaMarker = null; }
   selectedReportId = report.id;
   document.querySelector("#success-case-id").textContent = report.id;
-  setTimeout(() => document.querySelector("#success-dialog").showModal(), 120);
+  submitButton.disabled = false;
+  submitButton.removeAttribute("aria-busy");
+  submitButton.querySelector("span").textContent = "Send report";
+  showToast(`Report ${report.id} sent successfully.`);
+  const successDialog = document.querySelector("#success-dialog");
+  setTimeout(() => { if (!successDialog.open) successDialog.showModal(); }, 80);
 });
 
 document.querySelector("#photo-input").addEventListener("change", async event => {
