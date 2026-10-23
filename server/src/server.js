@@ -236,7 +236,10 @@ app.post("/analyze-animal", async (request, response) => {
       })
     });
     const payload = await jevResponse.json().catch(() => ({}));
-    if (!jevResponse.ok) return response.status(502).json({ error: payload.detail || payload.error || "Jev could not analyze this photo" });
+    if (!jevResponse.ok) {
+      const message = payload.error?.message || payload.detail?.message || payload.message || (typeof payload.error === "string" ? payload.error : "Jev could not analyze this photo");
+      return response.status(502).json({ error: message });
+    }
     const animalProbability = Number(payload.answers?.animal_present?.noul || 0);
     const animalType = payload.answers?.animal_type;
     const condition = payload.answers?.condition;
