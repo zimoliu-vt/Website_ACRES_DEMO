@@ -231,6 +231,14 @@ app.post("/analyze-animal", async (request, response) => {
               "In an unsafe location": "The animal is in immediate environmental danger such as traffic",
               "Not sure": "The condition cannot be safely determined from the image"
             }
+          },
+          rescue_needed: {
+            type: "noul",
+            instructions: "Based only on visible evidence in animal_photo, does this animal appear to need assessment or rescue attention?",
+            criteria: {
+              true: "The animal appears injured, bleeding, immobile, trapped, entangled, distressed, orphaned, dead, or in immediate environmental danger",
+              false: "The animal appears healthy and behaving normally, no animal is visible, or there is no visible reason for intervention"
+            }
           }
         }
       })
@@ -243,6 +251,7 @@ app.post("/analyze-animal", async (request, response) => {
     const animalProbability = Number(payload.answers?.animal_present?.noul || 0);
     const animalType = payload.answers?.animal_type;
     const condition = payload.answers?.condition;
+    const rescueProbability = Number(payload.answers?.rescue_needed?.noul || 0);
     response.json({
       isAnimal: animalProbability >= 0.65,
       animalProbability,
@@ -250,6 +259,8 @@ app.post("/analyze-animal", async (request, response) => {
       animalConfidence: Number(animalType?.confidence || 0),
       condition: condition?.choice || "Not sure",
       conditionConfidence: Number(condition?.confidence || 0),
+      rescueNeeded: rescueProbability >= 0.65,
+      rescueProbability,
       model: payload.model || jevModel
     });
   } catch (error) {

@@ -211,6 +211,14 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .jev-analysis[hidden] { display: none; }
 .jev-analysis.checking { color: #6c5518; background: #fff2c9; }
 .jev-analysis.rejected, .jev-analysis.error { color: #8d2e27; background: #fff0ee; }
+.ai-assessment { margin: 15px 0; padding: 14px; border: 1px solid #c7d9d0; border-radius: 14px; color: var(--forest); background: #eef7f2; }
+.ai-assessment.attention { border-color: #e7c676; background: #fff7dc; }
+.ai-assessment > div { display: flex; align-items: center; gap: 10px; }
+.ai-assessment > div > span { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 9px; background: var(--lime); }
+.ai-assessment > div > div { display: grid; gap: 2px; }
+.ai-assessment small { color: var(--muted); font-size: 9px; line-height: 1.45; }
+.ai-assessment strong { font-size: 12px; }
+.ai-assessment p { margin: 10px 0 4px; font-size: 11px; font-weight: 750; }
 .random-report-button { width: 100%; padding: 13px 15px; display: flex; align-items: center; gap: 12px; border: 1px dashed #a7b8af; border-radius: 14px; color: var(--forest); background: #fffef9; text-align: left; }
 .random-report-button > span { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 10px; background: var(--lime); font-size: 18px; }
 .random-report-button div { display: flex; flex-direction: column; gap: 3px; }

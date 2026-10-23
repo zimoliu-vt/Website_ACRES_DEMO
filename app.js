@@ -195,7 +195,10 @@ async function analyzeAnimalPhoto() {
     if (animalInput) animalInput.checked = true;
     document.querySelector("#report-form").elements.condition.value = condition;
     status.className = "jev-analysis";
-    status.textContent = `Jev found an animal and suggested ${animal.toLowerCase()} · ${condition.toLowerCase()}. Please check these choices before sending.`;
+    const rescueCopy = result.rescueNeeded
+      ? `Jev sees a possible need for rescue attention (${Math.round(result.rescueProbability * 100)}% confidence).`
+      : `Jev does not see a clear rescue need in this photo (${Math.round((1 - result.rescueProbability) * 100)}% confidence).`;
+    status.textContent = `Jev found an animal and suggested ${animal.toLowerCase()} · ${condition.toLowerCase()}. ${rescueCopy} Please check before sending.`;
   } catch (error) {
     status.className = "jev-analysis error";
     status.textContent = error.message;
@@ -553,6 +556,7 @@ function renderReportDetail(id) {
     </div>
     <p class="notes-box">${escapeHtml(report.notes)}</p>
     ${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Photo attached to case ${escapeHtml(report.id)}" /><figcaption>Photo supplied with this demo report</figcaption></figure>` : ""}
+    ${report.aiAssessment ? `<section class="ai-assessment ${report.aiAssessment.rescueNeeded ? "attention" : "monitor"}"><div><span>✦</span><div><small>JEV photo review · advisory</small><strong>${report.aiAssessment.rescueNeeded ? "Possible rescue attention needed" : "No clear rescue need visible"}</strong></div></div><p>${escapeHtml(report.aiAssessment.animal || "Other")} · ${escapeHtml(report.aiAssessment.condition || "Not sure")} · ${Math.round(Number(report.aiAssessment.rescueProbability || 0) * 100)}% rescue-need confidence</p><small>A person should review the full situation; a photo may miss important context.</small></section>` : ""}
     ${reportResponders(report).length ? `<section class="volunteer-update"><div><span>♡</span><div class="responder-list"><small>Volunteer responses · ${reportResponders(report).length}/3</small>${reportResponders(report).map(item => `<div class="responder-detail"><strong>${escapeHtml(item.name)} · ${escapeHtml(item.status)}</strong>${Array.isArray(item.experience) && item.experience.length ? `<small>Training: ${escapeHtml(item.experience.join(", "))}${item.experienceDetails ? ` — ${escapeHtml(item.experienceDetails)}` : ""}</small>` : ""}${Array.isArray(item.animalPreferences) ? `<small>Preferred animals: ${item.animalPreferences.length ? escapeHtml(item.animalPreferences.join(", ")) : "Any"}</small>` : ""}</div>`).join("")}</div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
     ${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer observation photo · demo</figcaption></figure>` : ""}
     <section class="case-timeline"><div class="timeline-heading"><span>Case progress</span><small>Newest update last</small></div><ol>${(Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }]).map((event, index, history) => `<li class="${index === history.length - 1 ? "current" : ""}"><span></span><div><strong>${escapeHtml(event.label)}</strong><small>${relativeTime(event.at)} · ${exactTime(event.at)}</small></div></li>`).join("")}</ol></section>
@@ -1009,6 +1013,17 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     area: selectedLocation.name || estimatedArea(selectedLocation.lat, selectedLocation.lng)
   };
   reportDraft.photo = selectedPhotoDataUrl;
+  if (photoAnalysis) reportDraft.aiAssessment = {
+    provider: "JEV",
+    model: photoAnalysis.model,
+    animal: photoAnalysis.animal,
+    animalConfidence: photoAnalysis.animalConfidence,
+    condition: photoAnalysis.condition,
+    conditionConfidence: photoAnalysis.conditionConfidence,
+    rescueNeeded: photoAnalysis.rescueNeeded,
+    rescueProbability: photoAnalysis.rescueProbability,
+    reviewedAt: Date.now()
+  };
   let report;
   try {
     for (let attempt = 0; attempt < 2; attempt += 1) {
