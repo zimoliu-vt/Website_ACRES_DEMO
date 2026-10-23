@@ -161,7 +161,10 @@ function isWorkerRequest(request) {
 
 function publicReport(report) {
   const { contact, reporter, photo, volunteerPhoto, clientRequestId, ...safe } = report;
-  return { ...safe, reporter: reporter ? "Name hidden" : "Anonymous", hasPhoto: Boolean(photo), hasVolunteerPhoto: Boolean(volunteerPhoto) };
+  const responders = Array.isArray(safe.responders)
+    ? safe.responders.map(({ experience, experienceDetails, animalPreferences, ...responder }) => responder)
+    : safe.responders;
+  return { ...safe, responders, reporter: reporter ? "Name hidden" : "Anonymous", hasPhoto: Boolean(photo), hasVolunteerPhoto: Boolean(volunteerPhoto) };
 }
 
 function safeEqual(left, right) {
@@ -232,6 +235,7 @@ app.post("/auth/volunteer-signup", async (request, response) => {
   if (!/^[a-z0-9._-]{3,32}$/.test(username)) return response.status(400).json({ error: "Use 3–32 letters, numbers, dots, dashes, or underscores for the username" });
   if (password.length < 10 || password.length > 128) return response.status(400).json({ error: "Password must contain 10–128 characters" });
   if (!profile?.name || !profile?.contact || !Number.isFinite(Number(profile?.lat)) || !Number.isFinite(Number(profile?.lng))) return response.status(400).json({ error: "Complete all volunteer profile fields" });
+  if (!Array.isArray(profile?.experience) || profile.experience.length === 0) return response.status(400).json({ error: "Select at least one type of animal medical, care, or handling experience" });
   if (!Number.isFinite(profile?.demoAgreementAcceptedAt) || profile.demoAgreementAcceptedAt <= 0) return response.status(400).json({ error: "You must agree that this is strictly a demo and no travel or real-world action is required" });
 
   const id = crypto.randomUUID();
@@ -288,8 +292,18 @@ app.post("/reports/:id/volunteer-offer", requireVolunteer, async (request, respo
       return response.status(409).json({ error: "This case already has three volunteers" });
     }
     const volunteerResult = await client.query("SELECT payload FROM volunteers WHERE id = $1", [request.auth.sub]);
-    const name = volunteerResult.rows[0]?.payload?.name || "Volunteer";
-    responders.push({ id: request.auth.sub, name, status: "On the way", offeredAt: Date.now(), arrivedAt: null });
+    const profile = volunteerResult.rows[0]?.payload || {};
+    const name = profile.name || "Volunteer";
+    responders.push({
+      id: request.auth.sub,
+      name,
+      status: "On the way",
+      offeredAt: Date.now(),
+      arrivedAt: null,
+      experience: Array.isArray(profile.experience) ? profile.experience : [],
+      experienceDetails: String(profile.experienceDetails || "").slice(0, 240),
+      animalPreferences: Array.isArray(profile.animalPreferences) ? profile.animalPreferences : []
+    });
     const report = applyResponders(targetRow.payload, responders);
     if (report.status === "New") report.status = "Acknowledged";
     addHistory(report, `${name} offered to observe`);

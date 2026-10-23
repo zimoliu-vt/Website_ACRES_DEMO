@@ -138,6 +138,10 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .report-copy small { color: #8b948f; font-size: 10px; }
 .report-time { display: block; margin-top: 3px; white-space: normal; line-height: 1.4; }
 .volunteer-card-badge { width: max-content; margin: 2px 0 6px; padding: 4px 7px; display: block; border-radius: 99px; color: var(--forest); background: var(--lime); font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+.responder-list { min-width: 0; display: grid; gap: 7px; }
+.responder-detail { padding-top: 6px; display: grid; gap: 3px; border-top: 1px solid rgba(23,63,53,.12); }
+.responder-detail strong { color: var(--forest); font-size: 11px; }
+.responder-detail small { color: var(--muted); font-size: 9px; line-height: 1.45; }
 .status-pill { padding: 5px 8px; border-radius: 99px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
 .status-new { color: #974036; background: #ffe1dc; }
 .status-acknowledged { color: #82611c; background: #fff0bd; }
@@ -304,6 +308,11 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .volunteer-location-title { margin-bottom: 9px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .volunteer-location-title strong { color: #293b35; font-size: 12px; }
 .volunteer-location-title small { color: var(--muted); font-size: 9px; }
+.volunteer-area-search { margin-bottom: 9px; position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
+.volunteer-area-search > input { min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; outline: 0; color: var(--forest); background: #fff; font-size: 12px; font-weight: 650; }
+.volunteer-area-search > input:focus { border-color: var(--forest-2); box-shadow: 0 0 0 3px rgba(34,91,75,.09); }
+.volunteer-area-search > button { padding: 0 15px; border: 0; border-radius: 11px; color: #fff; background: var(--forest); font-size: 11px; font-weight: 850; }
+.volunteer-search-results { top: calc(100% + 5px); right: 0; left: 0; z-index: 1002; }
 .volunteer-map { height: 285px; position: relative; z-index: 1; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #d6dfd4; }
 .volunteer-map .leaflet-control-attribution { max-width: 80%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .volunteer-location-label { margin-top: 8px; padding: 11px 13px; display: flex; align-items: center; gap: 10px; border-radius: 11px; color: var(--forest); background: var(--mint); }
@@ -311,6 +320,20 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .volunteer-location-label div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .volunteer-location-label strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .volunteer-location-label small { color: #587068; font-size: 9px; }
+.volunteer-profile-section { margin: 19px 0; padding: 0; border: 0; }
+.volunteer-profile-section legend { margin-bottom: 5px; color: #293b35; font-size: 12px; font-weight: 850; }
+.volunteer-profile-section legend span { margin-left: 5px; color: #8b5a25; font-size: 8px; text-transform: uppercase; letter-spacing: .06em; }
+.volunteer-profile-section > p { margin: 0 0 10px; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.choice-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.choice-card-grid label { min-height: 64px; padding: 11px; display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--line); border-radius: 12px; color: var(--forest); background: #fff; cursor: pointer; }
+.choice-card-grid label:has(input:checked) { border-color: var(--forest-2); background: var(--mint); box-shadow: inset 0 0 0 1px var(--forest-2); }
+.choice-card-grid input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--forest); }
+.choice-card-grid span { display: flex; flex-direction: column; gap: 3px; }
+.choice-card-grid strong { font-size: 11px; line-height: 1.3; }
+.choice-card-grid small { color: var(--muted); font-size: 9px; line-height: 1.35; }
+.animal-choice-grid label { min-height: 48px; align-items: center; }
+.compact-field { margin-top: 10px; }
+.compact-field textarea { resize: vertical; }
 .radius-field { margin: 18px 0; display: block; }
 .radius-field > span { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .radius-field strong { color: #293b35; font-size: 12px; }
@@ -337,6 +360,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .nearby-cases { padding: 14px; display: grid; gap: 12px; }
 .nearby-case { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
 .nearby-case.mine { border-color: #8fbca8; box-shadow: inset 4px 0 0 #58a179; }
+.preference-badge { margin-left: 5px; padding: 3px 6px; display: inline-block; border-radius: 99px; color: var(--forest); background: var(--lime); font: 800 8px/1.2 Inter, sans-serif; vertical-align: middle; text-transform: uppercase; letter-spacing: .04em; }
 .nearby-case-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
 .nearby-case h3 { margin: 4px 0 0; color: var(--forest); font-size: 15px; }
 .nearby-case > p { margin: 13px 0 8px; color: var(--muted); font-size: 13px; line-height: 1.55; }

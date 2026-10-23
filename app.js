@@ -520,7 +520,7 @@ function renderReportDetail(id) {
     </div>
     <p class="notes-box">${escapeHtml(report.notes)}</p>
     ${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Photo attached to case ${escapeHtml(report.id)}" /><figcaption>Photo supplied with this demo report</figcaption></figure>` : ""}
-    ${reportResponders(report).length ? `<section class="volunteer-update"><div><span>♡</span><div><small>Volunteer responses · ${reportResponders(report).length}/3</small><strong>${reportResponders(report).map(item => `${escapeHtml(item.name)} · ${escapeHtml(item.status)}`).join("<br>")}</strong></div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
+    ${reportResponders(report).length ? `<section class="volunteer-update"><div><span>♡</span><div class="responder-list"><small>Volunteer responses · ${reportResponders(report).length}/3</small>${reportResponders(report).map(item => `<div class="responder-detail"><strong>${escapeHtml(item.name)} · ${escapeHtml(item.status)}</strong>${Array.isArray(item.experience) && item.experience.length ? `<small>Training: ${escapeHtml(item.experience.join(", "))}${item.experienceDetails ? ` — ${escapeHtml(item.experienceDetails)}` : ""}</small>` : ""}${Array.isArray(item.animalPreferences) ? `<small>Preferred animals: ${item.animalPreferences.length ? escapeHtml(item.animalPreferences.join(", ")) : "Any"}</small>` : ""}</div>`).join("")}</div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
     ${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer observation photo · demo</figcaption></figure>` : ""}
     <section class="case-timeline"><div class="timeline-heading"><span>Case progress</span><small>Newest update last</small></div><ol>${(Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }]).map((event, index, history) => `<li class="${index === history.length - 1 ? "current" : ""}"><span></span><div><strong>${escapeHtml(event.label)}</strong><small>${relativeTime(event.at)} · ${exactTime(event.at)}</small></div></li>`).join("")}</ol></section>
     <div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
@@ -559,9 +559,12 @@ function renderVolunteerPortal() {
   document.querySelector("#volunteer-islands-toggle").checked = Boolean(volunteer.canTravelToIslands);
   document.querySelector("#volunteer-islands-label").textContent = volunteer.canTravelToIslands ? "Available" : "Mainland only";
   const myActiveCase = reports.find(report => report.status !== "Resolved" && reportResponders(report).some(item => item.id === volunteer.id));
+  const animalPreferences = Array.isArray(volunteer.animalPreferences) ? volunteer.animalPreferences : [];
   const nearby = reports.map(report => ({ report, distance: distanceKm(volunteer.lat, volunteer.lng, report.lat, report.lng) }))
     .filter(item => item.report.status !== "Resolved" && (item.report.id === myActiveCase?.id || (item.distance <= volunteer.radius && (volunteer.canTravelToIslands || !isOffshoreLocation(item.report)))))
-    .sort((a, b) => Number(b.report.id === myActiveCase?.id) - Number(a.report.id === myActiveCase?.id) || a.distance - b.distance);
+    .sort((a, b) => Number(b.report.id === myActiveCase?.id) - Number(a.report.id === myActiveCase?.id)
+      || Number(animalPreferences.includes(b.report.animal)) - Number(animalPreferences.includes(a.report.animal))
+      || a.distance - b.distance);
   document.querySelector("#nearby-count").textContent = nearby.length;
   const container = document.querySelector("#nearby-cases");
   container.innerHTML = nearby.length ? nearby.map(({ report, distance }) => {
@@ -583,7 +586,8 @@ function renderVolunteerPortal() {
     } else {
       action = `<button class="primary-button volunteer-case-action" data-volunteer-action="claim" data-report-id="${report.id}" type="button">Offer to observe · ${responders.length}/3</button>`;
     }
-    return `<article class="nearby-case ${mine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away · ${responders.length}/3 volunteers</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)} · ${exactTime(report.createdAt)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
+    const preferenceBadge = animalPreferences.includes(report.animal) ? '<span class="preference-badge">Preferred animal</span>' : "";
+    return `<article class="nearby-case ${mine ? "mine" : ""}"><div class="nearby-case-top"><span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span><div><span class="case-id">${escapeHtml(report.id)} · ${distance.toFixed(1)} km away · ${responders.length}/3 volunteers</span><h3>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)} ${preferenceBadge}</h3></div><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><p>${escapeHtml(report.notes)}</p><div class="nearby-location">⌖ ${escapeHtml(report.area)} · ${relativeTime(report.createdAt)} · ${exactTime(report.createdAt)}</div><div class="safe-task"><strong>Your role:</strong> Observe from a safe distance and update the rescue team.</div>${action}</article>`;
   }).join("") : '<div class="empty-detail"><span>✓</span><h3>No active cases nearby</h3><p>There are currently no demo reports inside your selected travel radius.</p></div>';
   container.querySelectorAll("[data-volunteer-action]").forEach(button => button.addEventListener("click", () => handleVolunteerAction(button.dataset.volunteerAction, button.dataset.reportId)));
 }
@@ -657,6 +661,38 @@ async function reverseVolunteerLocation(lat, lng) {
   } catch {}
   if (!pendingVolunteerLocation || Math.abs(pendingVolunteerLocation.lat - lat) >= .0001 || Math.abs(pendingVolunteerLocation.lng - lng) >= .0001) return;
   document.querySelector("#volunteer-location-label").innerHTML = `<span>⌖</span><div><strong>${escapeHtml(pendingVolunteerLocation.name)}</strong><small>${lat.toFixed(4)}, ${lng.toFixed(4)}</small></div>`;
+}
+
+async function searchVolunteerArea() {
+  const input = document.querySelector("#volunteer-area-search-input");
+  const container = document.querySelector("#volunteer-area-search-results");
+  const query = input.value.trim();
+  if (query.length < 2) {
+    container.innerHTML = '<p class="search-message">Enter at least two characters.</p>';
+    container.hidden = false;
+    return;
+  }
+  container.innerHTML = '<p class="search-message">Searching Singapore…</p>';
+  container.hidden = false;
+  try {
+    const results = await searchSingapore(query);
+    if (!results.length) {
+      container.innerHTML = '<p class="search-message">No matching Singapore areas found.</p>';
+      return;
+    }
+    container.innerHTML = results.map((result, index) => `<button class="search-result" data-volunteer-search-index="${index}" type="button"><strong>${escapeHtml(searchResultLabel(result))}</strong><small>${escapeHtml(result.display_name.split(",").slice(1, 4).join(", ") || "Singapore")}</small></button>`).join("") + '<div class="search-credit">Search © OpenStreetMap contributors</div>';
+    container.querySelectorAll("[data-volunteer-search-index]").forEach(button => button.addEventListener("click", () => {
+      const result = results[Number(button.dataset.volunteerSearchIndex)];
+      const lat = Number(result.lat);
+      const lng = Number(result.lon);
+      input.value = searchResultLabel(result);
+      container.hidden = true;
+      setVolunteerLocation(lat, lng);
+      volunteerMap.flyTo([lat, lng], 14, { duration: .8 });
+    }));
+  } catch (searchError) {
+    container.innerHTML = `<p class="search-message">${escapeHtml(searchError.message)}</p>`;
+  }
 }
 
 async function handleVolunteerAction(action, reportId) {
@@ -990,6 +1026,12 @@ function setVolunteerAccountMode(mode) {
 
 document.querySelectorAll("#volunteer-signup-fields input[required]").forEach(input => { input.dataset.wasRequired = "true"; });
 document.querySelectorAll("[data-account-mode]").forEach(button => button.addEventListener("click", () => setVolunteerAccountMode(button.dataset.accountMode)));
+document.querySelector("#volunteer-area-search-button").addEventListener("click", searchVolunteerArea);
+document.querySelector("#volunteer-area-search-input").addEventListener("keydown", event => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  searchVolunteerArea();
+});
 
 document.querySelector("#volunteer-signin-button").addEventListener("click", async () => {
   const username = document.querySelector('[name="signinUsername"]');
@@ -1020,7 +1062,7 @@ document.querySelector("#volunteer-form").addEventListener("submit", async event
   const data = new FormData(event.currentTarget);
   const error = document.querySelector("#volunteer-form-error");
   if (!pendingVolunteerLocation) {
-    error.textContent = "Tap the map to choose your approximate starting location.";
+    error.textContent = "Search for an area or tap the map to choose your approximate starting location.";
     error.hidden = false;
     document.querySelector("#volunteer-map").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
@@ -1029,6 +1071,13 @@ document.querySelector("#volunteer-form").addEventListener("submit", async event
     error.textContent = "The passwords do not match.";
     error.hidden = false;
     event.currentTarget.elements.confirmPassword.focus();
+    return;
+  }
+  const experience = data.getAll("experience");
+  if (!experience.length) {
+    error.textContent = "Select at least one type of animal medical, care, or handling experience.";
+    error.hidden = false;
+    document.querySelector("#experience-section").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   error.hidden = true;
@@ -1040,6 +1089,9 @@ document.querySelector("#volunteer-form").addEventListener("submit", async event
     lng: pendingVolunteerLocation.lng,
     radius: Number(data.get("radius")),
     canTravelToIslands: data.get("canTravelToIslands") === "on",
+    experience,
+    experienceDetails: data.get("experienceDetails").trim(),
+    animalPreferences: data.getAll("animalPreference"),
     demoAgreementAcceptedAt: data.get("agreement") === "on" ? Date.now() : null,
     registeredAt: Date.now()
   };
@@ -1069,6 +1121,7 @@ document.querySelector("#volunteer-reset").addEventListener("click", () => {
   if (volunteerLocationMarker) { volunteerLocationMarker.remove(); volunteerLocationMarker = null; }
   if (volunteerRadiusCircle) { volunteerRadiusCircle.remove(); volunteerRadiusCircle = null; }
   document.querySelector("#volunteer-radius-output").textContent = "5 km";
+  document.querySelector("#volunteer-area-search-results").hidden = true;
   document.querySelector("#volunteer-location-label").innerHTML = '<span>⌖</span><div><strong>No location selected</strong><small>Tap anywhere within Singapore</small></div>';
   renderVolunteerPortal();
   volunteerToken = "";

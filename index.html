@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=33" />
+    <link rel="stylesheet" href="styles.css?v=34" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -107,10 +107,36 @@
               <label class="field">Confirm password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="10" placeholder="Enter the password again" required /></label>
               <p class="password-note">Use at least 10 characters. We store a secure password hash, never your password.</p>
               <div class="volunteer-location-field">
-                <div class="volunteer-location-title"><strong>Your approximate area</strong><small>Tap the map.</small></div>
+                <div class="volunteer-location-title"><strong>Your approximate area</strong><small>Search or tap the map.</small></div>
+                <div class="volunteer-area-search">
+                  <input id="volunteer-area-search-input" type="search" autocomplete="off" placeholder="Search an area, MRT station, or postcode" />
+                  <button id="volunteer-area-search-button" type="button">Search</button>
+                  <div id="volunteer-area-search-results" class="map-search-results volunteer-search-results" hidden></div>
+                </div>
                 <div id="volunteer-map" class="volunteer-map" role="application" aria-label="Choose volunteer starting location on a Singapore map"></div>
                 <div id="volunteer-location-label" class="volunteer-location-label"><span>⌖</span><div><strong>No location selected</strong><small>Tap anywhere within Singapore</small></div></div>
               </div>
+              <fieldset class="volunteer-profile-section" id="experience-section">
+                <legend>Animal medical or care experience <span>Required</span></legend>
+                <p>Select everything that applies. This is self-reported for the demo.</p>
+                <div class="choice-card-grid">
+                  <label><input type="checkbox" name="experience" value="Veterinary professional or student" /><span><strong>Veterinary</strong><small>Professional or student</small></span></label>
+                  <label><input type="checkbox" name="experience" value="Wildlife or animal-care training" /><span><strong>Animal care</strong><small>Wildlife or animal-care training</small></span></label>
+                  <label><input type="checkbox" name="experience" value="Animal first aid or safe handling" /><span><strong>First aid</strong><small>Animal first aid or safe handling</small></span></label>
+                  <label><input type="checkbox" name="experience" value="Other relevant experience" /><span><strong>Other training</strong><small>Relevant experience or certification</small></span></label>
+                </div>
+                <label class="field compact-field">Brief details <span>(optional)</span><textarea name="experienceDetails" rows="2" maxlength="240" placeholder="For example: veterinary student, wildlife handling course…"></textarea></label>
+              </fieldset>
+              <fieldset class="volunteer-profile-section">
+                <legend>Animals you prefer to help <span>Optional</span></legend>
+                <p>Choose any favourites. Leave all blank if you are happy to help with any animal.</p>
+                <div class="choice-card-grid animal-choice-grid">
+                  <label><input type="checkbox" name="animalPreference" value="Bird" /><span><strong>🐦 Birds</strong></span></label>
+                  <label><input type="checkbox" name="animalPreference" value="Mammal" /><span><strong>🐒 Mammals</strong></span></label>
+                  <label><input type="checkbox" name="animalPreference" value="Reptile" /><span><strong>🦎 Reptiles</strong></span></label>
+                  <label><input type="checkbox" name="animalPreference" value="Other" /><span><strong>🐾 Other</strong></span></label>
+                </div>
+              </fieldset>
               <label class="radius-field" for="volunteer-radius"><span><strong>How far can you travel?</strong><output id="volunteer-radius-output" for="volunteer-radius">5 km</output></span><input id="volunteer-radius" name="radius" type="range" min="1" max="30" step="1" value="5" /><small>Choose 1–30 km.</small></label>
               <label class="island-choice"><input name="canTravelToIslands" type="checkbox" /><span><strong>I can travel to Singapore’s offshore islands</strong><small>For example: Pulau Ubin, Sentosa, or the southern islands.</small></span></label>
               <p id="volunteer-form-error" class="form-error" role="alert" hidden></p>
@@ -340,6 +366,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=33"></script>
+    <script src="app.js?v=34"></script>
   </body>
 </html>
