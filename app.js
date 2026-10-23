@@ -986,10 +986,10 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     document.querySelector(".photo-first-step").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  if (!selectedAnimal || !condition || !notes) {
-    error.textContent = !selectedAnimal ? "Choose the animal type." : !condition ? "Select what seems to be wrong." : "Describe what you can safely observe.";
+  if (!selectedAnimal || !condition) {
+    error.textContent = !selectedAnimal ? "Choose the animal type." : "Select what seems to be wrong.";
     error.hidden = false;
-    const target = !selectedAnimal ? event.currentTarget.querySelector(".animal-options") : !condition ? event.currentTarget.elements.condition : event.currentTarget.elements.notes;
+    const target = !selectedAnimal ? event.currentTarget.querySelector(".animal-options") : event.currentTarget.elements.condition;
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
@@ -1005,7 +1005,7 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     clientRequestId: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     animal: data.get("animal"),
     condition: data.get("condition"),
-    notes: data.get("notes"),
+    notes: data.get("notes").trim() || "Photo submitted for rescue team review",
     reporter: data.get("reporter") || "Anonymous",
     contact: data.get("contact") || "",
     lat: selectedLocation.lat,
