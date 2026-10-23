@@ -908,6 +908,21 @@ document.querySelector("#locate-button").addEventListener("click", () => {
   });
 });
 
+document.querySelector("#random-report-button").addEventListener("click", () => {
+  const form = document.querySelector("#report-form");
+  const animals = ["Bird", "Mammal", "Reptile", "Other"];
+  const conditions = ["Injured or bleeding", "Unable to move or fly", "Trapped or entangled", "Young animal alone", "In an unsafe location", "Not sure"];
+  const animal = animals[Math.floor(Math.random() * animals.length)];
+  const condition = conditions[Math.floor(Math.random() * conditions.length)];
+  form.querySelector(`[name="animal"][value="${animal}"]`).checked = true;
+  form.elements.condition.value = condition;
+  form.elements.notes.value = "Demo rescue";
+  form.elements.reporter.value = "Random";
+  form.elements.contact.value = "";
+  document.querySelector("#report-form-error").hidden = true;
+  showToast(`Random demo: ${animal} · ${condition}`);
+});
+
 document.querySelector("#report-form").addEventListener("submit", async event => {
   event.preventDefault();
   if (!selectedLocation) return showToast("Please choose a location on the map first.");

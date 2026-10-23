@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=34" />
+    <link rel="stylesheet" href="styles.css?v=35" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -297,6 +297,21 @@
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
         <p id="report-form-error" class="form-error" role="alert" hidden></p>
 
+        <section class="photo-first-step">
+          <div><p class="eyebrow">Start with a photo</p><h3>Photograph the animal from a safe distance</h3><p>The image will be checked to confirm it contains an animal before suggesting its type.</p></div>
+          <label class="photo-field camera-photo-field">
+            <input id="photo-input" name="photo" type="file" accept="image/*" capture="environment" />
+            <span>⌾</span><strong>Open camera or choose photo</strong><small>Do not move closer or put yourself in danger for a photo.</small>
+          </label>
+          <div id="photo-preview" class="photo-preview" hidden>
+            <img id="photo-preview-image" alt="Selected animal photo preview" />
+            <div><strong>Photo ready</strong><small id="photo-preview-name"></small></div>
+            <button id="remove-photo" type="button">Remove</button>
+          </div>
+        </section>
+
+        <button id="random-report-button" class="random-report-button" type="button"><span>✦</span><div><strong>Fill a random demo report</strong><small>Random animal and condition · name “Random” · no contact number</small></div></button>
+
         <fieldset>
           <legend>What kind of animal is it?</legend>
           <div class="animal-options">
@@ -328,16 +343,6 @@
           <label class="field">Contact number <span>(optional)</span><input name="contact" type="tel" placeholder="For follow-up questions" /></label>
         </div>
 
-        <label class="photo-field">
-          <input id="photo-input" name="photo" type="file" accept="image/*" />
-          <span>＋</span><strong>Add a photo</strong><small>Optional — stored in the shared demo for the Rescue Team Portal</small>
-        </label>
-        <div id="photo-preview" class="photo-preview" hidden>
-          <img id="photo-preview-image" alt="Selected animal photo preview" />
-          <div><strong>Photo ready</strong><small id="photo-preview-name"></small></div>
-          <button id="remove-photo" type="button">Remove</button>
-        </div>
-
         <p class="privacy-copy">Demo only. This does not contact a real rescue service.</p>
         <button id="send-report-button" class="submit-button" type="submit"><span>Send report</span><b>→</b></button>
       </form>
@@ -366,6 +371,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=34"></script>
+    <script src="app.js?v=35"></script>
   </body>
 </html>
