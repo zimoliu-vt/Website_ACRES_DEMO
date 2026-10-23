@@ -261,7 +261,8 @@ app.post("/analyze-animal", async (request, response) => {
       conditionConfidence: Number(condition?.confidence || 0),
       rescueNeeded: rescueProbability >= 0.65,
       rescueProbability,
-      model: payload.model || jevModel
+      model: payload.model || jevModel,
+      usage: payload.usage || null
     });
   } catch (error) {
     response.status(error.name === "AbortError" ? 504 : 502).json({ error: error.name === "AbortError" ? "Jev took too long to respond" : "Jev image analysis is temporarily unavailable" });
