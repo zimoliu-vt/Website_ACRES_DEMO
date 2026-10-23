@@ -32,6 +32,8 @@ let volunteerToken = localStorage.getItem("wildcare-volunteer-token") || "";
 let backendReady = false;
 let reverseLookupTimer = null;
 let selectedPhotoDataUrl = "";
+let photoAnalysis = null;
+let randomReportMode = false;
 let pendingReopen = null;
 let volunteer = loadVolunteer();
 if (volunteer && !volunteerToken) {
@@ -164,9 +166,40 @@ function compressPhoto(file) {
 
 function clearSelectedPhoto() {
   selectedPhotoDataUrl = "";
+  photoAnalysis = null;
   document.querySelector("#photo-input").value = "";
   document.querySelector("#photo-preview").hidden = true;
   document.querySelector("#photo-preview-image").removeAttribute("src");
+  const analysis = document.querySelector("#jev-analysis");
+  analysis.hidden = true;
+  analysis.className = "jev-analysis";
+}
+
+async function analyzeAnimalPhoto() {
+  const status = document.querySelector("#jev-analysis");
+  status.hidden = false;
+  status.className = "jev-analysis checking";
+  status.textContent = "Jev is checking whether this is an animal…";
+  photoAnalysis = null;
+  try {
+    const result = await apiFetch("/analyze-animal", { method: "POST", body: JSON.stringify({ image: selectedPhotoDataUrl }) });
+    photoAnalysis = result;
+    if (!result.isAnimal) {
+      status.className = "jev-analysis rejected";
+      status.textContent = "Jev could not confirm an animal in this image. Try another clear photo.";
+      return;
+    }
+    const animal = result.animalConfidence >= .55 ? result.animal : "Other";
+    const condition = result.conditionConfidence >= .55 ? result.condition : "Not sure";
+    const animalInput = document.querySelector(`[name="animal"][value="${CSS.escape(animal)}"]`);
+    if (animalInput) animalInput.checked = true;
+    document.querySelector("#report-form").elements.condition.value = condition;
+    status.className = "jev-analysis";
+    status.textContent = `Jev found an animal and suggested ${animal.toLowerCase()} · ${condition.toLowerCase()}. Please check these choices before sending.`;
+  } catch (error) {
+    status.className = "jev-analysis error";
+    status.textContent = error.message;
+  }
 }
 
 function validPhotoSource(value) {
@@ -914,6 +947,8 @@ document.querySelector("#random-report-button").addEventListener("click", () => 
   const conditions = ["Injured or bleeding", "Unable to move or fly", "Trapped or entangled", "Young animal alone", "In an unsafe location", "Not sure"];
   const animal = animals[Math.floor(Math.random() * animals.length)];
   const condition = conditions[Math.floor(Math.random() * conditions.length)];
+  clearSelectedPhoto();
+  randomReportMode = true;
   form.querySelector(`[name="animal"][value="${animal}"]`).checked = true;
   form.elements.condition.value = condition;
   form.elements.notes.value = "Demo rescue";
@@ -921,6 +956,9 @@ document.querySelector("#random-report-button").addEventListener("click", () => 
   form.elements.contact.value = "";
   document.querySelector("#report-form-error").hidden = true;
   showToast(`Random demo: ${animal} · ${condition}`);
+});
+document.querySelector("#report-form").addEventListener("input", event => {
+  if (["animal", "condition", "notes", "reporter", "contact"].includes(event.target.name)) randomReportMode = false;
 });
 
 document.querySelector("#report-form").addEventListener("submit", async event => {
@@ -932,6 +970,18 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   const selectedAnimal = event.currentTarget.querySelector('[name="animal"]:checked');
   const condition = event.currentTarget.elements.condition.value;
   const notes = event.currentTarget.elements.notes.value.trim();
+  if (!randomReportMode && !selectedPhotoDataUrl) {
+    error.textContent = "Take or choose a clear animal photo first, or use the random demo button.";
+    error.hidden = false;
+    document.querySelector(".photo-first-step").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  if (!randomReportMode && !photoAnalysis?.isAnimal) {
+    error.textContent = "Wait for Jev to confirm the photo contains an animal, or try another photo.";
+    error.hidden = false;
+    document.querySelector(".photo-first-step").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   if (!selectedAnimal || !condition || !notes) {
     error.textContent = !selectedAnimal ? "Choose the animal type." : !condition ? "Select what seems to be wrong." : "Describe what you can safely observe.";
     error.hidden = false;
@@ -990,6 +1040,7 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); } catch {}
   try { drawReportMarkers(); } catch {}
   event.currentTarget.reset();
+  randomReportMode = false;
   clearSelectedPhoto();
   if (locationMarker) { locationMarker.remove(); locationMarker = null; }
   if (searchAreaMarker) { searchAreaMarker.remove(); searchAreaMarker = null; }
@@ -1013,10 +1064,12 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
     document.querySelector("#photo-preview-image").src = selectedPhotoDataUrl;
     document.querySelector("#photo-preview-name").textContent = file.name;
     document.querySelector("#photo-preview").hidden = false;
-    helper.textContent = "Photo added — it will appear in the Rescue Team Portal";
+    helper.textContent = "Photo ready — checking with Jev…";
+    randomReportMode = false;
+    await analyzeAnimalPhoto();
   } catch (error) {
     clearSelectedPhoto();
-    helper.textContent = "Optional — stored in the shared demo for the Rescue Team Portal";
+    helper.textContent = "Open camera or choose another photo";
     showToast(error.message);
   }
 });

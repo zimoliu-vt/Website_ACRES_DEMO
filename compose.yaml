@@ -21,6 +21,8 @@ services:
       DATABASE_URL: postgresql://wildcare:${POSTGRES_PASSWORD}@database:5432/wildcare
       JWT_SECRET: ${JWT_SECRET}
       DEMO_PIN: ${DEMO_PIN:-0000}
+      JEV_API_KEY: ${JEV_API_KEY:-}
+      JEV_MODEL: ${JEV_MODEL:-jev-preview}
       PORT: 3000
     depends_on:
       database:

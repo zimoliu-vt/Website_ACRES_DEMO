@@ -10,7 +10,10 @@ const port = Number(process.env.PORT || 3000);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const jwtSecret = process.env.JWT_SECRET;
 const demoPin = process.env.DEMO_PIN || "0000";
+const jevApiKey = process.env.JEV_API_KEY || "";
+const jevModel = process.env.JEV_MODEL || "jev-preview";
 const scrypt = promisify(crypto.scrypt);
+const analysisRequests = new Map();
 
 if (!jwtSecret || jwtSecret.length < 24) throw new Error("JWT_SECRET must contain at least 24 characters");
 
@@ -176,6 +179,81 @@ function safeEqual(left, right) {
 app.get("/health", async (_request, response) => {
   await pool.query("SELECT 1");
   response.json({ ok: true, service: "wildcare-demo-api" });
+});
+
+app.post("/analyze-animal", async (request, response) => {
+  if (!jevApiKey) return response.status(503).json({ error: "Jev image analysis is not configured yet" });
+  const now = Date.now();
+  const address = request.ip || request.socket.remoteAddress || "unknown";
+  const recent = (analysisRequests.get(address) || []).filter(timestamp => now - timestamp < 60000);
+  if (recent.length >= 10) return response.status(429).json({ error: "Too many image checks. Please wait a minute and try again." });
+  recent.push(now);
+  analysisRequests.set(address, recent);
+
+  const match = String(request.body?.image || "").match(/^data:image\/(jpeg|jpg|png);base64,([A-Za-z0-9+/=]+)$/i);
+  if (!match) return response.status(400).json({ error: "Use a JPEG or PNG photo" });
+  if (match[2].length > 3_500_000) return response.status(413).json({ error: "The photo is too large" });
+  const format = match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+  try {
+    const jevResponse = await fetch("https://api.typesafe.ai/v1/systemone", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Authorization": `Bearer ${jevApiKey}`,
+        "Content-Type": "application/json",
+        "TypeSafe-Danger-Zone-Images": "true"
+      },
+      body: JSON.stringify({
+        model: jevModel,
+        state: "animal_photo",
+        assets: { animal_photo: { type: "image", format, data_base64: match[2] } },
+        questions: {
+          animal_present: {
+            type: "noul",
+            instructions: "Does animal_photo clearly contain a real animal as the main subject?",
+            criteria: { true: "A real living or deceased animal is visible", false: "No animal is visible, or this is a drawing, toy, screen, or unclear image" }
+          },
+          animal_type: {
+            type: "choice",
+            instructions: "Which broad animal group best matches the animal visible in animal_photo?",
+            criteria: { Bird: "A bird", Mammal: "A mammal", Reptile: "A reptile", Other: "Another animal type or too unclear to classify" }
+          },
+          condition: {
+            type: "choice",
+            instructions: "Which visible condition best matches animal_photo? Choose Not sure unless the visual evidence is clear.",
+            criteria: {
+              "Injured or bleeding": "A visible wound, injury, or bleeding",
+              "Unable to move or fly": "The animal visibly cannot move normally or fly",
+              "Trapped or entangled": "The animal is visibly trapped or entangled",
+              "Young animal alone": "A visibly young animal appears alone",
+              "In an unsafe location": "The animal is in immediate environmental danger such as traffic",
+              "Not sure": "The condition cannot be safely determined from the image"
+            }
+          }
+        }
+      })
+    });
+    const payload = await jevResponse.json().catch(() => ({}));
+    if (!jevResponse.ok) return response.status(502).json({ error: payload.detail || payload.error || "Jev could not analyze this photo" });
+    const animalProbability = Number(payload.answers?.animal_present?.noul || 0);
+    const animalType = payload.answers?.animal_type;
+    const condition = payload.answers?.condition;
+    response.json({
+      isAnimal: animalProbability >= 0.65,
+      animalProbability,
+      animal: animalType?.choice || "Other",
+      animalConfidence: Number(animalType?.confidence || 0),
+      condition: condition?.choice || "Not sure",
+      conditionConfidence: Number(condition?.confidence || 0),
+      model: payload.model || jevModel
+    });
+  } catch (error) {
+    response.status(error.name === "AbortError" ? 504 : 502).json({ error: error.name === "AbortError" ? "Jev took too long to respond" : "Jev image analysis is temporarily unavailable" });
+  } finally {
+    clearTimeout(timeout);
+  }
 });
 
 app.get("/reports", async (request, response) => {
