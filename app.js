@@ -2,8 +2,7 @@ const STORAGE_KEY = "wildcare-demo-reports-v1";
 const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
-const RESCUE_ENTRY_PATH = "/rescue";
-const isRescueEntry = window.location.pathname === RESCUE_ENTRY_PATH;
+if (window.location.pathname === "/rescue") history.replaceState({}, "", "/");
 
 const sampleReports = [
   { id: "WC-1043", animal: "Bird", condition: "Unable to move or fly", notes: "A small green bird is on the grass beside the footpath. It tries to hop but cannot fly.", reporter: "Mei", contact: "", lat: 1.3048, lng: 103.8318, area: "Singapore Botanic Gardens", status: "New", createdAt: Date.now() - 12 * 60 * 1000 },
@@ -800,6 +799,11 @@ function showToast(message) {
 }
 
 document.querySelectorAll(".mode-button").forEach(button => button.addEventListener("click", () => switchView(button.dataset.view)));
+document.querySelector("#team-shortcut").addEventListener("click", event => {
+  event.preventDefault();
+  history.replaceState({}, "", "/");
+  switchView("worker");
+});
 document.querySelectorAll("[data-map-style]").forEach(button => button.addEventListener("click", () => setMapStyle(button.dataset.mapStyle)));
 document.querySelector("#map-search-form").addEventListener("submit", async event => {
   event.preventDefault();
@@ -825,7 +829,6 @@ demoWarningDialog.addEventListener("cancel", event => event.preventDefault());
 document.querySelector("#acknowledge-demo").addEventListener("click", () => {
   sessionStorage.setItem(DEMO_WARNING_KEY, "true");
   demoWarningDialog.close();
-  if (isRescueEntry) setTimeout(() => switchView("worker"), 80);
 });
 document.querySelectorAll("[data-guide-step]").forEach(button => button.addEventListener("click", () => {
   const mapPanel = document.querySelector(".map-panel");
@@ -1326,4 +1329,3 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && livePortalOpen) loadBackendReports(true);
 });
 if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();
-else if (isRescueEntry) setTimeout(() => switchView("worker"), 80);
