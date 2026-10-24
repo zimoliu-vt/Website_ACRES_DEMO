@@ -49,6 +49,28 @@ test("report flow explains requirements and protects a changed draft", async ({ 
   await expect(page.getByLabel("Your name (optional)")).toHaveValue("Random");
 });
 
+test("photo uploads are normalized to dimensions accepted by Jev", async ({ page }) => {
+  await page.route("**/api/analyze-animal", async route => {
+    const image = JSON.parse(route.request().postData() || "{}").image;
+    expect(image).toMatch(/^data:image\/jpeg;base64,/);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ isAnimal: true, animal: "Other", animalConfidence: .9, condition: "Not sure", conditionConfidence: .9, rescueNeeded: false, rescueProbability: .1, model: "test" })
+    });
+  });
+  await enterDemo(page);
+  await page.getByRole("button", { name: /Choose a location/ }).click();
+  await page.locator("#map").click();
+  await page.getByLabel("Open camera or choose an animal photo").setInputFiles({
+    name: "tiny image with spaces.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2nKAAAAAASUVORK5CYII=", "base64")
+  });
+  await expect(page.locator("#jev-analysis")).toContainText("Jev found an animal");
+  await expect.poll(() => page.locator("#photo-preview-image").evaluate(image => [image.naturalWidth, image.naturalHeight])).toEqual([768, 768]);
+});
+
 test("choosing a searched area switches the reporting map to satellite", async ({ page }) => {
   await page.route("https://nominatim.openstreetmap.org/search?**", route => route.fulfill({
     status: 200,

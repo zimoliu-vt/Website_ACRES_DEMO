@@ -153,15 +153,17 @@ function compressPhoto(file) {
           reject(new Error("This photo has invalid dimensions. Try choosing it again."));
           return;
         }
-        const maxDimension = 1000;
-        const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+        const outputSize = 768;
+        const scale = Math.min(outputSize / sourceWidth, outputSize / sourceHeight);
+        const drawWidth = Math.max(1, Math.round(sourceWidth * scale));
+        const drawHeight = Math.max(1, Math.round(sourceHeight * scale));
         const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round(sourceWidth * scale));
-        canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+        canvas.width = outputSize;
+        canvas.height = outputSize;
         const context = canvas.getContext("2d");
         context.fillStyle = "#ffffff";
         context.fillRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        context.drawImage(image, Math.round((outputSize - drawWidth) / 2), Math.round((outputSize - drawHeight) / 2), drawWidth, drawHeight);
         resolve(canvas.toDataURL("image/jpeg", .76));
       };
       image.src = reader.result;
