@@ -10,10 +10,12 @@ const port = Number(process.env.PORT || 3000);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const jwtSecret = process.env.JWT_SECRET;
 const demoPin = process.env.DEMO_PIN || "0000";
+const devPassword = process.env.DEV_PASSWORD || "";
 const jevApiKey = process.env.JEV_API_KEY || "";
 const jevModel = process.env.JEV_MODEL || "jev-preview";
 const scrypt = promisify(crypto.scrypt);
 const analysisRequests = new Map();
+const devLoginRequests = new Map();
 
 if (!jwtSecret || jwtSecret.length < 24) throw new Error("JWT_SECRET must contain at least 24 characters");
 
@@ -48,6 +50,12 @@ async function initialiseDatabase() {
       username text UNIQUE NOT NULL,
       password_hash text NOT NULL,
       role text NOT NULL CHECK (role IN ('volunteer', 'worker')),
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id bigserial PRIMARY KEY,
+      action text NOT NULL,
+      details jsonb NOT NULL DEFAULT '{}'::jsonb,
       created_at timestamptz NOT NULL DEFAULT now()
     );
   `);
@@ -153,6 +161,18 @@ function requireWorker(request, response, next) {
   }
 }
 
+function requireDev(request, response, next) {
+  const token = request.headers.authorization?.replace(/^Bearer\s+/i, "");
+  try {
+    const claims = jwt.verify(token || "", jwtSecret);
+    if (claims.role !== "dev") throw new Error("Invalid role");
+    request.auth = claims;
+    next();
+  } catch {
+    response.status(401).json({ error: "Developer authentication required" });
+  }
+}
+
 function isWorkerRequest(request) {
   const token = request.headers.authorization?.replace(/^Bearer\s+/i, "");
   try {
@@ -176,9 +196,94 @@ function safeEqual(left, right) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+async function recordAudit(action, details = {}) {
+  try {
+    await pool.query("INSERT INTO audit_logs (action, details) VALUES ($1, $2)", [String(action).slice(0, 120), details]);
+  } catch (error) {
+    console.error("Could not write audit log:", error.message);
+  }
+}
+
+app.use((request, response, next) => {
+  const startedAt = Date.now();
+  response.on("finish", () => {
+    if (!["POST", "PUT", "DELETE"].includes(request.method) || request.path === "/auth/dev") return;
+    const token = request.headers.authorization?.replace(/^Bearer\s+/i, "");
+    let role = "public";
+    try { role = jwt.verify(token || "", jwtSecret).role || "public"; } catch {}
+    const visitor = crypto.createHash("sha256").update(`${request.ip || "unknown"}:${jwtSecret}`).digest("hex").slice(0, 12);
+    recordAudit(`${request.method} ${request.path}`, { status: response.statusCode, role, visitor, durationMs: Date.now() - startedAt });
+  });
+  next();
+});
+
 app.get("/health", async (_request, response) => {
   await pool.query("SELECT 1");
   response.json({ ok: true, service: "wildcare-demo-api" });
+});
+
+app.post("/auth/dev", async (request, response) => {
+  if (!devPassword) return response.status(503).json({ error: "Developer access is not configured" });
+  const now = Date.now();
+  const address = request.ip || request.socket.remoteAddress || "unknown";
+  const recent = (devLoginRequests.get(address) || []).filter(timestamp => now - timestamp < 10 * 60 * 1000);
+  if (recent.length >= 5) return response.status(429).json({ error: "Too many attempts. Try again later." });
+  if (!safeEqual(request.body?.password || "", devPassword)) {
+    recent.push(now);
+    devLoginRequests.set(address, recent);
+    await recordAudit("Developer sign-in failed", { visitor: crypto.createHash("sha256").update(`${address}:${jwtSecret}`).digest("hex").slice(0, 12) });
+    return response.status(401).json({ error: "Incorrect password" });
+  }
+  devLoginRequests.delete(address);
+  await recordAudit("Developer signed in");
+  response.json({ token: jwt.sign({ role: "dev" }, jwtSecret, { expiresIn: "2h" }) });
+});
+
+app.get("/dev/status", requireDev, async (_request, response) => {
+  const [{ rows: reportRows }, { rows: volunteerRows }, { rows: logRows }] = await Promise.all([
+    pool.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE payload->>'status' <> 'Resolved')::int AS active, count(*) FILTER (WHERE coalesce(payload->>'photo','') <> '')::int AS photos FROM reports"),
+    pool.query("SELECT count(*)::int AS total FROM volunteers"),
+    pool.query("SELECT count(*)::int AS total FROM audit_logs")
+  ]);
+  response.json({
+    ok: true,
+    service: "wildcare-demo-api",
+    uptimeSeconds: Math.round(process.uptime()),
+    jevConfigured: Boolean(jevApiKey),
+    reports: reportRows[0],
+    volunteers: volunteerRows[0].total,
+    loggedActions: logRows[0].total,
+    checkedAt: Date.now()
+  });
+});
+
+app.get("/dev/logs", requireDev, async (request, response) => {
+  const limit = Math.min(200, Math.max(10, Number(request.query.limit) || 80));
+  const { rows } = await pool.query("SELECT id, action, details, created_at FROM audit_logs ORDER BY id DESC LIMIT $1", [limit]);
+  response.json(rows);
+});
+
+app.post("/dev/run-checks", requireDev, async (_request, response) => {
+  const startedAt = Date.now();
+  const checks = [];
+  try {
+    await pool.query("SELECT 1");
+    checks.push({ name: "Database connection", passed: true, detail: "Connected" });
+  } catch (error) {
+    checks.push({ name: "Database connection", passed: false, detail: error.message });
+  }
+  const { rows } = await pool.query(`SELECT
+    count(*) FILTER (WHERE payload->>'id' IS NULL OR payload->>'animal' IS NULL OR payload->>'condition' IS NULL)::int AS incomplete,
+    count(*) FILTER (WHERE coalesce(payload->>'photo','') <> '' AND coalesce((payload->>'photoSharingConsentAt')::bigint, 0) <= 0)::int AS photos_without_consent,
+    count(*) FILTER (WHERE coalesce(payload->>'photo','') <> '' AND payload->>'photo' !~ '^data:image/(jpeg|jpg|png);base64,')::int AS invalid_photos
+    FROM reports`);
+  checks.push({ name: "Required report data", passed: rows[0].incomplete === 0, detail: `${rows[0].incomplete} incomplete reports` });
+  checks.push({ name: "Legacy photo records", passed: true, warning: rows[0].photos_without_consent > 0, detail: rows[0].photos_without_consent > 0 ? `${rows[0].photos_without_consent} photos predate consent recording; new uploads require consent` : "All stored photos include consent metadata" });
+  checks.push({ name: "Stored photo format", passed: rows[0].invalid_photos === 0, detail: `${rows[0].invalid_photos} invalid photos` });
+  checks.push({ name: "JEV configuration", passed: Boolean(jevApiKey), detail: jevApiKey ? `Configured with ${jevModel}` : "API key missing" });
+  const passed = checks.every(check => check.passed);
+  await recordAudit("Developer diagnostics run", { passed, durationMs: Date.now() - startedAt });
+  response.json({ passed, checks, finishedAt: Date.now(), durationMs: Date.now() - startedAt });
 });
 
 app.post("/analyze-animal", async (request, response) => {

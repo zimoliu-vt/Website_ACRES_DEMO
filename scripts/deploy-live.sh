@@ -10,10 +10,11 @@ npm test
 
 echo "Tests passed. Backing up the current public frontend…"
 ssh -i "$WILDCARE_SSH_KEY" "$WILDCARE_SSH_TARGET" \
-  "cp '$WILDCARE_REMOTE_DIR/app.js' '$WILDCARE_REMOTE_DIR/app.js.pre-deploy' && cp '$WILDCARE_REMOTE_DIR/index.html' '$WILDCARE_REMOTE_DIR/index.html.pre-deploy' && cp '$WILDCARE_REMOTE_DIR/styles.css' '$WILDCARE_REMOTE_DIR/styles.css.pre-deploy'"
+  "cp '$WILDCARE_REMOTE_DIR/app.js' '$WILDCARE_REMOTE_DIR/app.js.pre-deploy' && cp '$WILDCARE_REMOTE_DIR/index.html' '$WILDCARE_REMOTE_DIR/index.html.pre-deploy' && cp '$WILDCARE_REMOTE_DIR/styles.css' '$WILDCARE_REMOTE_DIR/styles.css.pre-deploy' && mkdir -p '$WILDCARE_REMOTE_DIR/dev'"
 
 echo "Deploying the public frontend…"
 scp -i "$WILDCARE_SSH_KEY" app.js index.html styles.css "$WILDCARE_SSH_TARGET:$WILDCARE_REMOTE_DIR/"
+scp -i "$WILDCARE_SSH_KEY" dev/index.html dev/dev.css dev/dev.js "$WILDCARE_SSH_TARGET:$WILDCARE_REMOTE_DIR/dev/"
 
 echo "Testing the deployed server…"
 if curl --fail --silent --show-error "https://wildcare.liuzimo.cn/api/health" >/dev/null \

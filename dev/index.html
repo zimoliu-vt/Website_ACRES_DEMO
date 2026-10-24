@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>WildCare Developer Console</title>
+    <link rel="stylesheet" href="/styles.css?v=41" />
+    <link rel="stylesheet" href="/dev/dev.css?v=2" />
+  </head>
+  <body class="dev-page">
+    <header class="dev-header">
+      <a class="brand" href="/" aria-label="Return to WildCare"><span class="brand-mark">✦</span><span><strong>WildCare</strong><small>Developer console</small></span></a>
+      <a class="dev-site-link" href="/">Open website</a>
+    </header>
+
+    <main class="dev-shell">
+      <section id="dev-login" class="dev-login-card">
+        <p class="eyebrow">Private access</p>
+        <h1>Developer console</h1>
+        <p>Sign in to inspect the demo service, recent backend activity, and diagnostic checks.</p>
+        <form id="dev-login-form">
+          <label>Password<input id="dev-password" type="password" autocomplete="current-password" required /></label>
+          <p id="dev-login-error" class="form-error" role="alert" hidden></p>
+          <button class="primary-button" type="submit">Open console</button>
+        </form>
+      </section>
+
+      <section id="dev-console" hidden>
+        <div class="dev-title-row"><div><p class="eyebrow">Private developer tools</p><h1>System overview</h1></div><button id="dev-logout" class="secondary-button" type="button">Log out</button></div>
+        <div id="dev-stats" class="dev-stats" aria-live="polite"></div>
+        <div class="dev-grid">
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Diagnostic checks</h2><p>Runs fixed, read-only checks against the live service.</p></div><button id="run-dev-checks" class="primary-button" type="button">Run checks</button></div>
+            <div id="dev-check-results" class="dev-check-results"><p class="dev-empty">No checks run in this session.</p></div>
+          </section>
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Backend activity</h2><p>Recent server actions. Visitor identifiers are anonymized.</p></div><button id="refresh-dev-logs" class="secondary-button" type="button">Refresh</button></div>
+            <div id="dev-logs" class="dev-logs" aria-live="polite"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script src="/dev/dev.js?v=2"></script>
+  </body>
+</html>

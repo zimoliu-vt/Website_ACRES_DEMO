@@ -144,3 +144,20 @@ test("new report clears old reporting and team search context", async ({ page })
   await expect(page.getByLabel("Search reports")).toHaveValue("");
   await expect(page.locator('[data-report-id="WC-2003"]')).toBeVisible();
 });
+
+test("private developer console signs in and runs fixed diagnostics", async ({ page }) => {
+  await page.route("**/api/auth/dev", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ token: "demo-dev-token" }) }));
+  await page.route("**/api/dev/status", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, reports: { active: 3, photos: 2 }, volunteers: 1 }) }));
+  await page.route("**/api/dev/logs?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ id: 1, action: "POST /reports", details: { status: 201 }, created_at: new Date().toISOString() }]) }));
+  await page.route("**/api/dev/run-checks", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ passed: true, finishedAt: Date.now(), checks: [{ name: "Database connection", passed: true, detail: "Connected" }] }) }));
+  await page.goto("/dev/");
+  await expect(page.getByRole("heading", { name: "Developer console" })).toBeVisible();
+  await expect(page.getByText("5687")).toHaveCount(0);
+  await page.getByLabel("Password").fill("test-password");
+  await page.getByRole("button", { name: "Open console" }).click();
+  await expect(page.getByRole("heading", { name: "System overview" })).toBeVisible();
+  await expect(page.getByText("POST /reports")).toBeVisible();
+  await page.getByRole("button", { name: "Run checks" }).click();
+  await expect(page.getByText("Database connection")).toBeVisible();
+  await expect(page.getByText("Connected")).toBeVisible();
+});
