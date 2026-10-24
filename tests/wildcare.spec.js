@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+const evidencePhoto = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2nKAAAAAASUVORK5CYII=";
 const reports = [
-  { id: "WC-2003", animal: "Bird", condition: "Unable to move or fly", notes: "Demo bird", reporter: "Name hidden", lat: 1.3048, lng: 103.8318, area: "Botanic Gardens", status: "New", createdAt: 1700000003000, history: [{ label: "Report submitted", at: 1700000003000 }] },
-  { id: "WC-2002", animal: "Reptile", condition: "In an unsafe location", notes: "Demo reptile", reporter: "Anonymous", lat: 1.3197, lng: 103.9237, area: "Bedok Reservoir", status: "Acknowledged", volunteerStatus: "On the way", responders: [{ id: "vol-1", name: "Demo Volunteer", status: "On the way" }], createdAt: 1700000002000, history: [{ label: "Report submitted", at: 1700000002000 }] },
+  { id: "WC-2003", animal: "Bird", condition: "Unable to move or fly", notes: "Demo bird", reporter: "Name hidden", photo: evidencePhoto, lat: 1.3048, lng: 103.8318, area: "Botanic Gardens", status: "New", createdAt: 1700000003000, history: [{ label: "Report submitted", at: 1700000003000 }] },
+  { id: "WC-2002", animal: "Reptile", condition: "In an unsafe location", notes: "Demo reptile", reporter: "Anonymous", volunteerPhoto: evidencePhoto, lat: 1.3197, lng: 103.9237, area: "Bedok Reservoir", status: "Acknowledged", volunteerStatus: "On the way", responders: [{ id: "vol-1", name: "Demo Volunteer", status: "On the way" }], createdAt: 1700000002000, history: [{ label: "Report submitted", at: 1700000002000 }] },
   { id: "WC-2001", animal: "Mammal", condition: "Injured or bleeding", notes: "Closed demo case", reporter: "Name hidden", lat: 1.3505, lng: 103.7764, area: "Bukit Timah", status: "Resolved", createdAt: 1700000001000, history: [{ label: "Report submitted", at: 1700000001000 }] }
 ];
 
@@ -104,6 +105,9 @@ test("choosing a searched area switches the reporting map to satellite", async (
 test("team filters keep the visible list and detail panel synchronized", async ({ page }) => {
   await enterDemo(page);
   await openTeam(page);
+  await expect(page.getByRole("img", { name: "Reporter evidence thumbnail for WC-2003" })).toBeVisible();
+  await page.locator('[data-report-id="WC-2003"]').click();
+  await expect(page.getByRole("img", { name: "Reporter photo attached to case WC-2003" })).toBeVisible();
 
   await page.getByRole("tab", { name: "Closed" }).click();
   await expect(page.getByRole("heading", { name: "Closed reports" })).toBeVisible();
@@ -116,6 +120,8 @@ test("team filters keep the visible list and detail panel synchronized", async (
   await expect(page.getByRole("heading", { name: "Reports with volunteers" })).toBeVisible();
   await expect(page.locator('[data-report-id="WC-2002"]')).toBeVisible();
   await expect(page.locator("#detail-panel")).toContainText("WC-2002");
+  await expect(page.getByRole("img", { name: "Volunteer evidence thumbnail for WC-2002" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Volunteer observation photo for case WC-2002" })).toBeVisible();
 });
 
 test("new report clears old reporting and team search context", async ({ page }) => {
