@@ -236,7 +236,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .account-mode-button:focus-visible { outline: 3px solid rgba(34,91,75,.18); outline-offset: 2px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .photo-field { padding: 14px; display: grid; grid-template-columns: auto 1fr; column-gap: 10px; border: 1px dashed #aebbb3; border-radius: 12px; cursor: pointer; }
-.photo-field input { display: none; }
+.photo-field input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.photo-field:focus-within { outline: 3px solid rgba(34,91,75,.18); outline-offset: 2px; }
 .photo-field > span { grid-row: 1 / 3; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--mint); color: var(--forest); }
 .photo-field strong { font-size: 11px; }
 .photo-field small { color: var(--muted); font-size: 9px; }
@@ -313,6 +314,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .volunteer-head > div > p:last-child { max-width: 720px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.6; }
 .volunteer-account-actions { display: flex; align-items: center; gap: 10px; }
 .volunteer-account-actions[hidden] { display: none; }
+.signed-in-note { margin: -14px 0 22px; padding: 12px 15px; display: flex; flex-wrap: wrap; gap: 5px 12px; border: 1px solid #bfd3c8; border-radius: 12px; color: var(--muted); background: #f1f7f3; font-size: 11px; }
+.signed-in-note strong { color: var(--forest); }
 .text-danger-button { padding: 12px 6px; border: 0; color: #9a312b; background: transparent; font-weight: 800; }
 .text-danger-button:hover, .text-danger-button:focus-visible { color: #741f1a; text-decoration: underline; outline: 0; }
 .delete-icon { color: #fff; background: var(--red); }

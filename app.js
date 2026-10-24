@@ -174,6 +174,30 @@ function clearSelectedPhoto() {
   analysis.className = "jev-analysis";
 }
 
+function reportDraftHasContent() {
+  const form = document.querySelector("#report-form");
+  return Boolean(selectedPhotoDataUrl
+    || form.elements.notes.value.trim()
+    || form.elements.reporter.value.trim()
+    || form.elements.contact.value.trim()
+    || form.elements.condition.value
+    || form.querySelector('[name="animal"]:checked'));
+}
+
+function resetReportDraft({ clearLocation = true } = {}) {
+  const form = document.querySelector("#report-form");
+  form.reset();
+  randomReportMode = false;
+  clearSelectedPhoto();
+  document.querySelector("#report-form-error").hidden = true;
+  if (!clearLocation) return;
+  selectedLocation = null;
+  if (locationMarker) { locationMarker.remove(); locationMarker = null; }
+  if (searchAreaMarker) { searchAreaMarker.remove(); searchAreaMarker = null; }
+  document.querySelector("#coordinates").textContent = "Choose a point on the map";
+  document.querySelector("#map-hint").innerHTML = "<span>1</span> Search for an area, then click the animal’s exact location";
+}
+
 async function analyzeAnimalPhoto() {
   const status = document.querySelector("#jev-analysis");
   status.hidden = false;
@@ -322,7 +346,7 @@ function renderSearchResults(results, message = "") {
   }
   container.innerHTML = results.map((result, index) => {
     const parts = result.display_name.split(",").map(part => part.trim());
-    return `<button class="search-result" data-search-index="${index}" type="button"><strong>${escapeHtml(searchResultLabel(result))}</strong><small>${escapeHtml(parts.slice(1, 4).join(", ") || "Singapore")}</small></button>`;
+    return `<button class="search-result" data-search-index="${index}" type="button"><strong>${escapeHtml(searchResultLabel(result))}</strong><small>${escapeHtml(parts.slice(1, 4).join(", ") || "Singapore")} · Show this area</small></button>`;
   }).join("") + '<div class="search-credit">Search © OpenStreetMap contributors</div>';
   container.hidden = false;
   container.querySelectorAll("[data-search-index]").forEach(button => button.addEventListener("click", () => {
@@ -394,8 +418,8 @@ function switchView(viewName) {
   document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `${viewName}-view`));
   if (viewName === "reporter" && map) setTimeout(() => map.invalidateSize(), 80);
   if (viewName === "worker") {
-    const latestVolunteerReport = reports.filter(report => report.volunteerStatus).sort((a, b) => (b.volunteerUpdatedAt || b.volunteerArrivedAt || 0) - (a.volunteerUpdatedAt || a.volunteerArrivedAt || 0))[0];
-    if (latestVolunteerReport) selectedReportId = latestVolunteerReport.id;
+    document.querySelector("#team-shortcut").title = "Team dashboard";
+    document.querySelector("#team-shortcut").setAttribute("aria-label", "Team dashboard");
     renderDashboard();
   }
   if (viewName === "volunteer") renderVolunteerPortal();
@@ -519,6 +543,10 @@ function renderDashboard() {
     ? (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt)
     : casePriority(a) - casePriority(b) || (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt));
 
+  const headings = { active: "Active reports", volunteers: "Reports with volunteers", all: "All reports", resolved: "Closed reports" };
+  document.querySelector("#queue-heading").textContent = headings[currentFilter] || "Reports";
+  if (!visible.some(report => report.id === selectedReportId)) selectedReportId = visible[0]?.id || null;
+
   document.querySelector("#queue-count").textContent = visible.length;
   const list = document.querySelector("#report-list");
   list.innerHTML = visible.length ? visible.map(report => `
@@ -529,7 +557,8 @@ function renderDashboard() {
     </button>`).join("") : `<div class="empty-detail"><span>${caseSearch ? "⌕" : "✓"}</span><h3>${caseSearch ? "No matching reports" : "No reports here"}</h3><p>${caseSearch ? "Try another case number or keyword." : "There are no reports matching this filter."}</p></div>`;
 
   list.querySelectorAll("[data-report-id]").forEach(button => button.addEventListener("click", () => selectReport(button.dataset.reportId)));
-  if (selectedReportId && reports.some(report => report.id === selectedReportId)) renderReportDetail(selectedReportId);
+  if (selectedReportId) renderReportDetail(selectedReportId);
+  else document.querySelector("#detail-panel").innerHTML = '<div class="empty-detail"><span>↖</span><h3>Select a report</h3><p>Choose a visible case from the queue to review its details and update its status.</p></div>';
 }
 
 function selectReport(id) {
@@ -585,9 +614,15 @@ function renderVolunteerPortal() {
   dashboard.hidden = !volunteer;
   accountActions.hidden = !volunteer;
   if (!volunteer) {
+    document.querySelector("#volunteer-heading").textContent = "Help from a safe distance.";
+    document.querySelector("#volunteer-head-copy").textContent = "Sign in to view nearby cases or create a volunteer account.";
     setTimeout(initVolunteerMap, 80);
     return;
   }
+
+  document.querySelector("#volunteer-heading").textContent = `Signed in as ${volunteer.name}`;
+  document.querySelector("#volunteer-head-copy").textContent = "View your active response first, then browse other nearby demo cases.";
+  document.querySelector("#volunteer-session-label").textContent = `Demo account active: ${volunteer.name}`;
 
   document.querySelector("#volunteer-name").textContent = volunteer.name;
   document.querySelector("#volunteer-area").textContent = volunteer.areaName;
@@ -614,9 +649,9 @@ function renderVolunteerPortal() {
         : mine.status === "Arrived"
           ? `<button class="primary-button volunteer-case-action" data-volunteer-action="assess" data-report-id="${report.id}" type="button">Send update</button>`
           : `<span class="volunteer-state">${escapeHtml(mine.status)}</span>`;
-      action = `<div class="volunteer-case-actions">${nextAction}<button class="cancel-response-button" data-volunteer-action="cancel" data-report-id="${report.id}" type="button">Cancel</button></div>`;
+      action = `<div class="volunteer-case-actions">${nextAction}<button class="cancel-response-button" data-volunteer-action="cancel" data-report-id="${report.id}" type="button">Stop responding</button></div>`;
     } else if (myActiveCase) {
-      action = `<button class="primary-button volunteer-case-action" type="button" disabled>Already responding to ${escapeHtml(myActiveCase.id)}</button>`;
+      action = `<button class="primary-button volunteer-case-action" type="button" disabled>You can respond to one case at a time · active: ${escapeHtml(myActiveCase.id)}</button>`;
     } else if (full) {
       action = '<button class="primary-button volunteer-case-action" type="button" disabled>3 volunteers already responding</button>';
     } else {
@@ -836,10 +871,15 @@ document.querySelectorAll("[data-guide-step]").forEach(button => button.addEvent
   const hint = document.querySelector("#map-hint");
   hint.innerHTML = button.dataset.guideStep === "location" ? "<span>＋</span> Click the animal’s location on the map" : "<span>1</span> First choose a location, then the report form will open";
   hint.animate([{ transform: "translateX(-50%) scale(1)" }, { transform: "translateX(-50%) scale(1.06)" }, { transform: "translateX(-50%) scale(1)" }], { duration: 500 });
+  setTimeout(() => document.querySelector("#map-search-input").focus({ preventScroll: true }), 450);
 }));
 document.querySelectorAll(".filter").forEach(button => button.addEventListener("click", () => {
   currentFilter = button.dataset.filter;
-  document.querySelectorAll(".filter").forEach(item => item.classList.toggle("active", item === button));
+  document.querySelectorAll(".filter").forEach(item => {
+    const active = item === button;
+    item.classList.toggle("active", active);
+    item.setAttribute("aria-pressed", String(active));
+  });
   renderDashboard();
 }));
 
@@ -862,7 +902,18 @@ document.querySelector("#case-sort-select").addEventListener("change", event => 
   renderDashboard();
 });
 
-document.querySelector("#close-dialog").addEventListener("click", () => document.querySelector("#report-dialog").close());
+function closeReportDraft() {
+  if (reportDraftHasContent() && !window.confirm("Discard this unfinished demo report?\n\nThe information entered in this report will be cleared.")) return;
+  resetReportDraft();
+  document.querySelector("#report-dialog").close();
+  showToast("Unfinished report discarded.");
+}
+
+document.querySelector("#close-dialog").addEventListener("click", closeReportDraft);
+document.querySelector("#report-dialog").addEventListener("cancel", event => {
+  event.preventDefault();
+  closeReportDraft();
+});
 document.querySelector("#finish-report").addEventListener("click", () => document.querySelector("#success-dialog").close());
 const reopenDialog = document.querySelector("#reopen-dialog");
 reopenDialog.addEventListener("cancel", () => { pendingReopen = null; });
@@ -896,8 +947,15 @@ document.querySelector("#login-form").addEventListener("submit", async event => 
   showToast("Rescue Team Portal unlocked.");
 });
 document.querySelector("#worker-logout").addEventListener("click", logoutWorker);
-document.querySelector("#new-report-worker").addEventListener("click", () => switchView("reporter"));
+document.querySelector("#new-report-worker").addEventListener("click", () => {
+  resetReportDraft();
+  switchView("reporter");
+  document.querySelector(".map-panel").scrollIntoView({ behavior: "smooth", block: "center" });
+  setTimeout(() => document.querySelector("#map-search-input").focus({ preventScroll: true }), 450);
+  showToast("New report started. Choose a location first.");
+});
 document.querySelector("#reset-demo").addEventListener("click", async () => {
+  if (!window.confirm("Reset all shared demo reports?\n\nThis restores the starting cases for everyone using this demo. Volunteer accounts are not deleted.")) return;
   try {
     reports = await apiFetch("/reports/reset", { method: "POST" });
     selectedReportId = null;
@@ -1052,7 +1110,7 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   } finally {
     submitButton.disabled = false;
     submitButton.removeAttribute("aria-busy");
-    submitButton.querySelector("span").textContent = "Send report";
+    submitButton.querySelector("span").textContent = "Send demo report";
   }
   reports.unshift(report);
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); } catch {}

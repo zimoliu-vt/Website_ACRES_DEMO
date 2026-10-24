@@ -8,7 +8,7 @@
     <title>WildCare SG — Wildlife rescue demo</title>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=37" />
+    <link rel="stylesheet" href="styles.css?v=38" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -74,7 +74,7 @@
             <div>
               <p class="eyebrow">Volunteer</p>
               <h1 id="volunteer-heading">Help from a safe distance.</h1>
-              <p>Sign in to view nearby cases or create a volunteer account.</p>
+              <p id="volunteer-head-copy">Sign in to view nearby cases or create a volunteer account.</p>
             </div>
             <div id="volunteer-account-actions" class="volunteer-account-actions" hidden>
               <button id="volunteer-reset" class="secondary-button" type="button">Sign out</button>
@@ -109,7 +109,7 @@
               <div class="volunteer-location-field">
                 <div class="volunteer-location-title"><strong>Your approximate area</strong><small>Search or tap the map.</small></div>
                 <div class="volunteer-area-search">
-                  <input id="volunteer-area-search-input" type="search" autocomplete="off" placeholder="Search an area, MRT station, or postcode" />
+                  <input id="volunteer-area-search-input" type="search" autocomplete="off" aria-label="Search for your approximate area" placeholder="Search an area, MRT station, or postcode" />
                   <button id="volunteer-area-search-button" type="button">Search</button>
                   <div id="volunteer-area-search-results" class="map-search-results volunteer-search-results" hidden></div>
                 </div>
@@ -118,7 +118,7 @@
               </div>
               <fieldset class="volunteer-profile-section" id="experience-section">
                 <legend>Animal medical or care experience <span>Required</span></legend>
-                <p>Select everything that applies. This is self-reported for the demo.</p>
+                <p>At least one type of relevant training or experience is required because volunteers may observe injured wildlife. This is self-reported for the demo.</p>
                 <div class="choice-card-grid">
                   <label><input type="checkbox" name="experience" value="Veterinary professional or student" /><span><strong>Veterinary</strong><small>Professional or student</small></span></label>
                   <label><input type="checkbox" name="experience" value="Wildlife or animal-care training" /><span><strong>Animal care</strong><small>Wildlife or animal-care training</small></span></label>
@@ -153,6 +153,7 @@
               <div><small>Travel radius</small><strong id="volunteer-radius-summary"></strong></div>
               <label class="volunteer-islands-summary"><input id="volunteer-islands-toggle" type="checkbox" /><span><small>Offshore islands</small><strong id="volunteer-islands-label">Mainland only</strong></span></label>
             </div>
+            <p class="signed-in-note"><strong id="volunteer-session-label"></strong><span>This browser remembers this demo account. Use “Sign out” above to start with another account.</span></p>
             <div class="volunteer-grid">
               <section class="nearby-panel">
                 <div class="panel-heading"><div><h2>Cases near you</h2><span id="nearby-count" class="count-pill">0</span></div></div>
@@ -176,7 +177,7 @@
             <p>Review cases and update their status.</p>
           </div>
           <div class="head-actions">
-            <button id="reset-demo" class="secondary-button" type="button">Reset demo data</button>
+            <button id="reset-demo" class="secondary-button" type="button" title="Restore all shared demo reports to their starting state">Reset shared demo</button>
             <button id="worker-logout" class="secondary-button" type="button">Log out</button>
             <button id="new-report-worker" class="primary-button" type="button">＋ New report</button>
           </div>
@@ -187,18 +188,18 @@
         <div class="dashboard-grid">
           <section class="queue-panel">
             <div class="panel-heading">
-              <div><h2>Active reports</h2><span id="queue-count" class="count-pill">0</span></div>
+              <div><h2 id="queue-heading">Active reports</h2><span id="queue-count" class="count-pill">0</span></div>
               <div class="filters" role="group" aria-label="Filter reports">
-                <button class="filter active" data-filter="active" type="button">Active</button>
-                <button class="filter" data-filter="volunteers" type="button">Volunteers</button>
-                <button class="filter" data-filter="all" type="button">All</button>
-                <button class="filter" data-filter="resolved" type="button">Closed</button>
+                <button class="filter active" data-filter="active" type="button" aria-pressed="true">Active</button>
+                <button class="filter" data-filter="volunteers" type="button" aria-pressed="false">Volunteers</button>
+                <button class="filter" data-filter="all" type="button" aria-pressed="false">All</button>
+                <button class="filter" data-filter="resolved" type="button" aria-pressed="false">Closed</button>
               </div>
             </div>
             <div class="queue-tools">
               <label class="case-search" for="case-search-input">
                 <span aria-hidden="true">⌕</span>
-                <input id="case-search-input" type="search" autocomplete="off" placeholder="Search case ID, animal, location, status…" />
+                <input id="case-search-input" type="search" autocomplete="off" aria-label="Search reports" placeholder="Search case ID, animal, location, status…" />
                 <button id="clear-case-search" type="button" aria-label="Clear search" hidden>×</button>
               </label>
               <label class="case-sort">Order by<select id="case-sort-select"><option value="priority">Importance</option><option value="newest">Newest</option></select></label>
@@ -235,9 +236,9 @@
       <form id="login-form">
         <button class="close-button login-close" id="close-login" type="button" aria-label="Close">×</button>
         <div class="login-icon" aria-hidden="true">⌘</div>
-        <p class="eyebrow">Authorised team access</p>
+        <p class="eyebrow">Demo team portal</p>
         <h2>Rescue Team Portal</h2>
-        <p class="login-copy">Enter the four-digit demo PIN to view and manage wildlife reports.</p>
+        <p class="login-copy">Enter the displayed demo PIN to view and manage simulated wildlife reports.</p>
         <div class="demo-pin-callout" role="note">
           <span>Demo access PIN</span>
           <strong>0000</strong>
@@ -291,16 +292,16 @@
     <dialog id="report-dialog" class="report-dialog">
       <form id="report-form" novalidate>
         <div class="dialog-head">
-          <div><p class="eyebrow">Step 2 of 3</p><h2>Describe the animal</h2></div>
+          <div><p class="eyebrow">Step 2 of 3 · final details</p><h2>Describe the animal</h2></div>
           <button class="close-button" id="close-dialog" type="button" aria-label="Close">×</button>
         </div>
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
         <p id="report-form-error" class="form-error" role="alert" hidden></p>
 
         <section class="photo-first-step">
-          <div><p class="eyebrow">Start with a photo</p><h3>Photograph the animal from a safe distance</h3><p>The image will be checked to confirm it contains an animal before suggesting its type.</p></div>
+          <div><p class="eyebrow">Start with a photo</p><h3>Photograph the animal from a safe distance</h3><p>The demo uploads and analyzes the image only to suggest the animal type and possible condition. Supported image files are compressed before upload and stored with this shared demo report.</p></div>
           <label class="photo-field camera-photo-field">
-            <input id="photo-input" name="photo" type="file" accept="image/*" capture="environment" />
+            <input id="photo-input" name="photo" type="file" accept="image/*" capture="environment" aria-label="Open camera or choose an animal photo" />
             <span>⌾</span><strong>Open camera or choose photo</strong><small>Do not move closer or put yourself in danger for a photo.</small>
           </label>
           <div id="photo-preview" class="photo-preview" hidden>
@@ -335,7 +336,7 @@
           </select>
         </label>
 
-        <label class="field">Describe what you can see <span>(optional when a photo is confirmed)</span>
+        <label class="field">Describe what you can see <span>(required unless a photo is confirmed)</span>
           <textarea name="notes" rows="3" maxlength="280" placeholder="Add anything the photo does not show, or leave this blank…"></textarea>
         </label>
 
@@ -345,7 +346,7 @@
         </div>
 
         <p class="privacy-copy">Demo only. This does not contact a real rescue service.</p>
-        <button id="send-report-button" class="submit-button" type="submit"><span>Send report</span><b>→</b></button>
+        <button id="send-report-button" class="submit-button" type="submit"><span>Send demo report</span><b>→</b></button>
       </form>
     </dialog>
 
@@ -362,16 +363,16 @@
           </div>
         </fieldset>
         <label class="field">What do you see?<textarea name="notes" rows="3" maxlength="280" placeholder="Describe movement, visible injuries, and nearby hazards…" required></textarea></label>
-        <label class="photo-field volunteer-photo-field"><input id="volunteer-photo-input" name="photo" type="file" accept="image/*" /><span>＋</span><strong>Add observation photo</strong><small id="volunteer-photo-help">Required for serious or deceased reports</small></label>
+        <label class="photo-field volunteer-photo-field"><input id="volunteer-photo-input" name="photo" type="file" accept="image/*" aria-label="Add a volunteer observation photo" /><span>＋</span><strong>Add observation photo</strong><small id="volunteer-photo-help">Required for serious or deceased reports</small></label>
         <div id="volunteer-photo-preview" class="photo-preview" hidden><img id="volunteer-photo-preview-image" alt="Volunteer observation photo preview" /><div><strong>Photo ready</strong><small id="volunteer-photo-preview-name"></small></div><button id="remove-volunteer-photo" type="button">Remove</button></div>
-        <p class="privacy-copy">Demo only. Do not approach the animal to take a photo.</p>
-        <button class="submit-button" type="submit">Send update to rescue team <span>→</span></button>
+        <p class="privacy-copy">Demo only. Do not approach the animal to take a photo. This update is saved only in the shared demo.</p>
+        <button class="submit-button" type="submit">Send demo update <span>→</span></button>
       </form>
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=39"></script>
+    <script src="app.js?v=40"></script>
   </body>
 </html>
