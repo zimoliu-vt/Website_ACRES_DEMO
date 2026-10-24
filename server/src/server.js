@@ -263,6 +263,52 @@ app.get("/dev/logs", requireDev, async (request, response) => {
   response.json(rows);
 });
 
+app.get("/dev/users", requireDev, async (_request, response) => {
+  const { rows } = await pool.query(`SELECT a.id, a.username, a.created_at, v.payload
+    FROM accounts a LEFT JOIN volunteers v ON v.id = a.id
+    WHERE a.role = 'volunteer' ORDER BY a.created_at DESC`);
+  response.json(rows.map(row => ({
+    id: row.id,
+    username: row.username,
+    createdAt: row.created_at,
+    name: row.payload?.name || "Volunteer",
+    contact: row.payload?.contact || "",
+    experience: Array.isArray(row.payload?.experience) ? row.payload.experience : []
+  })));
+});
+
+app.delete("/dev/users/:id", requireDev, async (request, response) => {
+  if (!devPassword || !safeEqual(request.body?.password || "", devPassword)) return response.status(401).json({ error: "Incorrect developer password" });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const accountResult = await client.query("SELECT username FROM accounts WHERE id = $1 AND role = 'volunteer' FOR UPDATE", [request.params.id]);
+    if (!accountResult.rows[0]) {
+      await client.query("ROLLBACK");
+      return response.status(404).json({ error: "Volunteer account not found" });
+    }
+    const reportResult = await client.query("SELECT id, payload FROM reports FOR UPDATE");
+    for (const row of reportResult.rows) {
+      const responders = reportResponders(row.payload);
+      if (!responders.some(item => item.id === request.params.id)) continue;
+      applyResponders(row.payload, responders.filter(item => item.id !== request.params.id));
+      if (row.payload.responders.length === 0 && row.payload.status === "Acknowledged") row.payload.status = "New";
+      addHistory(row.payload, "A volunteer account was removed by a developer");
+      await client.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1", [row.id, row.payload]);
+    }
+    await client.query("DELETE FROM volunteers WHERE id = $1", [request.params.id]);
+    await client.query("DELETE FROM accounts WHERE id = $1", [request.params.id]);
+    await client.query("COMMIT");
+    await recordAudit("Developer removed volunteer account", { username: accountResult.rows[0].username });
+    response.json({ removed: true });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+});
+
 app.post("/dev/run-checks", requireDev, async (_request, response) => {
   const startedAt = Date.now();
   const checks = [];

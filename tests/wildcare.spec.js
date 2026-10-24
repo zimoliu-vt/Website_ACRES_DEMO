@@ -146,17 +146,32 @@ test("new report clears old reporting and team search context", async ({ page })
 });
 
 test("private developer console signs in and runs fixed diagnostics", async ({ page }) => {
+  let users = [{ id: "user-1", username: "riverwatch", createdAt: new Date().toISOString(), name: "River Watcher", contact: "river@example.test", experience: ["Wildlife first aid"] }];
   await page.route("**/api/auth/dev", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ token: "demo-dev-token" }) }));
   await page.route("**/api/dev/status", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, reports: { active: 3, photos: 2 }, volunteers: 1 }) }));
   await page.route("**/api/dev/logs?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ id: 1, action: "POST /reports", details: { status: 201 }, created_at: new Date().toISOString() }]) }));
+  await page.route("**/api/dev/users", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(users) }));
+  await page.route("**/api/dev/users/user-1", async route => {
+    const body = route.request().postDataJSON();
+    if (body.password !== "test-password") return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: "Incorrect developer password" }) });
+    users = [];
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ removed: true }) });
+  });
   await page.route("**/api/dev/run-checks", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ passed: true, finishedAt: Date.now(), checks: [{ name: "Database connection", passed: true, detail: "Connected" }] }) }));
   await page.goto("/dev/");
   await expect(page.getByRole("heading", { name: "Developer console" })).toBeVisible();
   await expect(page.getByText("5687")).toHaveCount(0);
-  await page.getByLabel("Password").fill("test-password");
+  await page.getByLabel("Password", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Open console" }).click();
   await expect(page.getByRole("heading", { name: "System overview" })).toBeVisible();
   await expect(page.getByText("POST /reports")).toBeVisible();
+  await expect(page.getByText("River Watcher")).toBeVisible();
+  await expect(page.getByText("@riverwatch")).toBeVisible();
+  await page.getByRole("button", { name: "Remove" }).click();
+  await expect(page.getByRole("heading", { name: "Remove River Watcher (@riverwatch)?" })).toBeVisible();
+  await page.getByLabel("Enter the developer password again").fill("test-password");
+  await page.getByRole("button", { name: "Remove user" }).click();
+  await expect(page.getByText("No volunteer accounts have been registered.")).toBeVisible();
   await page.getByRole("button", { name: "Run checks" }).click();
   await expect(page.getByText("Database connection")).toBeVisible();
   await expect(page.getByText("Connected")).toBeVisible();

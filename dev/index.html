@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>WildCare Developer Console</title>
     <link rel="stylesheet" href="/styles.css?v=41" />
-    <link rel="stylesheet" href="/dev/dev.css?v=2" />
+    <link rel="stylesheet" href="/dev/dev.css?v=3" />
   </head>
   <body class="dev-page">
     <header class="dev-header">
@@ -38,9 +38,24 @@
             <div class="dev-panel-head"><div><h2>Backend activity</h2><p>Recent server actions. Visitor identifiers are anonymized.</p></div><button id="refresh-dev-logs" class="secondary-button" type="button">Refresh</button></div>
             <div id="dev-logs" class="dev-logs" aria-live="polite"></div>
           </section>
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Volunteer users</h2><p>View registered demo accounts. Removing an account requires the developer password again.</p></div><button id="refresh-dev-users" class="secondary-button" type="button">Refresh</button></div>
+            <div id="dev-users" class="dev-users" aria-live="polite"></div>
+          </section>
         </div>
       </section>
     </main>
-    <script src="/dev/dev.js?v=2"></script>
+    <dialog id="remove-user-dialog" class="dev-confirm-dialog">
+      <form id="remove-user-form">
+        <button id="close-remove-user" class="close-button" type="button" aria-label="Close">×</button>
+        <p class="eyebrow">Confirm account removal</p>
+        <h2>Remove <span id="remove-user-name">this user</span>?</h2>
+        <p>This deletes the volunteer account and removes it from any active case.</p>
+        <label>Enter the developer password again<input id="remove-user-password" type="password" autocomplete="current-password" required /></label>
+        <p id="remove-user-error" class="form-error" role="alert" hidden></p>
+        <button class="danger-button" type="submit">Remove user</button>
+      </form>
+    </dialog>
+    <script src="/dev/dev.js?v=3"></script>
   </body>
 </html>

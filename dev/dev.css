@@ -25,4 +25,18 @@
 .dev-check strong, .dev-log strong { display: block; color: var(--forest); font-size: 11px; }
 .dev-check small, .dev-log small { color: var(--muted); font-size: 9px; line-height: 1.5; }
 .dev-log code { color: var(--forest-2); font-size: 9px; }
+.dev-users { margin-top: 18px; display: grid; gap: 9px; }
+.dev-user { padding: 14px; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 12px; background: white; }
+.dev-user strong { display: block; color: var(--forest); font-size: 12px; }
+.dev-user small { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.45; }
+.dev-remove-user { padding: 9px 12px; border: 1px solid #d8a7a2; border-radius: 9px; color: #a72c25; background: #fff7f6; font-size: 10px; font-weight: 850; }
+.dev-confirm-dialog { width: min(440px,calc(100% - 30px)); padding: 0; border: 0; border-radius: 22px; background: var(--paper); box-shadow: var(--shadow); }
+.dev-confirm-dialog::backdrop { background: rgba(15,35,29,.58); backdrop-filter: blur(5px); }
+.dev-confirm-dialog form { padding: 30px; position: relative; }
+.dev-confirm-dialog .close-button { position: absolute; top: 18px; right: 18px; }
+.dev-confirm-dialog h2 { margin-right: 45px; color: var(--forest); }
+.dev-confirm-dialog > form > p:not(.eyebrow,.form-error) { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.dev-confirm-dialog label { display: grid; gap: 7px; margin: 20px 0 14px; color: var(--forest); font-size: 11px; font-weight: 850; }
+.dev-confirm-dialog input { padding: 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 16px; }
+.dev-confirm-dialog .danger-button { width: 100%; }
 @media (max-width:720px) { .dev-stats { grid-template-columns: 1fr 1fr; } .dev-title-row,.dev-panel-head { flex-direction: column; } .dev-panel-head button { width: 100%; } .dev-check,.dev-log { grid-template-columns: 18px 1fr; } .dev-check time,.dev-log time { grid-column: 2; } }

@@ -1,5 +1,6 @@
 const TOKEN_KEY = "wildcare-dev-token";
 let devToken = sessionStorage.getItem(TOKEN_KEY) || "";
+let pendingUserRemoval = null;
 
 async function devFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
@@ -33,9 +34,40 @@ async function loadLogs() {
   document.querySelector("#dev-logs").innerHTML = logs.length ? logs.map(log => `<article class="dev-log"><span>•</span><div><strong>${escapeHtml(log.action)}</strong><small>${escapeHtml(JSON.stringify(log.details || {}))}</small></div><time>${escapeHtml(exactTime(log.created_at))}</time></article>`).join("") : '<p class="dev-empty">No backend activity has been recorded yet.</p>';
 }
 
+async function loadUsers() {
+  const users = await devFetch("/dev/users");
+  document.querySelector("#dev-users").innerHTML = users.length ? users.map(user => {
+    const details = [
+      `@${user.username}`,
+      user.contact || "No contact supplied",
+      user.experience?.length ? user.experience.join(", ") : "No experience supplied",
+      `Joined ${exactTime(user.createdAt)}`
+    ];
+    return `<article class="dev-user"><div><strong>${escapeHtml(user.name)}</strong><small>${details.map(escapeHtml).join(" · ")}</small></div><button class="dev-remove-user" type="button" data-remove-user="${escapeHtml(user.id)}">Remove</button></article>`;
+  }).join("") : '<p class="dev-empty">No volunteer accounts have been registered.</p>';
+  document.querySelectorAll("[data-remove-user]").forEach(button => button.addEventListener("click", () => {
+    const user = users.find(item => item.id === button.dataset.removeUser);
+    if (user) openRemoveUser(user);
+  }));
+}
+
+function openRemoveUser(user) {
+  pendingUserRemoval = user;
+  document.querySelector("#remove-user-name").textContent = `${user.name} (@${user.username})`;
+  document.querySelector("#remove-user-password").value = "";
+  document.querySelector("#remove-user-error").hidden = true;
+  document.querySelector("#remove-user-dialog").showModal();
+  document.querySelector("#remove-user-password").focus();
+}
+
+function closeRemoveUser() {
+  document.querySelector("#remove-user-dialog").close();
+  pendingUserRemoval = null;
+}
+
 async function openConsole() {
   try {
-    await Promise.all([loadStatus(), loadLogs()]);
+    await Promise.all([loadStatus(), loadLogs(), loadUsers()]);
     document.querySelector("#dev-login").hidden = true;
     document.querySelector("#dev-console").hidden = false;
   } catch {
@@ -71,6 +103,35 @@ document.querySelector("#dev-logout").addEventListener("click", () => {
 });
 
 document.querySelector("#refresh-dev-logs").addEventListener("click", loadLogs);
+document.querySelector("#refresh-dev-users").addEventListener("click", loadUsers);
+document.querySelector("#close-remove-user").addEventListener("click", closeRemoveUser);
+document.querySelector("#remove-user-dialog").addEventListener("cancel", event => {
+  event.preventDefault();
+  closeRemoveUser();
+});
+document.querySelector("#remove-user-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!pendingUserRemoval) return;
+  const button = event.currentTarget.querySelector('[type="submit"]');
+  const error = document.querySelector("#remove-user-error");
+  error.hidden = true;
+  button.disabled = true;
+  button.textContent = "Removing…";
+  try {
+    await devFetch(`/dev/users/${encodeURIComponent(pendingUserRemoval.id)}`, {
+      method: "DELETE",
+      body: JSON.stringify({ password: document.querySelector("#remove-user-password").value })
+    });
+    closeRemoveUser();
+    await Promise.all([loadUsers(), loadStatus(), loadLogs()]);
+  } catch (removeError) {
+    error.textContent = removeError.message;
+    error.hidden = false;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Remove user";
+  }
+});
 document.querySelector("#run-dev-checks").addEventListener("click", async event => {
   const button = event.currentTarget;
   button.disabled = true;
