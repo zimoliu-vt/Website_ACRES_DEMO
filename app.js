@@ -98,7 +98,7 @@ function loadReports() {
 
 function saveReports() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-  if (backendReady) reports.forEach(report => persistReport(report));
+  if (backendReady && workerAuthenticated) reports.forEach(report => persistReport(report));
 }
 
 function loadVolunteer() {
@@ -116,7 +116,7 @@ function saveVolunteer() {
 
 async function apiFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
-  const needsVolunteerToken = path.startsWith("/volunteers/") || /\/volunteer-(offer|cancel|arrive)$/.test(path);
+  const needsVolunteerToken = path.startsWith("/volunteers/") || /\/volunteer-(offer|cancel|arrive|assessment)$/.test(path);
   const token = needsVolunteerToken ? volunteerToken : workerToken || volunteerToken;
   if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
@@ -642,7 +642,7 @@ function renderReportDetail(id) {
       <div class="meta-box"><small>Reporter</small><strong>${escapeHtml(report.reporter || "Anonymous")}</strong></div>
     </div>
     <p class="notes-box">${escapeHtml(report.notes)}</p>
-    <section class="case-evidence"><h3>Photo evidence</h3><div class="case-evidence-grid"><article><div class="evidence-heading"><strong>Reporter photo</strong><small>Submitted with the original report</small></div>${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Reporter photo attached to case ${escapeHtml(report.id)}" /><figcaption>Original reporter evidence · demo</figcaption></figure>` : '<p class="no-evidence">No reporter photo was supplied.</p>'}</article><article><div class="evidence-heading"><strong>Volunteer observation</strong><small>Use this to assess the on-site response</small></div>${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer observation evidence · demo</figcaption></figure>` : '<p class="no-evidence">No volunteer observation photo yet.</p>'}</article></div></section>
+    <section class="case-evidence"><h3>Photos</h3><div class="case-evidence-grid"><article><div class="evidence-heading"><strong>Original report</strong><small>Photo sent by the reporter</small></div>${validPhotoSource(report.photo) ? `<figure class="case-photo"><img src="${validPhotoSource(report.photo)}" alt="Reporter photo attached to case ${escapeHtml(report.id)}" /><figcaption>Reporter photo · demo</figcaption></figure>` : `<p class="no-evidence">${report.aiAssessment ? "JEV reviewed a photo, but the original image is no longer available." : "No photo was included with this report."}</p>`}</article><article><div class="evidence-heading"><strong>Volunteer update</strong><small>Photo sent after observing the animal</small></div>${validPhotoSource(report.volunteerPhoto) ? `<figure class="case-photo volunteer-evidence"><img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer observation photo for case ${escapeHtml(report.id)}" /><figcaption>Volunteer update photo · demo</figcaption></figure>` : '<p class="no-evidence">No volunteer update photo yet.</p>'}</article></div></section>
     ${report.aiAssessment ? `<section class="ai-assessment ${report.aiAssessment.rescueNeeded ? "attention" : "monitor"}"><div><span>✦</span><div><small>JEV photo review · advisory</small><strong>${report.aiAssessment.rescueNeeded ? "Possible rescue attention needed" : "No clear rescue need visible"}</strong></div></div><p>${escapeHtml(report.aiAssessment.animal || "Other")} · ${escapeHtml(report.aiAssessment.condition || "Not sure")} · ${Math.round(Number(report.aiAssessment.rescueProbability || 0) * 100)}% rescue-need confidence</p><small>A person should review the full situation; a photo may miss important context.</small></section>` : ""}
     ${reportResponders(report).length ? `<section class="volunteer-update"><div><span>♡</span><div class="responder-list"><small>Volunteer responses · ${reportResponders(report).length}/3</small>${reportResponders(report).map(item => `<div class="responder-detail"><strong>${escapeHtml(item.name)} · ${escapeHtml(item.status)}</strong>${Array.isArray(item.experience) && item.experience.length ? `<small>Training: ${escapeHtml(item.experience.join(", "))}${item.experienceDetails ? ` — ${escapeHtml(item.experienceDetails)}` : ""}</small>` : ""}${Array.isArray(item.animalPreferences) ? `<small>Preferred animals: ${item.animalPreferences.length ? escapeHtml(item.animalPreferences.join(", ")) : "Any"}</small>` : ""}</div>`).join("")}</div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
     <section class="case-timeline"><div class="timeline-heading"><span>Case progress</span><small>Newest update last</small></div><ol>${(Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }]).map((event, index, history) => `<li class="${index === history.length - 1 ? "current" : ""}"><span></span><div><strong>${escapeHtml(event.label)}</strong><small>${relativeTime(event.at)} · ${exactTime(event.at)}</small></div></li>`).join("")}</ol></section>
@@ -1400,36 +1400,22 @@ document.querySelector("#volunteer-photo-input").addEventListener("change", asyn
 });
 document.querySelector("#remove-volunteer-photo").addEventListener("click", clearVolunteerPhoto);
 
-document.querySelector("#volunteer-assessment-form").addEventListener("submit", event => {
+document.querySelector("#volunteer-assessment-form").addEventListener("submit", async event => {
   event.preventDefault();
   const report = reports.find(item => item.id === volunteerAssessmentReportId);
   if (!report) return showToast("This demo case could not be found.");
   const data = new FormData(event.currentTarget);
   const outcome = data.get("outcome");
   if (["serious", "deceased"].includes(outcome) && !volunteerPhotoDataUrl) return showToast("Please add a photo for a serious or deceased report.");
-  report.volunteerStatus = "Assessment sent";
-  const ownResponder = reportResponders(report).find(item => item.id === volunteer?.id);
-  if (ownResponder) ownResponder.status = "Assessment sent";
-  report.volunteerNotes = data.get("notes").trim();
-  report.volunteerPhoto = volunteerPhotoDataUrl;
-  report.volunteerUpdatedAt = Date.now();
-  if (outcome === "deceased") {
-    report.volunteerAssessment = "Animal appears deceased";
-    report.status = "Reported deceased";
-    addCaseEvent(report, "Volunteer reported a possible deceased animal");
-  } else if (outcome === "serious") {
-    report.volunteerAssessment = "Alive — serious condition reported";
-    report.status = "Urgent";
-    addCaseEvent(report, "Volunteer reported urgent attention needed");
-  } else {
-    report.volunteerAssessment = "Alive — currently stable";
-    if (report.status === "New") report.status = "Acknowledged";
-    addCaseEvent(report, "Volunteer reported the animal is currently stable");
-  }
   try {
-    saveReports();
-  } catch {
-    return showToast("That photo is too large for browser storage. Try a smaller image.");
+    const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/volunteer-assessment`, {
+      method: "POST",
+      body: JSON.stringify({ outcome, notes: data.get("notes").trim(), photo: volunteerPhotoDataUrl })
+    });
+    Object.assign(report, updated, { volunteerPhoto: volunteerPhotoDataUrl });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+  } catch (error) {
+    return showToast(error.message);
   }
   document.querySelector("#volunteer-assessment-dialog").close();
   clearVolunteerPhoto();

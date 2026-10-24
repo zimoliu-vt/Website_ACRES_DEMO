@@ -316,7 +316,7 @@ app.post("/reports", async (request, response) => {
   response.status(201).json(saved);
 });
 
-app.put("/reports/:id", async (request, response) => {
+app.put("/reports/:id", requireWorker, async (request, response) => {
   const report = { ...request.body, id: request.params.id };
   const result = await pool.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1 RETURNING payload", [request.params.id, report]);
   if (!result.rowCount) return response.status(404).json({ error: "Report not found" });
@@ -464,6 +464,45 @@ app.post("/reports/:id/volunteer-arrive", requireVolunteer, async (request, resp
   addHistory(report, `${responder.name} arrived nearby`);
   await pool.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1", [request.params.id, report]);
   response.json(report);
+});
+
+app.post("/reports/:id/volunteer-assessment", requireVolunteer, async (request, response) => {
+  const outcome = String(request.body?.outcome || "");
+  const notes = String(request.body?.notes || "").trim().slice(0, 1000);
+  const photo = String(request.body?.photo || "");
+  if (!["stable", "serious", "deceased"].includes(outcome)) return response.status(400).json({ error: "Choose the animal's condition" });
+  if (["serious", "deceased"].includes(outcome) && !photo) return response.status(400).json({ error: "Add a photo for a serious or deceased report" });
+  if (photo && (!/^data:image\/(jpeg|jpg|png);base64,[A-Za-z0-9+/=]+$/i.test(photo) || photo.length > 3_500_100)) {
+    return response.status(400).json({ error: "Use a JPEG or PNG photo under the demo photo limit" });
+  }
+
+  const result = await pool.query("SELECT payload FROM reports WHERE id = $1 FOR UPDATE", [request.params.id]);
+  if (!result.rows[0]) return response.status(404).json({ error: "Case not found" });
+  const report = result.rows[0].payload;
+  const responders = reportResponders(report);
+  const responder = responders.find(item => item.id === request.auth.sub);
+  if (!responder) return response.status(409).json({ error: "You are not assigned to this case" });
+
+  responder.status = "Assessment sent";
+  applyResponders(report, responders);
+  report.volunteerNotes = notes;
+  report.volunteerPhoto = photo;
+  report.volunteerUpdatedAt = Date.now();
+  if (outcome === "deceased") {
+    report.volunteerAssessment = "Animal appears deceased";
+    report.status = "Reported deceased";
+    addHistory(report, "Volunteer reported a possible deceased animal");
+  } else if (outcome === "serious") {
+    report.volunteerAssessment = "Alive — serious condition reported";
+    report.status = "Urgent";
+    addHistory(report, "Volunteer reported urgent attention needed");
+  } else {
+    report.volunteerAssessment = "Alive — currently stable";
+    if (report.status === "New") report.status = "Acknowledged";
+    addHistory(report, "Volunteer reported the animal is currently stable");
+  }
+  await pool.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1", [request.params.id, report]);
+  response.json(publicReport(report));
 });
 
 app.put("/volunteers/:id", requireVolunteerOwner, async (request, response) => {
