@@ -476,6 +476,10 @@ function switchView(viewName) {
     return;
   }
   document.querySelectorAll(".mode-button").forEach(button => button.classList.toggle("active", button.dataset.view === viewName));
+  const teamShortcut = document.querySelector("#team-shortcut");
+  teamShortcut.classList.toggle("active", viewName === "worker");
+  if (viewName === "worker") teamShortcut.setAttribute("aria-current", "page");
+  else teamShortcut.removeAttribute("aria-current");
   document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `${viewName}-view`));
   if (viewName === "reporter" && map) setTimeout(() => map.invalidateSize(), 80);
   if (viewName === "worker") {

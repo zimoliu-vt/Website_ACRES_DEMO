@@ -109,6 +109,8 @@ test("choosing a searched area switches the reporting map to satellite", async (
 test("team filters keep the visible list and detail panel synchronized", async ({ page }) => {
   await enterDemo(page);
   await openTeam(page);
+  await expect(page.getByRole("link", { name: "Team dashboard" })).toHaveClass(/active/);
+  await expect(page.getByRole("link", { name: "Team dashboard" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("img", { name: "Reporter evidence thumbnail for WC-2003" })).toBeVisible();
   await page.locator('[data-report-id="WC-2003"]').click();
   await expect(page.getByRole("img", { name: "Reporter photo attached to case WC-2003" })).toBeVisible();

@@ -37,6 +37,8 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .mode-button.active { color: #fff; background: var(--forest); box-shadow: 0 4px 14px rgba(23,63,53,.2); }
 .rescue-shortcut { padding: 8px 11px; display: inline-flex; align-items: center; gap: 5px; border-left: 1px solid #d3d8d3; color: var(--muted); border-radius: 0 999px 999px 0; font-size: 10px; font-weight: 800; text-decoration: none; }
 .rescue-shortcut:hover, .rescue-shortcut:focus-visible { color: var(--forest); background: #fff; outline: 2px solid rgba(34,91,75,.14); }
+.rescue-shortcut.active { border-left-color: transparent; color: #fff; background: var(--forest); box-shadow: 0 4px 14px rgba(23,63,53,.2); }
+.rescue-shortcut.active:hover, .rescue-shortcut.active:focus-visible { color: #fff; background: var(--forest-2); }
 .view { display: none; }
 .view.active { display: block; }
 
