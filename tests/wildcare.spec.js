@@ -75,6 +75,10 @@ test("photo uploads are normalized to dimensions accepted by Jev", async ({ page
   });
   await expect(page.locator("#jev-analysis")).toContainText("Jev found an animal");
   await expect.poll(() => page.locator("#photo-preview-image").evaluate(image => [image.naturalWidth, image.naturalHeight])).toEqual([768, 768]);
+  await expect(page.getByLabel("I understand that this photo can be seen by others.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Send demo report/ })).toBeDisabled();
+  await page.getByLabel("I understand that this photo can be seen by others.").check();
+  await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
 });
 
 test("Umami records safe portal and click events", async ({ page }) => {

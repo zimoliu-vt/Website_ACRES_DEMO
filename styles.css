@@ -261,6 +261,12 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .photo-preview strong { color: var(--forest); font-size: 11px; }
 .photo-preview small { color: var(--muted); font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .photo-preview button { padding: 7px 9px; border: 1px solid #d8b1ad; border-radius: 8px; color: #9a312b; background: #fff; font-size: 9px; font-weight: 800; }
+.photo-sharing-consent { margin-top: 10px; padding: 13px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid #bfd0c6; border-radius: 11px; background: #f7faf7; cursor: pointer; }
+.photo-sharing-consent[hidden] { display: none; }
+.photo-sharing-consent input { width: 18px; height: 18px; margin: 1px 0 0; flex: 0 0 auto; accent-color: var(--forest); }
+.photo-sharing-consent span { display: grid; gap: 3px; }
+.photo-sharing-consent strong { color: var(--forest); font-size: 11px; line-height: 1.4; }
+.photo-sharing-consent small { color: var(--muted); font-size: 9px; line-height: 1.45; }
 .privacy-copy { margin: 14px 0; color: var(--muted); font-size: 10px; text-align: center; }
 .submit-button { width: 100%; padding: 14px 18px; display: flex; justify-content: space-between; color: white; background: var(--forest); }
 .submit-button:hover, .primary-button:hover { background: var(--forest-2); }

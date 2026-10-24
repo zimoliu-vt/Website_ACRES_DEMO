@@ -163,7 +163,7 @@ function isWorkerRequest(request) {
 }
 
 function publicReport(report) {
-  const { contact, reporter, photo, volunteerPhoto, clientRequestId, ...safe } = report;
+  const { contact, reporter, photo, volunteerPhoto, clientRequestId, photoSharingConsentAt, ...safe } = report;
   const responders = Array.isArray(safe.responders)
     ? safe.responders.map(({ experience, experienceDetails, animalPreferences, ...responder }) => responder)
     : safe.responders;
@@ -295,6 +295,9 @@ app.post("/reports", async (request, response) => {
   const report = request.body;
   if (!report || !report.animal || !report.condition || !report.notes || !Number.isFinite(Number(report.lat)) || !Number.isFinite(Number(report.lng))) {
     return response.status(400).json({ error: "Missing required report fields" });
+  }
+  if (report.photo && (!Number.isFinite(Number(report.photoSharingConsentAt)) || Number(report.photoSharingConsentAt) <= 0)) {
+    return response.status(400).json({ error: "Confirm that the photo may be seen by others" });
   }
   const requestKey = typeof report.clientRequestId === "string" && /^[a-zA-Z0-9-]{16,80}$/.test(report.clientRequestId) ? report.clientRequestId : null;
   if (requestKey) {

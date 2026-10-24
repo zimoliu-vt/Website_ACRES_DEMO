@@ -187,6 +187,8 @@ function clearSelectedPhoto() {
   document.querySelector("#photo-input").value = "";
   document.querySelector("#photo-preview").hidden = true;
   document.querySelector("#photo-preview-image").removeAttribute("src");
+  document.querySelector("#photo-sharing-consent").hidden = true;
+  document.querySelector("#photo-sharing-consent-input").checked = false;
   const analysis = document.querySelector("#jev-analysis");
   analysis.hidden = true;
   analysis.className = "jev-analysis";
@@ -201,7 +203,8 @@ function updateReportSubmitState() {
   const hasAnimal = Boolean(form.querySelector('[name="animal"]:checked'));
   const hasCondition = Boolean(form.elements.condition.value);
   const hasUsablePhoto = Boolean(selectedPhotoDataUrl && photoAnalysis?.isAnimal);
-  const ready = Boolean(selectedLocation && hasAnimal && hasCondition && (randomReportMode || hasUsablePhoto));
+  const hasPhotoConsent = document.querySelector("#photo-sharing-consent-input").checked;
+  const ready = Boolean(selectedLocation && hasAnimal && hasCondition && (randomReportMode || (hasUsablePhoto && hasPhotoConsent)));
   button.disabled = !ready;
   requirements.textContent = ready
     ? "Ready to send this demo report."
@@ -209,6 +212,8 @@ function updateReportSubmitState() {
       ? "Choose the animal’s location first."
       : !randomReportMode && !hasUsablePhoto
         ? "Add a confirmed animal photo or use the random demo report to continue."
+        : !randomReportMode && !hasPhotoConsent
+          ? "Confirm that others may see the photo to continue."
         : !hasAnimal || !hasCondition
           ? "Choose the animal type and condition to continue."
           : "Complete the required report details.";
@@ -1111,6 +1116,12 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     document.querySelector(".photo-first-step").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
+  if (!randomReportMode && !event.currentTarget.elements.photoSharingConsent.checked) {
+    error.textContent = "Confirm that you understand this photo can be seen by others.";
+    error.hidden = false;
+    document.querySelector("#photo-sharing-consent").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   if (!selectedAnimal || !condition) {
     error.textContent = !selectedAnimal ? "Choose the animal type." : "Select what seems to be wrong.";
     error.hidden = false;
@@ -1138,6 +1149,7 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     area: selectedLocation.name || estimatedArea(selectedLocation.lat, selectedLocation.lng)
   };
   reportDraft.photo = selectedPhotoDataUrl;
+  if (selectedPhotoDataUrl) reportDraft.photoSharingConsentAt = Date.now();
   if (photoAnalysis) reportDraft.aiAssessment = {
     provider: "JEV",
     model: photoAnalysis.model,
@@ -1204,6 +1216,7 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
     document.querySelector("#photo-preview-image").src = selectedPhotoDataUrl;
     document.querySelector("#photo-preview-name").textContent = file.name;
     document.querySelector("#photo-preview").hidden = false;
+    document.querySelector("#photo-sharing-consent").hidden = false;
     helper.textContent = "Photo ready — checking with Jev…";
     randomReportMode = false;
     await analyzeAnimalPhoto();
