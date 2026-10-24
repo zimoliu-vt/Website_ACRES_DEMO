@@ -194,18 +194,8 @@ app.post("/analyze-animal", async (request, response) => {
   if (!match) return response.status(400).json({ error: "Use a JPEG or PNG photo" });
   if (match[2].length > 3_500_000) return response.status(413).json({ error: "The photo is too large" });
   const format = match[1].toLowerCase() === "jpg" ? "jpeg" : match[1].toLowerCase();
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
-    const jevResponse = await fetch("https://api.typesafe.ai/v1/systemone", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Authorization": `Bearer ${jevApiKey}`,
-        "Content-Type": "application/json",
-        "TypeSafe-Danger-Zone-Images": "true"
-      },
-      body: JSON.stringify({
+    const requestBody = JSON.stringify({
         model: jevModel,
         state: "animal_photo",
         assets: { animal_photo: { type: "image", format, data_base64: match[2] } },
@@ -241,11 +231,36 @@ app.post("/analyze-animal", async (request, response) => {
             }
           }
         }
-      })
-    });
-    const payload = await jevResponse.json().catch(() => ({}));
+      });
+    let jevResponse;
+    let payload = {};
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      try {
+        jevResponse = await fetch("https://api.typesafe.ai/v1/systemone", {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Authorization": `Bearer ${jevApiKey}`,
+            "Content-Type": "application/json",
+            "TypeSafe-Danger-Zone-Images": "true"
+          },
+          body: requestBody
+        });
+        payload = await jevResponse.json().catch(() => ({}));
+        if (jevResponse.ok || jevResponse.status < 500 || attempt === 2) break;
+        console.warn(`Jev image analysis attempt ${attempt} returned ${jevResponse.status}; retrying once`);
+      } catch (error) {
+        if (attempt === 2) throw error;
+        console.warn(`Jev image analysis attempt ${attempt} failed (${error.name || "network error"}); retrying once`);
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
     if (!jevResponse.ok) {
       const message = payload.error?.message || payload.detail?.message || payload.message || (typeof payload.error === "string" ? payload.error : "Jev could not analyze this photo");
+      console.error(`Jev image analysis failed after retry: ${jevResponse.status} ${message}`);
       return response.status(502).json({ error: message });
     }
     const animalProbability = Number(payload.answers?.animal_present?.noul || 0);
@@ -265,9 +280,8 @@ app.post("/analyze-animal", async (request, response) => {
       usage: payload.usage || null
     });
   } catch (error) {
+    console.error("Jev image analysis request failed:", error.name || error.message || error);
     response.status(error.name === "AbortError" ? 504 : 502).json({ error: error.name === "AbortError" ? "Jev took too long to respond" : "Jev image analysis is temporarily unavailable" });
-  } finally {
-    clearTimeout(timeout);
   }
 });
 
