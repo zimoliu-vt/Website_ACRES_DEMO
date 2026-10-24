@@ -45,6 +45,14 @@ let volunteerPhotoDataUrl = "";
 let volunteerMap = null;
 let volunteerLocationMarker = null;
 let volunteerRadiusCircle = null;
+
+function trackAnalytics(name, data = {}) {
+  if (window.umami?.track) window.umami.track(name, data);
+}
+
+function identifyAnalyticsVolunteer() {
+  if (volunteer?.id && window.umami?.identify) window.umami.identify(`volunteer-${volunteer.id}`);
+}
 let pendingVolunteerLocation = null;
 
 const singaporeBoundary = [
@@ -100,6 +108,7 @@ function loadVolunteer() {
 function saveVolunteer() {
   if (volunteer) localStorage.setItem(VOLUNTEER_KEY, JSON.stringify(volunteer));
   else localStorage.removeItem(VOLUNTEER_KEY);
+  identifyAnalyticsVolunteer();
   if (backendReady && volunteer) {
     apiFetch(`/volunteers/${encodeURIComponent(volunteer.id)}`, { method: "PUT", body: JSON.stringify(volunteer) }).catch(() => {});
   }
@@ -456,6 +465,7 @@ function drawReportMarkers() {
 }
 
 function switchView(viewName) {
+  trackAnalytics("portal_view", { view: viewName });
   if (viewName === "worker" && !workerAuthenticated) {
     openWorkerLogin();
     return;
@@ -1427,6 +1437,24 @@ document.querySelector("#volunteer-assessment-form").addEventListener("submit", 
   renderVolunteerPortal();
   drawReportMarkers();
   showToast(`Update for ${report.id} is now visible to the rescue team.`);
+});
+
+window.addEventListener("load", identifyAnalyticsVolunteer);
+
+document.addEventListener("click", event => {
+  const control = event.target.closest("button, a");
+  if (!control) return;
+  const target = control.id
+    || control.dataset.view
+    || control.dataset.volunteerAction
+    || control.dataset.mapStyle
+    || control.dataset.filter
+    || control.getAttribute("aria-label")
+    || control.classList[0]
+    || control.tagName.toLowerCase();
+  const data = { target: String(target).slice(0, 80) };
+  if (control.dataset.reportId) data.caseId = control.dataset.reportId;
+  trackAnalytics("ui_click", data);
 });
 
 initMap();

@@ -7,6 +7,11 @@ const reports = [
 ];
 
 async function mockBackend(page) {
+  await page.route("https://analytics.liusida.com/umami/script.js", route => route.fulfill({
+    status: 200,
+    contentType: "application/javascript",
+    body: "window.__umamiEvents=[];window.umami={track(...args){window.__umamiEvents.push(['track',...args])},identify(...args){window.__umamiEvents.push(['identify',...args])}};"
+  }));
   await page.route("**/api/reports", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(reports) }));
   await page.route("**/api/auth/worker", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ token: "demo-worker-token" }) }));
 }
@@ -69,6 +74,15 @@ test("photo uploads are normalized to dimensions accepted by Jev", async ({ page
   });
   await expect(page.locator("#jev-analysis")).toContainText("Jev found an animal");
   await expect.poll(() => page.locator("#photo-preview-image").evaluate(image => [image.naturalWidth, image.naturalHeight])).toEqual([768, 768]);
+});
+
+test("Umami records safe portal and click events", async ({ page }) => {
+  await enterDemo(page);
+  await page.getByRole("button", { name: "Volunteer" }).click();
+  await expect.poll(() => page.evaluate(() => window.__umamiEvents)).toEqual(expect.arrayContaining([
+    ["track", "portal_view", { view: "volunteer" }],
+    ["track", "ui_click", { target: "volunteer" }]
+  ]));
 });
 
 test("choosing a searched area switches the reporting map to satellite", async ({ page }) => {
