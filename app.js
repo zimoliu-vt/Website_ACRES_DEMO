@@ -147,11 +147,17 @@ function compressPhoto(file) {
       const image = new Image();
       image.onerror = () => reject(new Error("This image format could not be previewed."));
       image.onload = () => {
+        const sourceWidth = image.naturalWidth;
+        const sourceHeight = image.naturalHeight;
+        if (!sourceWidth || !sourceHeight) {
+          reject(new Error("This photo has invalid dimensions. Try choosing it again."));
+          return;
+        }
         const maxDimension = 1000;
-        const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+        const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
         const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1, Math.round(image.width * scale));
-        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+        canvas.height = Math.max(1, Math.round(sourceHeight * scale));
         const context = canvas.getContext("2d");
         context.fillStyle = "#ffffff";
         context.fillRect(0, 0, canvas.width, canvas.height);
