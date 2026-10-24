@@ -12,9 +12,8 @@ async function mockBackend(page) {
 }
 
 async function enterDemo(page) {
+  await page.addInitScript(() => sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true"));
   await page.goto(`/?deployment-test=${Date.now()}`);
-  const warningButton = page.getByRole("button", { name: "I understand — enter the demo" });
-  if (await warningButton.isVisible()) await warningButton.click();
 }
 
 async function openTeam(page) {
@@ -48,6 +47,22 @@ test("report flow explains requirements and protects a changed draft", async ({ 
   await page.getByRole("button", { name: "Close" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByLabel("Your name (optional)")).toHaveValue("Random");
+});
+
+test("choosing a searched area switches the reporting map to satellite", async ({ page }) => {
+  await page.route("https://nominatim.openstreetmap.org/search?**", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify([{ lat: "1.3640", lon: "103.8460", name: "Bishan–Ang Mo Kio Park", display_name: "Bishan–Ang Mo Kio Park, Bishan, Singapore", address: { country_code: "sg", park: "Bishan–Ang Mo Kio Park", suburb: "Bishan" } }])
+  }));
+  await enterDemo(page);
+  await page.getByLabel("Search for a location in Singapore").fill("Bishan park");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByRole("button", { name: /Bishan–Ang Mo Kio Park/ }).click();
+  await expect(page.getByRole("button", { name: "Satellite" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('img[src*="World_Transportation"]')).not.toHaveCount(0);
+  await expect(page.locator('img[src*="World_Boundaries_and_Places"]')).not.toHaveCount(0);
+  await expect(page.locator("#map-hint")).toContainText("click the animal’s exact location");
 });
 
 test("team filters keep the visible list and detail panel synchronized", async ({ page }) => {

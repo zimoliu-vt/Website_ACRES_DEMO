@@ -16,6 +16,7 @@ let reports = loadReports();
 let map;
 let streetLayer = null;
 let satelliteLayer = null;
+let satelliteLabelsLayer = null;
 let selectedLocation = null;
 let locationMarker = null;
 let searchAreaMarker = null;
@@ -273,8 +274,13 @@ function initMap() {
   });
   satelliteLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
     maxZoom: 19,
+    zIndex: 200,
     attribution: "Esri, Maxar, Earthstar Geographics, and the GIS User Community"
   });
+  satelliteLabelsLayer = L.layerGroup([
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, zIndex: 350 }),
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, zIndex: 360, attribution: "Labels and roads © Esri" })
+  ]);
   streetLayer.addTo(map);
   map.on("click", (event) => {
     if (!isSingaporePoint(event.latlng.lat, event.latlng.lng)) return rejectOutsideSingapore();
@@ -292,7 +298,9 @@ function setMapStyle(style) {
   const useSatellite = style === "satellite";
   if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
   if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+  if (satelliteLabelsLayer && map.hasLayer(satelliteLabelsLayer)) map.removeLayer(satelliteLabelsLayer);
   (useSatellite ? satelliteLayer : streetLayer).addTo(map);
+  if (useSatellite && satelliteLabelsLayer) satelliteLabelsLayer.addTo(map);
   document.querySelectorAll("[data-map-style]").forEach(button => {
     const active = button.dataset.mapStyle === style;
     button.classList.toggle("active", active);
@@ -398,10 +406,11 @@ function renderSearchResults(results, message = "") {
       fillOpacity: .18,
       interactive: false
     }).addTo(map);
+    setMapStyle("satellite");
     map.flyTo([lat, lng], 15, { duration: .8 });
     const hint = document.querySelector("#map-hint");
     hint.innerHTML = `<span>＋</span> ${escapeHtml(searchResultLabel(result))} is highlighted — click the animal’s exact location`;
-    showToast(`Zoomed to ${searchResultLabel(result)}. Now click the exact location on the map.`);
+    showToast(`Satellite view opened for ${searchResultLabel(result)}. Now click the animal’s exact location.`);
   }));
 }
 
