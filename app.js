@@ -172,6 +172,28 @@ function clearSelectedPhoto() {
   const analysis = document.querySelector("#jev-analysis");
   analysis.hidden = true;
   analysis.className = "jev-analysis";
+  updateReportSubmitState();
+}
+
+function updateReportSubmitState() {
+  const form = document.querySelector("#report-form");
+  const button = document.querySelector("#send-report-button");
+  const requirements = document.querySelector("#report-requirements");
+  if (!form || !button || !requirements || button.getAttribute("aria-busy") === "true") return;
+  const hasAnimal = Boolean(form.querySelector('[name="animal"]:checked'));
+  const hasCondition = Boolean(form.elements.condition.value);
+  const hasUsablePhoto = Boolean(selectedPhotoDataUrl && photoAnalysis?.isAnimal);
+  const ready = Boolean(selectedLocation && hasAnimal && hasCondition && (randomReportMode || hasUsablePhoto));
+  button.disabled = !ready;
+  requirements.textContent = ready
+    ? "Ready to send this demo report."
+    : !selectedLocation
+      ? "Choose the animal’s location first."
+      : !randomReportMode && !hasUsablePhoto
+        ? "Add a confirmed animal photo or use the random demo report to continue."
+        : !hasAnimal || !hasCondition
+          ? "Choose the animal type and condition to continue."
+          : "Complete the required report details.";
 }
 
 function reportDraftHasContent() {
@@ -190,12 +212,16 @@ function resetReportDraft({ clearLocation = true } = {}) {
   randomReportMode = false;
   clearSelectedPhoto();
   document.querySelector("#report-form-error").hidden = true;
+  document.querySelector("#map-search-input").value = "";
+  document.querySelector("#map-search-results").hidden = true;
   if (!clearLocation) return;
   selectedLocation = null;
   if (locationMarker) { locationMarker.remove(); locationMarker = null; }
   if (searchAreaMarker) { searchAreaMarker.remove(); searchAreaMarker = null; }
   document.querySelector("#coordinates").textContent = "Choose a point on the map";
   document.querySelector("#map-hint").innerHTML = "<span>1</span> Search for an area, then click the animal’s exact location";
+  map?.setView([1.3521, 103.8198], 12);
+  updateReportSubmitState();
 }
 
 async function analyzeAnimalPhoto() {
@@ -225,6 +251,8 @@ async function analyzeAnimalPhoto() {
   } catch (error) {
     status.className = "jev-analysis error";
     status.textContent = error.message;
+  } finally {
+    updateReportSubmitState();
   }
 }
 
@@ -292,6 +320,7 @@ function chooseLocation(lat, lng) {
   }
   updateCoordinateCopy();
   document.querySelector("#report-dialog").showModal();
+  updateReportSubmitState();
   scheduleReverseLookup(lat, lng);
 }
 
@@ -418,6 +447,9 @@ function switchView(viewName) {
   document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `${viewName}-view`));
   if (viewName === "reporter" && map) setTimeout(() => map.invalidateSize(), 80);
   if (viewName === "worker") {
+    caseSearch = "";
+    document.querySelector("#case-search-input").value = "";
+    document.querySelector("#clear-case-search").hidden = true;
     document.querySelector("#team-shortcut").title = "Team dashboard";
     document.querySelector("#team-shortcut").setAttribute("aria-label", "Team dashboard");
     renderDashboard();
@@ -630,6 +662,9 @@ function renderVolunteerPortal() {
   document.querySelector("#volunteer-islands-toggle").checked = Boolean(volunteer.canTravelToIslands);
   document.querySelector("#volunteer-islands-label").textContent = volunteer.canTravelToIslands ? "Available" : "Mainland only";
   const myActiveCase = reports.find(report => report.status !== "Resolved" && reportResponders(report).some(item => item.id === volunteer.id));
+  document.querySelector("#volunteer-head-copy").textContent = myActiveCase
+    ? `Your active response to ${myActiveCase.id} is shown first. Other nearby demo cases appear below.`
+    : "Browse nearby demo cases and offer to observe one from a safe distance.";
   const animalPreferences = Array.isArray(volunteer.animalPreferences) ? volunteer.animalPreferences : [];
   const nearby = reports.map(report => ({ report, distance: distanceKm(volunteer.lat, volunteer.lng, report.lat, report.lng) }))
     .filter(item => item.report.status !== "Resolved" && (item.report.id === myActiveCase?.id || (item.distance <= volunteer.radius && (volunteer.canTravelToIslands || !isOffshoreLocation(item.report)))))
@@ -878,7 +913,7 @@ document.querySelectorAll(".filter").forEach(button => button.addEventListener("
   document.querySelectorAll(".filter").forEach(item => {
     const active = item === button;
     item.classList.toggle("active", active);
-    item.setAttribute("aria-pressed", String(active));
+    item.setAttribute("aria-selected", String(active));
   });
   renderDashboard();
 }));
@@ -903,10 +938,11 @@ document.querySelector("#case-sort-select").addEventListener("change", event => 
 });
 
 function closeReportDraft() {
-  if (reportDraftHasContent() && !window.confirm("Discard this unfinished demo report?\n\nThe information entered in this report will be cleared.")) return;
+  const dirty = reportDraftHasContent();
+  if (dirty && !window.confirm("Discard this unfinished demo report?\n\nThe information entered in this report will be cleared.")) return;
   resetReportDraft();
   document.querySelector("#report-dialog").close();
-  showToast("Unfinished report discarded.");
+  if (dirty) showToast("Unfinished report discarded.");
 }
 
 document.querySelector("#close-dialog").addEventListener("click", closeReportDraft);
@@ -1020,10 +1056,12 @@ document.querySelector("#random-report-button").addEventListener("click", () => 
   form.elements.reporter.value = "Random";
   form.elements.contact.value = "";
   document.querySelector("#report-form-error").hidden = true;
+  updateReportSubmitState();
   showToast(`Random demo: ${animal} · ${condition}`);
 });
 document.querySelector("#report-form").addEventListener("input", event => {
   if (["animal", "condition", "notes", "reporter", "contact"].includes(event.target.name)) randomReportMode = false;
+  updateReportSubmitState();
 });
 
 document.querySelector("#report-form").addEventListener("submit", async event => {

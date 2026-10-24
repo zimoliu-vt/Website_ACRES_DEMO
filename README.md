@@ -51,6 +51,30 @@ The API listens on `127.0.0.1:3000`. In deployment, Nginx serves the frontend an
 
 The included workflow will deploy the site whenever `main` is updated.
 
+## Deployment tests
+
+Every push to `main` runs the Playwright browser tests before the GitHub Pages deployment. The deploy job depends on the test job, so any failed required test stops deployment. Failure artifacts include the Playwright HTML report, screenshots, and traces when available.
+
+Run the same required gate locally with:
+
+```sh
+npm ci
+npx playwright install chromium
+npm test
+```
+
+The live JEV image check is separate because it uses API credits. Supply a local animal image when you intentionally want to run it:
+
+```sh
+JEV_TEST_IMAGE=/absolute/path/to/animal.jpg npm run test:jev
+```
+
+For the VPS-hosted demo, use the guarded deployment script. It runs the same required tests first and `scp` is never reached after a failure:
+
+```sh
+WILDCARE_SSH_KEY=~/.ssh/id_ed25519 ./scripts/deploy-live.sh
+```
+
 ## Future production path
 
 This remains a demo. Before accepting real reports, add verified user accounts, role-based access controls, dedicated object storage, retention policies, abuse prevention, monitoring, notifications, and an operational rescue-team workflow.

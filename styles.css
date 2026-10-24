@@ -251,7 +251,9 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .privacy-copy { margin: 14px 0; color: var(--muted); font-size: 10px; text-align: center; }
 .submit-button { width: 100%; padding: 14px 18px; display: flex; justify-content: space-between; color: white; background: var(--forest); }
 .submit-button:hover, .primary-button:hover { background: var(--forest-2); }
-.submit-button:disabled { cursor: wait; opacity: .72; }
+.submit-button:disabled { cursor: not-allowed; opacity: .58; }
+.submit-button[aria-busy="true"] { cursor: wait; opacity: .72; }
+.form-requirements { margin: 4px 0 10px; color: var(--muted); font-size: 10px; text-align: center; }
 .toast { position: fixed; right: 24px; bottom: 24px; z-index: 2000; max-width: 360px; padding: 14px 18px; border-radius: 13px; color: white; background: var(--forest); box-shadow: var(--shadow); opacity: 0; transform: translateY(20px); pointer-events: none; transition: .25s ease; font-size: 13px; }
 .toast.show { opacity: 1; transform: translateY(0); }
 

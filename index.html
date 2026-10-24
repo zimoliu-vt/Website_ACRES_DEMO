@@ -189,11 +189,11 @@
           <section class="queue-panel">
             <div class="panel-heading">
               <div><h2 id="queue-heading">Active reports</h2><span id="queue-count" class="count-pill">0</span></div>
-              <div class="filters" role="group" aria-label="Filter reports">
-                <button class="filter active" data-filter="active" type="button" aria-pressed="true">Active</button>
-                <button class="filter" data-filter="volunteers" type="button" aria-pressed="false">Volunteers</button>
-                <button class="filter" data-filter="all" type="button" aria-pressed="false">All</button>
-                <button class="filter" data-filter="resolved" type="button" aria-pressed="false">Closed</button>
+              <div class="filters" role="tablist" aria-label="Filter reports">
+                <button class="filter active" data-filter="active" type="button" role="tab" aria-selected="true">Active</button>
+                <button class="filter" data-filter="volunteers" type="button" role="tab" aria-selected="false">Volunteers</button>
+                <button class="filter" data-filter="all" type="button" role="tab" aria-selected="false">All</button>
+                <button class="filter" data-filter="resolved" type="button" role="tab" aria-selected="false">Closed</button>
               </div>
             </div>
             <div class="queue-tools">
@@ -292,7 +292,7 @@
     <dialog id="report-dialog" class="report-dialog">
       <form id="report-form" novalidate>
         <div class="dialog-head">
-          <div><p class="eyebrow">Step 2 of 3 · final details</p><h2>Describe the animal</h2></div>
+          <div><p class="eyebrow">Step 2 of 3 · report details</p><h2>Describe the animal</h2></div>
           <button class="close-button" id="close-dialog" type="button" aria-label="Close">×</button>
         </div>
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
@@ -346,7 +346,8 @@
         </div>
 
         <p class="privacy-copy">Demo only. This does not contact a real rescue service.</p>
-        <button id="send-report-button" class="submit-button" type="submit"><span>Send demo report</span><b>→</b></button>
+        <p id="report-requirements" class="form-requirements" role="status">Add a photo or use the random demo report to continue.</p>
+        <button id="send-report-button" class="submit-button" type="submit" disabled><span>Send demo report</span><b>→</b></button>
       </form>
     </dialog>
 
@@ -373,6 +374,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=40"></script>
+    <script src="app.js?v=41"></script>
   </body>
 </html>
