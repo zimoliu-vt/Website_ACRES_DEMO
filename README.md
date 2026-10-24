@@ -69,7 +69,7 @@ The live JEV image check is separate because it uses API credits. Supply a local
 JEV_TEST_IMAGE=/absolute/path/to/animal.jpg npm run test:jev
 ```
 
-For the VPS-hosted demo, use the guarded deployment script. It runs the same required tests first and `scp` is never reached after a failure:
+For the VPS-hosted demo, use the guarded deployment script. It tests before upload, backs up the current frontend, tests the deployed server and live API, and restores the backup if a post-deployment check fails:
 
 ```sh
 WILDCARE_SSH_KEY=~/.ssh/id_ed25519 ./scripts/deploy-live.sh

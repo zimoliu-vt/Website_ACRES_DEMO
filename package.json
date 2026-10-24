@@ -5,6 +5,7 @@
   "scripts": {
     "test": "playwright test",
     "test:headed": "playwright test --headed",
+    "test:live": "playwright test",
     "test:jev": "node tests/jev-live.mjs"
   },
   "devDependencies": {

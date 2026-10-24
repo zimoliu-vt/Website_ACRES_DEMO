@@ -12,7 +12,7 @@ async function mockBackend(page) {
 }
 
 async function enterDemo(page) {
-  await page.goto("/");
+  await page.goto(`/?deployment-test=${Date.now()}`);
   const warningButton = page.getByRole("button", { name: "I understand — enter the demo" });
   if (await warningButton.isVisible()) await warningButton.click();
 }
