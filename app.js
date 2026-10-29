@@ -202,21 +202,25 @@ function updateReportSubmitState() {
   if (!form || !button || !requirements || button.getAttribute("aria-busy") === "true") return;
   const hasAnimal = Boolean(form.querySelector('[name="animal"]:checked'));
   const hasCondition = Boolean(form.elements.condition.value);
+  const hasNotes = Boolean(form.elements.notes.value.trim());
+  const hasSelectedPhoto = Boolean(selectedPhotoDataUrl);
   const hasUsablePhoto = Boolean(selectedPhotoDataUrl && photoAnalysis?.isAnimal);
   const hasPhotoConsent = document.querySelector("#photo-sharing-consent-input").checked;
-  const ready = Boolean(selectedLocation && hasAnimal && hasCondition && (randomReportMode || (hasUsablePhoto && hasPhotoConsent)));
+  const manualReady = !hasSelectedPhoto && hasAnimal && hasCondition && hasNotes;
+  const photoReady = hasUsablePhoto && hasPhotoConsent && hasAnimal && hasCondition;
+  const ready = Boolean(selectedLocation && (randomReportMode || manualReady || photoReady));
   button.disabled = !ready;
   requirements.textContent = ready
     ? "Ready to send this demo report."
     : !selectedLocation
       ? "Choose the animal’s location first."
-      : !randomReportMode && !hasUsablePhoto
-        ? "Add a confirmed animal photo or use the random demo report to continue."
-        : !randomReportMode && !hasPhotoConsent
+      : hasSelectedPhoto && !hasUsablePhoto
+        ? "Wait for the photo check, or remove the photo and describe the animal manually."
+        : hasSelectedPhoto && !hasPhotoConsent
           ? "Confirm that others may see the photo to continue."
-        : !hasAnimal || !hasCondition
-          ? "Choose the animal type and condition to continue."
-          : "Complete the required report details.";
+        : !hasAnimal || !hasCondition || (!hasSelectedPhoto && !hasNotes)
+          ? "Choose the animal type and condition, then describe what you can see."
+          : "Add a photo, or complete the animal details manually.";
 }
 
 function reportDraftHasContent() {
@@ -1108,28 +1112,22 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   const selectedAnimal = event.currentTarget.querySelector('[name="animal"]:checked');
   const condition = event.currentTarget.elements.condition.value;
   const notes = event.currentTarget.elements.notes.value.trim();
-  if (!randomReportMode && !selectedPhotoDataUrl) {
-    error.textContent = "Take or choose a clear animal photo first, or use the random demo button.";
-    error.hidden = false;
-    document.querySelector(".photo-first-step").scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
-  if (!randomReportMode && !photoAnalysis?.isAnimal) {
+  if (!randomReportMode && selectedPhotoDataUrl && !photoAnalysis?.isAnimal) {
     error.textContent = "Wait for Jev to confirm the photo contains an animal, or try another photo.";
     error.hidden = false;
     document.querySelector(".photo-first-step").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  if (!randomReportMode && !event.currentTarget.elements.photoSharingConsent.checked) {
+  if (!randomReportMode && selectedPhotoDataUrl && !event.currentTarget.elements.photoSharingConsent.checked) {
     error.textContent = "Confirm that you understand this photo can be seen by others.";
     error.hidden = false;
     document.querySelector("#photo-sharing-consent").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  if (!selectedAnimal || !condition) {
-    error.textContent = !selectedAnimal ? "Choose the animal type." : "Select what seems to be wrong.";
+  if (!selectedAnimal || !condition || (!selectedPhotoDataUrl && !notes)) {
+    error.textContent = !selectedAnimal ? "Choose the animal type." : !condition ? "Select what seems to be wrong." : "Describe what you can safely observe when no photo is attached.";
     error.hidden = false;
-    const target = !selectedAnimal ? event.currentTarget.querySelector(".animal-options") : event.currentTarget.elements.condition;
+    const target = !selectedAnimal ? event.currentTarget.querySelector(".animal-options") : !condition ? event.currentTarget.elements.condition : event.currentTarget.elements.notes;
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }

@@ -300,7 +300,7 @@
         <p id="report-form-error" class="form-error" role="alert" hidden></p>
 
         <section class="photo-first-step">
-          <div><p class="eyebrow">Start with a photo</p><h3>Photograph the animal from a safe distance</h3><p>The demo uploads and analyzes the image only to suggest the animal type and possible condition. Supported image files are compressed before upload and stored with this shared demo report.</p></div>
+          <div><p class="eyebrow">Photo is optional</p><h3>Photograph the animal only if it is safe</h3><p>A photo can help suggest the animal type and possible condition, but you can submit without one by completing the animal details below.</p></div>
           <label class="photo-field camera-photo-field">
             <input id="photo-input" name="photo" type="file" accept="image/*" capture="environment" aria-label="Open camera or choose an animal photo" />
             <span>⌾</span><strong>Open camera or choose photo</strong><small>Do not move closer or put yourself in danger for a photo.</small>
@@ -341,8 +341,8 @@
           </select>
         </label>
 
-        <label class="field">Describe what you can see <span>(required unless a photo is confirmed)</span>
-          <textarea name="notes" rows="3" maxlength="280" placeholder="Add anything the photo does not show, or leave this blank…"></textarea>
+        <label class="field">Describe what you can see <span>(required without a photo)</span>
+          <textarea name="notes" rows="3" maxlength="280" placeholder="For example: small bird under a tree, one wing held low…"></textarea>
         </label>
 
         <div class="field-row">
@@ -351,7 +351,7 @@
         </div>
 
         <p class="privacy-copy">Demo only. This does not contact a real rescue service.</p>
-        <p id="report-requirements" class="form-requirements" role="status">Add a photo or use the random demo report to continue.</p>
+        <p id="report-requirements" class="form-requirements" role="status">Add a photo, or complete the animal type, condition, and description.</p>
         <button id="send-report-button" class="submit-button" type="submit" disabled><span>Send demo report</span><b>→</b></button>
       </form>
     </dialog>
@@ -379,6 +379,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=50"></script>
+  <script src="app.js?v=51"></script>
   </body>
 </html>

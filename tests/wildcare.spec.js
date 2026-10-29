@@ -43,6 +43,11 @@ test("report flow explains requirements and protects a changed draft", async ({ 
   await expect(page.getByLabel("Open camera or choose an animal photo")).toBeAttached();
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeDisabled();
 
+  await page.getByRole("radio", { name: /Bird/ }).check();
+  await page.getByLabel("What seems to be wrong?").selectOption("Unable to move or fly");
+  await page.getByLabel(/Describe what you can see/).fill("Public report without a photo");
+  await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
+
   await page.getByRole("button", { name: /Fill a random demo report/ }).click();
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
 
