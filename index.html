@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Choose the responsive layout before styles are painted, preventing a
+      // phone from briefly displaying the desktop interface during startup.
+      const initialPhoneLayout = window.matchMedia("(max-width: 620px)").matches;
+      document.documentElement.classList.toggle("phone-layout", initialPhoneLayout);
+      document.documentElement.dataset.layout = initialPhoneLayout ? "phone" : "desktop";
+    </script>
     <meta name="theme-color" content="#173f35" />
     <meta name="description" content="A demo wildlife rescue reporting experience for Singapore." />
     <title>WildCare SG — Wildlife rescue demo</title>
@@ -11,7 +18,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <link rel="stylesheet" href="styles.css?v=51" />
   </head>
-  <body>
+  <body class="phone-report-map">
     <div class="demo-banner" role="note" aria-label="Demo warning">
       <strong><span aria-hidden="true">⚠</span> DEMO ONLY — NOT A REAL RESCUE SERVICE</strong>
       <small>Reports are not monitored, sent, or acted on.</small>
