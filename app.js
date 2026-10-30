@@ -235,6 +235,7 @@ function updateReportSubmitState() {
         : !hasAnimal || !hasCondition || (!hasSelectedPhoto && !hasNotes)
           ? "Choose the animal type and condition, then describe what you can see."
           : "Add a photo, or complete the animal details manually.";
+  updateInteractiveTutorialForm(ready);
 }
 
 function reportDraftHasContent() {
@@ -369,6 +370,7 @@ function chooseLocation(lat, lng) {
   updateCoordinateCopy();
   document.querySelector("#report-dialog").showModal();
   updateReportSubmitState();
+  if (interactiveTutorialActive) advanceInteractiveTutorialToForm();
   scheduleReverseLookup(lat, lng);
 }
 
@@ -949,31 +951,51 @@ document.querySelector("#map-search-form").addEventListener("submit", async even
 });
 const demoWarningDialog = document.querySelector("#demo-warning-dialog");
 const phoneTutorialDialog = document.querySelector("#phone-tutorial-dialog");
-let phoneTutorialStep = 0;
-
-function renderPhoneTutorial() {
-  const steps = [...document.querySelectorAll("[data-tutorial-step]")];
-  steps.forEach((step, index) => {
-    step.hidden = index !== phoneTutorialStep;
-    step.classList.toggle("active", index === phoneTutorialStep);
-  });
-  document.querySelectorAll(".tutorial-progress i").forEach((dot, index) => dot.classList.toggle("active", index === phoneTutorialStep));
-  const back = document.querySelector("#phone-tutorial-back");
-  const next = document.querySelector("#phone-tutorial-next");
-  back.hidden = phoneTutorialStep === 0;
-  next.textContent = phoneTutorialStep === steps.length - 1 ? "Got it" : "Next";
-}
+let interactiveTutorialActive = false;
 
 function openPhoneTutorial() {
   if (!phoneViewport.matches || phoneTutorialDialog.open) return;
-  phoneTutorialStep = 0;
-  renderPhoneTutorial();
   phoneTutorialDialog.showModal();
 }
 
 function completePhoneTutorial() {
   localStorage.setItem(PHONE_TUTORIAL_KEY, "true");
+  interactiveTutorialActive = false;
+  if (phoneTutorialDialog.open) phoneTutorialDialog.close();
+  document.querySelector("#map-tutorial-guide").hidden = true;
+  document.querySelector("#report-tutorial-guide").hidden = true;
+  document.querySelector(".map-panel").classList.remove("tutorial-map-active");
+  document.querySelector("#report-form").classList.remove("tutorial-form-active", "tutorial-form-ready");
+}
+
+function startInteractiveTutorial() {
   phoneTutorialDialog.close();
+  interactiveTutorialActive = true;
+  const mapPanel = document.querySelector(".map-panel");
+  mapPanel.classList.add("tutorial-map-active");
+  document.querySelector("#map-tutorial-guide").hidden = false;
+  mapPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  setTimeout(() => document.querySelector("#map-search-input").focus({ preventScroll: true }), 450);
+}
+
+function advanceInteractiveTutorialToForm() {
+  document.querySelector("#map-tutorial-guide").hidden = true;
+  document.querySelector(".map-panel").classList.remove("tutorial-map-active");
+  const form = document.querySelector("#report-form");
+  form.classList.add("tutorial-form-active");
+  document.querySelector("#report-tutorial-guide").hidden = false;
+  document.querySelector("#report-tutorial-title").textContent = "Describe the animal";
+  document.querySelector("#report-tutorial-copy").textContent = "Choose its type and condition, then describe what you can see. A photo is optional.";
+}
+
+function updateInteractiveTutorialForm(ready) {
+  if (!interactiveTutorialActive || !document.querySelector("#report-dialog")?.open) return;
+  const form = document.querySelector("#report-form");
+  form.classList.toggle("tutorial-form-ready", ready);
+  document.querySelector("#report-tutorial-title").textContent = ready ? "Your report is ready" : "Describe the animal";
+  document.querySelector("#report-tutorial-copy").textContent = ready
+    ? "Great — review your information, then use Send demo report when you are ready. Nothing was submitted by the tutorial."
+    : "Choose its type and condition, then describe what you can see. A photo is optional.";
 }
 
 function maybeShowPhoneTutorial() {
@@ -988,16 +1010,9 @@ document.querySelector("#acknowledge-demo").addEventListener("click", () => {
 });
 document.querySelector("#phone-help").addEventListener("click", openPhoneTutorial);
 document.querySelector("#skip-phone-tutorial").addEventListener("click", completePhoneTutorial);
-document.querySelector("#phone-tutorial-back").addEventListener("click", () => {
-  phoneTutorialStep = Math.max(0, phoneTutorialStep - 1);
-  renderPhoneTutorial();
-});
-document.querySelector("#phone-tutorial-next").addEventListener("click", () => {
-  const finalStep = document.querySelectorAll("[data-tutorial-step]").length - 1;
-  if (phoneTutorialStep === finalStep) return completePhoneTutorial();
-  phoneTutorialStep += 1;
-  renderPhoneTutorial();
-});
+document.querySelector("#phone-tutorial-next").addEventListener("click", startInteractiveTutorial);
+document.querySelector("#skip-map-tutorial").addEventListener("click", completePhoneTutorial);
+document.querySelector("#finish-interactive-tutorial").addEventListener("click", completePhoneTutorial);
 phoneTutorialDialog.addEventListener("cancel", event => {
   event.preventDefault();
   completePhoneTutorial();
@@ -1043,6 +1058,7 @@ function closeReportDraft() {
   const dirty = reportDraftHasContent();
   if (dirty && !window.confirm("Discard this unfinished demo report?\n\nThe information entered in this report will be cleared.")) return;
   resetReportDraft();
+  if (interactiveTutorialActive) completePhoneTutorial();
   document.querySelector("#report-dialog").close();
   if (dirty) showToast("Unfinished report discarded.");
 }
@@ -1199,6 +1215,7 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   submitButton.setAttribute("aria-busy", "true");
   submitButton.querySelector("span").textContent = "Sending…";
   const reportDialog = document.querySelector("#report-dialog");
+  if (interactiveTutorialActive) completePhoneTutorial();
   reportDialog.close();
   showToast("Sending your report…");
   const data = new FormData(event.currentTarget);

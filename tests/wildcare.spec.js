@@ -36,7 +36,7 @@ test.beforeEach(async ({ page }) => {
   await mockBackend(page);
 });
 
-test("phone tutorial explains reporting and can be reopened", async ({ page, isMobile }) => {
+test("phone tutorial guides the user through real reporting controls", async ({ page, isMobile }) => {
   await page.addInitScript(() => sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true"));
   await page.goto(`/?tutorial-test=${Date.now()}`);
   if (!isMobile) {
@@ -44,17 +44,24 @@ test("phone tutorial explains reporting and can be reopened", async ({ page, isM
     await expect(page.locator("#phone-help")).not.toBeVisible();
     return;
   }
-  await expect(page.getByRole("heading", { name: "Start a wildlife report" })).toBeVisible();
-  await page.getByRole("button", { name: "Next" }).click();
-  await expect(page.getByRole("heading", { name: "Choose the exact spot" })).toBeVisible();
-  await page.getByRole("button", { name: "Next" }).click();
-  await expect(page.getByRole("heading", { name: "Describe and send" })).toBeVisible();
-  await page.getByRole("button", { name: "Next" }).click();
-  await expect(page.getByRole("heading", { name: "Explore the demo" })).toBeVisible();
-  await page.getByRole("button", { name: "Got it" }).click();
+  await expect(page.getByRole("heading", { name: "Make a report yourself" })).toBeVisible();
+  await page.getByRole("button", { name: "Start walkthrough" }).click();
+  await expect(page.getByText("Choose the animal’s location")).toBeVisible();
+  await expect(page.getByLabel("Search for a location in Singapore")).toBeFocused();
+  await page.locator("#map").click();
+  await expect(page.locator("#report-tutorial-title")).toHaveText("Describe the animal");
+  await page.getByRole("radio", { name: /Bird/ }).check();
+  await page.getByLabel("What seems to be wrong?").selectOption("Unable to move or fly");
+  await page.getByLabel(/Describe what you can see/).fill("Interactive tutorial test");
+  await expect(page.locator("#report-tutorial-title")).toHaveText("Your report is ready");
+  await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
+  await page.getByRole("button", { name: "Finish guide" }).click();
   await expect(page.locator("#phone-tutorial-dialog")).not.toBeVisible();
+  await expect(page.locator("#report-tutorial-guide")).not.toBeVisible();
+  page.once("dialog", dialog => dialog.accept());
+  await page.getByRole("button", { name: "Close" }).click();
   await page.getByRole("button", { name: "Open reporting tutorial" }).click();
-  await expect(page.getByRole("heading", { name: "Start a wildlife report" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Make a report yourself" })).toBeVisible();
 });
 
 test("automatically detects phone-sized layouts", async ({ page, isMobile }) => {

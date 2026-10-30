@@ -326,6 +326,22 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-actions .secondary-button[hidden] { display: none; }
 .tutorial-actions:has(.secondary-button[hidden]) .primary-button { grid-column: 1 / -1; }
 
+.interactive-guide { border: 2px solid var(--lime); border-radius: 16px; color: #fff; background: rgba(23,63,53,.97); box-shadow: 0 16px 38px rgba(10,31,26,.3); }
+.interactive-guide[hidden] { display: none !important; }
+.interactive-guide .interactive-step { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 12px; font-weight: 950; }
+.interactive-guide strong { display: block; margin-bottom: 3px; font-size: 12px; }
+.interactive-guide p { margin: 0; color: rgba(255,255,255,.78); font-size: 10px; line-height: 1.4; }
+.interactive-guide button { padding: 8px 9px; border: 1px solid rgba(255,255,255,.28); border-radius: 9px; color: #fff; background: transparent; font-size: 9px; font-weight: 850; }
+.map-tutorial-guide { display: none; }
+.form-tutorial-guide { margin: 0 0 14px; padding: 12px; position: sticky; top: 0; z-index: 5; align-items: center; gap: 10px; }
+.form-tutorial-guide:not([hidden]) { display: flex; }
+.form-tutorial-guide > div { min-width: 0; flex: 1; }
+.tutorial-form-active .animal-options,
+.tutorial-form-active .field:has([name="condition"]),
+.tutorial-form-active .field:has([name="notes"]) { border-radius: 12px; outline: 3px solid rgba(215,243,108,.72); outline-offset: 3px; }
+.tutorial-form-ready #send-report-button { outline: 4px solid var(--lime); outline-offset: 3px; animation: tutorialPulse 1.25s ease-in-out infinite; }
+@keyframes tutorialPulse { 50% { box-shadow: 0 0 0 8px rgba(215,243,108,.15); } }
+
 .success-dialog { width: min(500px, calc(100% - 30px)); padding: 0; border: 0; border-radius: 24px; background: var(--paper); box-shadow: 0 30px 100px rgba(10,31,26,.32); }
 .success-content { padding: 38px; text-align: center; }
 .success-mark { width: 66px; height: 66px; margin: 0 auto 22px; display: grid; place-items: center; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 28px; font-weight: 900; }
@@ -636,6 +652,10 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .map-search { min-height: 48px; padding: 4px; border-radius: 13px; }
   .phone-layout .map-search > span { font-size: 18px; }
   .phone-layout .map-search button { min-width: 64px; min-height: 38px; }
+  .phone-layout .map-tutorial-guide:not([hidden]) { position: absolute; top: 116px; left: 10px; right: 10px; z-index: 900; padding: 12px; display: flex; align-items: center; gap: 10px; }
+  .phone-layout .map-tutorial-guide > div { min-width: 0; flex: 1; }
+  .phone-layout .tutorial-map-active .map-search { outline: 4px solid var(--lime); outline-offset: 3px; animation: tutorialPulse 1.25s ease-in-out infinite; }
+  .phone-layout .tutorial-map-active #map { filter: saturate(1.08); }
   .phone-layout .map-actions { justify-content: space-between; }
   .phone-layout .map-style-switch { min-height: 42px; }
   .phone-layout .icon-button { width: 44px; height: 44px; }

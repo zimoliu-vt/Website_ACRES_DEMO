@@ -9,7 +9,7 @@
     <script defer src="https://analytics.liusida.com/umami/script.js" data-website-id="3421d06e-63c1-4985-a7e3-1ce278eb85b4" data-domains="wildcare.liuzimo.cn" data-exclude-search="true"></script>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=45" />
+    <link rel="stylesheet" href="styles.css?v=46" />
   </head>
   <body>
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -66,6 +66,11 @@
             </div>
             <div id="map" role="application" aria-label="Interactive map of Singapore"></div>
             <div class="map-hint" id="map-hint"><span>＋</span> Select the animal’s location on the map</div>
+            <div id="map-tutorial-guide" class="interactive-guide map-tutorial-guide" role="status" hidden>
+              <span class="interactive-step">1</span>
+              <div><strong>Choose the animal’s location</strong><p>Search for an area or tap the exact spot on the map. The guide will continue when you choose a location.</p></div>
+              <button id="skip-map-tutorial" type="button">Skip</button>
+            </div>
           </section>
         </div>
       </section>
@@ -237,34 +242,14 @@
     <dialog id="phone-tutorial-dialog" class="phone-tutorial-dialog" aria-labelledby="tutorial-title">
       <div class="phone-tutorial-content">
         <button id="skip-phone-tutorial" class="tutorial-skip" type="button">Skip</button>
-        <div class="tutorial-step active" data-tutorial-step="0">
+        <div class="tutorial-step active">
           <span class="tutorial-icon" aria-hidden="true">⌕</span>
-          <p class="eyebrow">Step 1 of 4</p>
-          <h2 id="tutorial-title">Start a wildlife report</h2>
-          <p>The main function is reporting an animal. Search for an area, use your nearby location, or tap directly on the map.</p>
+          <p class="eyebrow">Interactive guide</p>
+          <h2 id="tutorial-title">Make a report yourself</h2>
+          <p>We’ll point out the real controls while you choose a location and describe the animal. Nothing will be submitted automatically.</p>
         </div>
-        <div class="tutorial-step" data-tutorial-step="1" hidden>
-          <span class="tutorial-icon" aria-hidden="true">⌖</span>
-          <p class="eyebrow">Step 2 of 4</p>
-          <h2>Choose the exact spot</h2>
-          <p>Zoom in, tap where the animal is, and move the marker if you need to correct it.</p>
-        </div>
-        <div class="tutorial-step" data-tutorial-step="2" hidden>
-          <span class="tutorial-icon" aria-hidden="true">✓</span>
-          <p class="eyebrow">Step 3 of 4</p>
-          <h2>Describe and send</h2>
-          <p>Add the animal type, condition, and what you can see. A public photo is optional.</p>
-        </div>
-        <div class="tutorial-step" data-tutorial-step="3" hidden>
-          <span class="tutorial-icon" aria-hidden="true">◎</span>
-          <p class="eyebrow">Step 4 of 4</p>
-          <h2>Explore the demo</h2>
-          <p>The Volunteer area shows nearby simulated cases. The Team area demonstrates how rescue workers review and update reports.</p>
-        </div>
-        <div class="tutorial-progress" aria-label="Tutorial progress"><i class="active"></i><i></i><i></i><i></i></div>
         <div class="tutorial-actions">
-          <button id="phone-tutorial-back" class="secondary-button" type="button" hidden>Back</button>
-          <button id="phone-tutorial-next" class="primary-button" type="button">Next</button>
+          <button id="phone-tutorial-next" class="primary-button" type="button">Start walkthrough</button>
         </div>
       </div>
     </dialog>
@@ -331,6 +316,11 @@
         <div class="dialog-head">
           <div><p class="eyebrow">Step 2 of 3 · report details</p><h2>Describe the animal</h2></div>
           <button class="close-button" id="close-dialog" type="button" aria-label="Close">×</button>
+        </div>
+        <div id="report-tutorial-guide" class="interactive-guide form-tutorial-guide" role="status" hidden>
+          <span class="interactive-step">2</span>
+          <div><strong id="report-tutorial-title">Describe the animal</strong><p id="report-tutorial-copy">Choose its type and condition, then describe what you can see. A photo is optional.</p></div>
+          <button id="finish-interactive-tutorial" type="button">Finish guide</button>
         </div>
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
         <p id="report-form-error" class="form-error" role="alert" hidden></p>
@@ -415,6 +405,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=54"></script>
+  <script src="app.js?v=55"></script>
   </body>
 </html>
