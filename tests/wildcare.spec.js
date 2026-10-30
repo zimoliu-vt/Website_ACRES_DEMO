@@ -21,6 +21,7 @@ async function enterDemo(page) {
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    sessionStorage.setItem("wildcare-auto-location-requested-v1", "true");
     localStorage.setItem("wildcare-volunteer-tutorial-seen-v1", "true");
     localStorage.setItem("wildcare-team-tutorial-seen-v1", "true");
   });
@@ -38,10 +39,28 @@ test.beforeEach(async ({ page }) => {
   await mockBackend(page);
 });
 
+test("first entry requests an approximate location and starts in satellite mode", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
+    localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    localStorage.setItem("wildcare-volunteer-tutorial-seen-v1", "true");
+    localStorage.setItem("wildcare-team-tutorial-seen-v1", "true");
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: { getCurrentPosition(success) { success({ coords: { latitude: 1.3521, longitude: 103.8198, accuracy: 80 } }); } }
+    });
+  });
+  await page.goto(`/?auto-location-test=${Date.now()}`);
+  await expect(page.locator("#map-hint")).toContainText("Your nearby area is highlighted");
+  await expect(page.getByRole("button", { name: "Satellite" })).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => page.locator(".report-marker").first().evaluate(element => getComputedStyle(element).marginTop)).toBe("-32px");
+});
+
 test("phone has detailed volunteer and rescue team walkthroughs", async ({ page, isMobile }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    sessionStorage.setItem("wildcare-auto-location-requested-v1", "true");
   });
   await page.goto(`/?portal-tutorial-test=${Date.now()}`);
   await page.getByRole("button", { name: "Volunteer" }).click();
@@ -74,7 +93,10 @@ test("phone tutorial guides the user through real reporting controls", async ({ 
   page.on("request", request => {
     if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/api/reports")) reportPosts += 1;
   });
-  await page.addInitScript(() => sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true"));
+  await page.addInitScript(() => {
+    sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
+    sessionStorage.setItem("wildcare-auto-location-requested-v1", "true");
+  });
   await page.goto(`/?tutorial-test=${Date.now()}`);
   if (!isMobile) {
     await expect(page.locator("#phone-tutorial-dialog")).not.toBeVisible();
@@ -114,6 +136,7 @@ test("automatically detects phone-sized layouts", async ({ page, isMobile }) => 
   await expect(page.locator("body")).toHaveClass(isMobile ? /phone-report-map/ : /^(?!.*phone-report-map)/);
   await expect.poll(() => page.locator("body").evaluate(element => getComputedStyle(element).overflowY)).toBe(isMobile ? "hidden" : "visible");
   if (isMobile) {
+    await expect.poll(() => page.locator("#toast").evaluate(element => getComputedStyle(element).bottom)).toBe("82px");
     await page.getByRole("button", { name: "Volunteer" }).click();
     await expect(page.locator("body")).not.toHaveClass(/phone-report-map/);
     await expect.poll(() => page.locator("body").evaluate(element => getComputedStyle(element).overflowY)).not.toBe("hidden");

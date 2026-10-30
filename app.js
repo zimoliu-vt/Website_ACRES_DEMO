@@ -3,6 +3,7 @@ const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 const PHONE_TUTORIAL_KEY = "wildcare-phone-tutorial-seen-v1";
 const VOLUNTEER_TUTORIAL_KEY = "wildcare-volunteer-tutorial-seen-v1";
 const TEAM_TUTORIAL_KEY = "wildcare-team-tutorial-seen-v1";
+const AUTO_LOCATION_KEY = "wildcare-auto-location-requested-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
 if (window.location.pathname === "/rescue") history.replaceState({}, "", "/");
@@ -326,7 +327,7 @@ function initMap() {
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, zIndex: 350 }),
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, zIndex: 360, attribution: "Labels and roads © Esri" })
   ]);
-  streetLayer.addTo(map);
+  setMapStyle("satellite");
   map.on("click", (event) => {
     if (!isSingaporePoint(event.latlng.lat, event.latlng.lng)) return rejectOutsideSingapore();
     if (searchAreaMarker) {
@@ -488,7 +489,7 @@ function drawReportMarkers() {
   if (!map) return;
   reportMarkers.forEach(marker => marker.remove());
   reportMarkers = reports.filter(report => report.status !== "Resolved").map(report => {
-    const icon = L.divIcon({ className: "report-marker", html: `<span>${animalEmoji[report.animal] || "🐾"}</span>`, iconSize: [32, 32] });
+    const icon = L.divIcon({ className: "report-marker", html: `<span>${animalEmoji[report.animal] || "🐾"}</span>`, iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -28] });
     return L.marker([report.lat, report.lng], { icon }).addTo(map).bindPopup(`<strong>${report.animal}</strong><br>${report.condition}`);
   });
 }
@@ -915,7 +916,7 @@ function renderDetailMap(report) {
   if (detailMap) detailMap.remove();
   detailMap = L.map("detail-map", { zoomControl: true, attributionControl: true, dragging: true, scrollWheelZoom: false }).setView([report.lat, report.lng], 16);
   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Esri, Maxar, Earthstar Geographics, and the GIS User Community" }).addTo(detailMap);
-  const icon = L.divIcon({ className: "report-marker", html: `<span>${animalEmoji[report.animal] || "🐾"}</span>`, iconSize: [32, 32] });
+  const icon = L.divIcon({ className: "report-marker", html: `<span>${animalEmoji[report.animal] || "🐾"}</span>`, iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -28] });
   L.marker([report.lat, report.lng], { icon }).addTo(detailMap).bindPopup(`<strong>${escapeHtml(report.animal)}</strong><br>${escapeHtml(report.area)}`).openPopup();
 }
 
@@ -1063,6 +1064,7 @@ demoWarningDialog.addEventListener("cancel", event => event.preventDefault());
 document.querySelector("#acknowledge-demo").addEventListener("click", () => {
   sessionStorage.setItem(DEMO_WARNING_KEY, "true");
   demoWarningDialog.close();
+  maybeAutoLocate();
   maybeShowPhoneTutorial();
 });
 document.querySelector("#phone-help").addEventListener("click", () => {
@@ -1200,7 +1202,7 @@ document.querySelector("#reset-demo").addEventListener("click", async () => {
   }
 });
 
-document.querySelector("#locate-button").addEventListener("click", () => {
+function requestNearbyLocation() {
   if (!navigator.geolocation) return showToast("Location is not available in this browser.");
   if (!map || !window.L) return showToast("The map is not ready yet.");
   navigator.geolocation.getCurrentPosition(position => {
@@ -1235,7 +1237,15 @@ document.querySelector("#locate-button").addEventListener("click", () => {
     maximumAge: 60000,
     timeout: 10000
   });
-});
+}
+
+function maybeAutoLocate() {
+  if (sessionStorage.getItem(AUTO_LOCATION_KEY) === "true") return;
+  sessionStorage.setItem(AUTO_LOCATION_KEY, "true");
+  requestNearbyLocation();
+}
+
+document.querySelector("#locate-button").addEventListener("click", requestNearbyLocation);
 
 document.querySelector("#random-report-button").addEventListener("click", () => {
   const form = document.querySelector("#report-form");
@@ -1633,4 +1643,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && livePortalOpen) loadBackendReports(true);
 });
 if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();
-else maybeShowPhoneTutorial();
+else {
+  maybeAutoLocate();
+  maybeShowPhoneTutorial();
+}

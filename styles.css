@@ -98,7 +98,7 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .leaflet-control-zoom { border: 0 !important; box-shadow: var(--shadow) !important; }
 .leaflet-control-zoom a { color: var(--forest) !important; border: 0 !important; }
 .leaflet-control-attribution { font-size: 9px !important; }
-.report-marker { width: 32px !important; height: 32px !important; margin: -16px 0 0 -16px !important; display: grid !important; place-items: center; border: 3px solid #fff; border-radius: 50% 50% 50% 10%; background: var(--red); color: #fff; box-shadow: 0 5px 15px rgba(50,50,50,.25); font-size: 14px; transform: rotate(-45deg); }
+.report-marker { width: 32px !important; height: 32px !important; margin: -32px 0 0 -16px !important; display: grid !important; place-items: center; border: 3px solid #fff; border-radius: 50% 50% 50% 10%; background: var(--red); color: #fff; box-shadow: 0 5px 15px rgba(50,50,50,.25); font-size: 14px; transform: rotate(-45deg); }
 .report-marker span { transform: rotate(45deg); }
 
 #worker-view { min-height: calc(100vh - 112px); padding: 48px clamp(20px, 5vw, 72px) 70px; }
@@ -610,7 +610,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .photo-preview img { width: 58px; }
   .photo-preview button { grid-column: 1 / -1; min-height: 42px; }
   .submit-button, .warning-button, .danger-button, .secondary-button, .primary-button { min-height: 48px; }
-  .toast { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); max-width: none; text-align: center; }
+  .toast { left: 12px; right: 12px; bottom: calc(82px + env(safe-area-inset-bottom)); max-width: none; text-align: center; }
   .login-dialog, .demo-warning-dialog, .success-dialog, .reopen-dialog { width: calc(100% - 20px); max-height: calc(100dvh - 20px); border-radius: 20px; }
   .login-dialog form { padding: 28px 20px calc(22px + env(safe-area-inset-bottom)); }
   .login-icon { margin-bottom: 15px; }
