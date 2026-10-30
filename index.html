@@ -16,7 +16,7 @@
     <script defer src="https://analytics.liusida.com/umami/script.js" data-website-id="3421d06e-63c1-4985-a7e3-1ce278eb85b4" data-domains="wildcare.liuzimo.cn" data-exclude-search="true"></script>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=56" />
+    <link rel="stylesheet" href="styles.css?v=57" />
   </head>
   <body class="phone-report-map">
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -359,7 +359,7 @@
         </div>
         <div id="report-tutorial-guide" class="interactive-guide form-tutorial-guide" role="status" hidden>
           <span class="interactive-step">2</span>
-          <div><strong id="report-tutorial-title">Try the photo, then add details</strong><p id="report-tutorial-copy">Start with a photo only if it is safe. You can continue without one.</p><ol class="tutorial-form-checklist"><li class="optional" data-tutorial-check="photo"><span>1</span> Photo <em>optional</em></li><li class="required" data-tutorial-check="animal"><span>2</span> Animal</li><li class="required" data-tutorial-check="condition"><span>3</span> Condition</li><li class="required" data-tutorial-check="notes"><span>4</span> Description</li></ol><small>Practice only — nothing will be submitted or saved.</small></div>
+          <div><strong id="report-tutorial-title">Use a photo or describe what you see</strong><p id="report-tutorial-copy">A photo is optional. If you skip it, write a short description instead.</p><ol class="tutorial-form-checklist"><li class="optional" data-tutorial-check="photo"><span>1</span> Photo <em>optional</em></li><li class="required" data-tutorial-check="animal"><span>2</span> Animal</li><li class="required" data-tutorial-check="condition"><span>3</span> Condition</li><li class="required" data-tutorial-check="notes"><span>4</span> Description</li></ol><small>Practice only — nothing will be submitted or saved.</small></div>
           <button id="finish-interactive-tutorial" type="button">Exit walkthrough</button>
         </div>
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
@@ -382,6 +382,11 @@
           </label>
           <div id="jev-analysis" class="jev-analysis" role="status" aria-live="polite" hidden></div>
         </section>
+
+        <div class="photo-or-divider" role="note">
+          <span>OR</span>
+          <div><strong>Continue without a photo</strong><small>Choose the animal type and condition, then describe what you can see.</small></div>
+        </div>
 
         <button id="random-report-button" class="random-report-button" type="button"><span>✦</span><div><strong>Fill a random demo report</strong><small>Random animal and condition · name “Random” · no contact number</small></div></button>
 
@@ -445,6 +450,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=69"></script>
+  <script src="app.js?v=70"></script>
   </body>
 </html>

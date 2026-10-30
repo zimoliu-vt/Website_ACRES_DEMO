@@ -237,6 +237,11 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .photo-tutorial-number { width: 22px; height: 22px; margin-right: 6px; display: none; place-items: center; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 10px; font-weight: 950; }
 .photo-first-step h3 { margin: 3px 0 5px; color: var(--forest); font: 600 20px/1.2 Georgia, serif; }
 .photo-first-step > div:first-child > p:last-child { margin: 0 0 12px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.photo-or-divider { margin: -4px 0 18px; display: none; grid-template-columns: auto 1fr; align-items: center; gap: 11px; color: var(--forest); }
+.photo-or-divider > span { width: 38px; height: 38px; display: grid; place-items: center; border: 2px solid var(--lime); border-radius: 50%; background: var(--paper); font-size: 10px; font-weight: 950; letter-spacing: .08em; }
+.photo-or-divider > div { display: flex; flex-direction: column; gap: 2px; }
+.photo-or-divider strong { font-size: 12px; }
+.photo-or-divider small { color: var(--muted); font-size: 9px; line-height: 1.4; }
 .camera-photo-field { margin: 0; background: #fff; }
 .jev-analysis { margin-top: 10px; padding: 11px 13px; border-radius: 11px; color: var(--forest); background: #dfeee7; font-size: 10px; font-weight: 750; line-height: 1.5; }
 .jev-analysis[hidden] { display: none; }
@@ -387,6 +392,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-form-active .numbered-field-label > span { display: inline-grid; }
 .tutorial-form-active .photo-tutorial-number { display: inline-grid; }
 .tutorial-form-active .photo-first-step { outline: 3px solid rgba(215,243,108,.72); outline-offset: 3px; }
+.tutorial-form-active .photo-or-divider { display: grid; }
 .tutorial-form-active .camera-photo-field { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(215,243,108,.25); }
 .tutorial-form-active .animal-options,
 .tutorial-form-active .field:has([name="condition"]),

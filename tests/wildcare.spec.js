@@ -135,12 +135,14 @@ test("desktop and phone tutorial guides the user through real reporting controls
   await expect(page.getByText("Choose the animal’s location")).toBeVisible();
   await expect(page.locator("#map-tutorial-guide")).toContainText("nothing will be submitted or saved");
   await page.locator("#map").click();
-  await expect(page.locator("#report-tutorial-title")).toHaveText("Try the photo, then add details");
+  await expect(page.locator("#report-tutorial-title")).toHaveText("Use a photo or describe what you see");
   await expect(page.locator("#report-tutorial-guide")).toContainText("nothing will be submitted or saved");
   await expect(page.locator(".tutorial-form-checklist")).toContainText("1 Photo optional");
   await expect(page.locator(".photo-first-step")).toBeVisible();
   await expect(page.locator(".photo-first-step")).toContainText("Photo is optional");
   await expect(page.getByLabel("Open camera or choose an animal photo")).toBeVisible();
+  await expect(page.locator(".photo-or-divider")).toContainText("OR");
+  await expect(page.locator(".photo-or-divider")).toContainText("Continue without a photo");
   await page.getByRole("radio", { name: /Bird/ }).check();
   await page.getByLabel("What seems to be wrong?").selectOption("Unable to move or fly");
   await page.getByLabel(/Describe what you can see/).fill("Interactive tutorial test");

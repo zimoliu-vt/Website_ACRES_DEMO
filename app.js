@@ -1100,8 +1100,8 @@ function advanceInteractiveTutorialToForm() {
   const form = document.querySelector("#report-form");
   form.classList.add("tutorial-form-active");
   document.querySelector("#report-tutorial-guide").hidden = false;
-  document.querySelector("#report-tutorial-title").textContent = "Try the photo, then add details";
-  document.querySelector("#report-tutorial-copy").textContent = "Start with a photo only if it is safe. You can continue without one, then complete steps 2–4.";
+  document.querySelector("#report-tutorial-title").textContent = "Use a photo or describe what you see";
+  document.querySelector("#report-tutorial-copy").textContent = "A photo is optional. If you skip it, write a short description instead.";
   updateInteractiveTutorialForm(false);
 }
 
@@ -1120,10 +1120,10 @@ function updateInteractiveTutorialForm(ready) {
   form.elements.notes.closest(".numbered-report-step")?.classList.toggle("tutorial-step-complete", completed.notes);
   document.querySelectorAll("[data-tutorial-check]").forEach(item => item.classList.toggle("complete", completed[item.dataset.tutorialCheck]));
   form.classList.toggle("tutorial-form-ready", ready);
-  document.querySelector("#report-tutorial-title").textContent = ready ? "Required details are complete" : "Try the photo, then add details";
+  document.querySelector("#report-tutorial-title").textContent = ready ? "Required details are complete" : "Use a photo or describe what you see";
   document.querySelector("#report-tutorial-copy").textContent = ready
     ? "Great — select Send demo report to finish the walkthrough. Nothing will be submitted or saved."
-    : "Start with a photo only if it is safe. You can continue without one, then complete steps 2–4.";
+    : "A photo is optional. If you skip it, write a short description instead.";
 }
 
 function maybeShowPhoneTutorial() {
