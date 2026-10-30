@@ -1,6 +1,8 @@
 const STORAGE_KEY = "wildcare-demo-reports-v1";
 const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 const PHONE_TUTORIAL_KEY = "wildcare-phone-tutorial-seen-v1";
+const VOLUNTEER_TUTORIAL_KEY = "wildcare-volunteer-tutorial-seen-v1";
+const TEAM_TUTORIAL_KEY = "wildcare-team-tutorial-seen-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
 if (window.location.pathname === "/rescue") history.replaceState({}, "", "/");
@@ -504,6 +506,8 @@ function switchView(viewName) {
   else teamShortcut.removeAttribute("aria-current");
   document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `${viewName}-view`));
   document.body.classList.toggle("phone-report-map", phoneViewport.matches && viewName === "reporter");
+  const helpButton = document.querySelector("#phone-help");
+  helpButton.setAttribute("aria-label", viewName === "volunteer" ? "Open volunteer walkthrough" : viewName === "worker" ? "Open rescue team walkthrough" : "Open reporting tutorial");
   if (viewName === "reporter" && map) setTimeout(() => map.invalidateSize(), 80);
   if (viewName === "worker") {
     caseSearch = "";
@@ -514,6 +518,7 @@ function switchView(viewName) {
     renderDashboard();
   }
   if (viewName === "volunteer") renderVolunteerPortal();
+  if (phoneViewport.matches && ["volunteer", "worker"].includes(viewName)) setTimeout(() => maybeShowPortalTutorial(viewName), 120);
 }
 
 function openWorkerLogin() {
@@ -954,7 +959,56 @@ document.querySelector("#map-search-form").addEventListener("submit", async even
 });
 const demoWarningDialog = document.querySelector("#demo-warning-dialog");
 const phoneTutorialDialog = document.querySelector("#phone-tutorial-dialog");
+const portalTutorialDialog = document.querySelector("#portal-tutorial-dialog");
 let interactiveTutorialActive = false;
+let portalTutorialType = "volunteer";
+let portalTutorialStep = 0;
+const portalTutorials = {
+  volunteer: [
+    { icon: "⌖", title: "Create your volunteer profile", copy: "Set up the demo profile that controls which cases you can see.", points: ["Choose your approximate location on the map.", "Customise how far you are willing to travel.", "Add relevant animal-care or handling experience."] },
+    { icon: "◎", title: "Find a nearby case", copy: "The portal compares active cases with your selected location and travel radius.", points: ["Cases are ordered by urgency and distance.", "You may respond to one active case at a time.", "Up to three volunteers can observe the same case."] },
+    { icon: "✓", title: "Share a safe observation", copy: "Use the case controls to demonstrate how a volunteer response progresses.", points: ["Offer to observe, then mark when you have arrived nearby.", "Report whether the animal appears stable, serious, or deceased.", "Serious or deceased assessments require a photo. This remains a demo—do not travel."] }
+  ],
+  worker: [
+    { icon: "⌘", title: "Open the rescue queue", copy: "The Team portal demonstrates how workers could review simulated reports.", points: ["Use demo PIN 0000 to sign in.", "Search, filter, and order active cases.", "Urgent and deceased reports are raised in priority."] },
+    { icon: "◫", title: "Review the evidence", copy: "Open a case to see everything collected about the animal.", points: ["Check the location, description, public photo, and timeline.", "Review volunteer names, experience, arrival, and assessment.", "Compare public and volunteer evidence before changing status."] },
+    { icon: "↻", title: "Manage the case", copy: "Move the simulated case through the rescue workflow.", points: ["Update statuses from New through Resolved.", "Reopening a resolved case requires confirmation.", "All actions are part of this demo and do not dispatch a real team."] }
+  ]
+};
+
+function portalTutorialKey(type) {
+  return type === "worker" ? TEAM_TUTORIAL_KEY : VOLUNTEER_TUTORIAL_KEY;
+}
+
+function renderPortalTutorial() {
+  const steps = portalTutorials[portalTutorialType];
+  const current = steps[portalTutorialStep];
+  document.querySelector("#portal-tutorial-icon").textContent = current.icon;
+  document.querySelector("#portal-tutorial-step").textContent = `Step ${portalTutorialStep + 1} of ${steps.length}`;
+  document.querySelector("#portal-tutorial-title").textContent = current.title;
+  document.querySelector("#portal-tutorial-copy").textContent = current.copy;
+  document.querySelector("#portal-tutorial-points").innerHTML = current.points.map(point => `<li>${escapeHtml(point)}</li>`).join("");
+  document.querySelector("#portal-tutorial-progress").innerHTML = steps.map((_step, index) => `<i class="${index === portalTutorialStep ? "active" : ""}"></i>`).join("");
+  document.querySelector("#portal-tutorial-back").hidden = portalTutorialStep === 0;
+  document.querySelector("#portal-tutorial-next").textContent = portalTutorialStep === steps.length - 1 ? "Got it" : "Next";
+}
+
+function openPortalTutorial(type) {
+  if (!phoneViewport.matches || portalTutorialDialog.open) return;
+  portalTutorialType = type === "worker" ? "worker" : "volunteer";
+  portalTutorialStep = 0;
+  renderPortalTutorial();
+  portalTutorialDialog.showModal();
+}
+
+function completePortalTutorial() {
+  localStorage.setItem(portalTutorialKey(portalTutorialType), "true");
+  if (portalTutorialDialog.open) portalTutorialDialog.close();
+}
+
+function maybeShowPortalTutorial(type) {
+  if (localStorage.getItem(portalTutorialKey(type)) !== "true") openPortalTutorial(type);
+}
 
 function openPhoneTutorial() {
   if (!phoneViewport.matches || phoneTutorialDialog.open) return;
@@ -1011,7 +1065,12 @@ document.querySelector("#acknowledge-demo").addEventListener("click", () => {
   demoWarningDialog.close();
   maybeShowPhoneTutorial();
 });
-document.querySelector("#phone-help").addEventListener("click", openPhoneTutorial);
+document.querySelector("#phone-help").addEventListener("click", () => {
+  const activeView = document.querySelector(".view.active")?.id;
+  if (activeView === "volunteer-view") openPortalTutorial("volunteer");
+  else if (activeView === "worker-view") openPortalTutorial("worker");
+  else openPhoneTutorial();
+});
 document.querySelector("#skip-phone-tutorial").addEventListener("click", completePhoneTutorial);
 document.querySelector("#phone-tutorial-next").addEventListener("click", startInteractiveTutorial);
 document.querySelector("#skip-map-tutorial").addEventListener("click", completePhoneTutorial);
@@ -1019,6 +1078,21 @@ document.querySelector("#finish-interactive-tutorial").addEventListener("click",
 phoneTutorialDialog.addEventListener("cancel", event => {
   event.preventDefault();
   completePhoneTutorial();
+});
+document.querySelector("#skip-portal-tutorial").addEventListener("click", completePortalTutorial);
+document.querySelector("#portal-tutorial-back").addEventListener("click", () => {
+  portalTutorialStep = Math.max(0, portalTutorialStep - 1);
+  renderPortalTutorial();
+});
+document.querySelector("#portal-tutorial-next").addEventListener("click", () => {
+  const finalStep = portalTutorials[portalTutorialType].length - 1;
+  if (portalTutorialStep === finalStep) return completePortalTutorial();
+  portalTutorialStep += 1;
+  renderPortalTutorial();
+});
+portalTutorialDialog.addEventListener("cancel", event => {
+  event.preventDefault();
+  completePortalTutorial();
 });
 document.querySelectorAll("[data-guide-step]").forEach(button => button.addEventListener("click", () => {
   const mapPanel = document.querySelector(".map-panel");

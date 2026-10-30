@@ -330,6 +330,22 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-actions .secondary-button[hidden] { display: none; }
 .tutorial-actions:has(.secondary-button[hidden]) .primary-button { grid-column: 1 / -1; }
 
+.portal-tutorial-dialog { width: min(520px, calc(100% - 24px)); padding: 0; border: 0; border-radius: 26px; background: var(--paper); box-shadow: 0 30px 100px rgba(10,31,26,.36); }
+.portal-tutorial-dialog::backdrop { background: rgba(12,32,27,.64); backdrop-filter: blur(6px); }
+.portal-tutorial-content { min-height: 520px; padding: 34px 30px 26px; position: relative; display: flex; flex-direction: column; }
+.portal-tutorial-icon { width: 74px; height: 74px; margin: 8px auto 22px; display: grid; place-items: center; border-radius: 23px; color: var(--lime); background: var(--forest); font-size: 32px; font-weight: 900; transform: rotate(-3deg); }
+.portal-tutorial-content > .eyebrow { margin-bottom: 8px; text-align: center; }
+.portal-tutorial-content h2 { margin: 0 0 12px; color: var(--forest); font: 600 34px/1.05 Georgia, serif; text-align: center; }
+.portal-tutorial-copy { max-width: 420px; margin: 0 auto 20px; color: var(--muted); font-size: 13px; line-height: 1.55; text-align: center; }
+.portal-tutorial-points { margin: 0; padding: 0; display: grid; gap: 9px; list-style: none; }
+.portal-tutorial-points li { padding: 11px 12px; display: grid; grid-template-columns: 24px 1fr; gap: 9px; align-items: start; border: 1px solid var(--line); border-radius: 12px; color: #43504b; background: #f7f8f4; font-size: 11px; line-height: 1.45; }
+.portal-tutorial-points li::before { content: "✓"; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: var(--forest); background: var(--lime); font-weight: 950; }
+.portal-tutorial-dialog .tutorial-progress { margin-top: auto; }
+.portal-tutorial-actions { display: grid; grid-template-columns: auto 1fr; gap: 9px; }
+.portal-tutorial-actions button { min-height: 50px; }
+.portal-tutorial-actions .secondary-button[hidden] { display: none; }
+.portal-tutorial-actions:has(.secondary-button[hidden]) .primary-button { grid-column: 1 / -1; }
+
 .interactive-guide { border: 2px solid var(--lime); border-radius: 16px; color: #fff; background: rgba(23,63,53,.97); box-shadow: 0 16px 38px rgba(10,31,26,.3); }
 .interactive-guide[hidden] { display: none !important; }
 .interactive-guide .interactive-step { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 12px; font-weight: 950; }
@@ -644,6 +660,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .brand-mark { width: 34px; height: 34px; font-size: 18px; }
   .phone-layout .brand strong { font-size: 21px; }
   .phone-layout .phone-help { width: 38px; height: 38px; margin-left: auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--forest); background: #f3f6f1; font-size: 17px; font-weight: 900; }
+  .phone-layout .portal-tutorial-dialog { width: calc(100% - 16px); max-height: calc(100dvh - 16px); border-radius: 24px; }
+  .phone-layout .portal-tutorial-content { min-height: min(650px, calc(100dvh - 16px)); padding: 30px 22px 20px; }
   .phone-layout .mode-switch { position: fixed; left: 10px; right: 10px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 1500; width: auto; min-height: 58px; margin: 0; padding: 5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border: 1px solid rgba(23,63,53,.1); border-radius: 18px; background: rgba(255,254,250,.97); box-shadow: 0 10px 34px rgba(23,63,53,.2); backdrop-filter: blur(18px); }
   .phone-layout .mode-button,
   .phone-layout .rescue-shortcut { min-width: 0; min-height: 48px; padding: 7px 5px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 13px; font-size: 11px; font-weight: 850; }
