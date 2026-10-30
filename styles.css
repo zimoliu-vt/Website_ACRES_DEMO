@@ -32,7 +32,8 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .brand strong { font-family: Georgia, serif; font-size: 21px; }
 .brand small { margin-top: 5px; font-size: 9px; text-transform: uppercase; letter-spacing: .22em; font-weight: 800; }
 .demo-chip { margin-left: 4px; padding: 5px 8px; border-radius: 7px; color: #fff; background: #c52f2f; font-size: 9px; font-weight: 950; letter-spacing: .12em; box-shadow: 0 3px 8px rgba(197,47,47,.22); }
-.phone-help { display: none; }
+.phone-help { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--forest); background: #f3f6f1; font-size: 17px; font-weight: 900; }
+.phone-help:hover, .phone-help:focus-visible { border-color: #afc1b7; background: #fff; outline: 3px solid rgba(23,63,53,.1); }
 .mode-switch { display: flex; gap: 5px; padding: 5px; border-radius: 999px; background: #ecede7; }
 .mode-button { padding: 10px 17px; border: 0; border-radius: 999px; color: #65706b; background: transparent; font-size: 13px; font-weight: 750; }
 .mode-button.active { color: #fff; background: var(--forest); box-shadow: 0 4px 14px rgba(23,63,53,.2); }
@@ -364,6 +365,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .interactive-guide div > small { margin-top: 5px; display: block; color: var(--lime); font-size: 9px; font-weight: 850; line-height: 1.35; }
 .interactive-guide button { padding: 8px 9px; border: 1px solid rgba(255,255,255,.28); border-radius: 9px; color: #fff; background: transparent; font-size: 9px; font-weight: 850; }
 .map-tutorial-guide { display: none; }
+.map-tutorial-guide:not([hidden]) { position: absolute; top: 126px; left: 18px; right: 18px; z-index: 900; padding: 12px; display: flex; align-items: center; gap: 10px; }
+.map-tutorial-guide > div { min-width: 0; flex: 1; }
 .form-tutorial-guide { margin: 0 0 14px; padding: 12px; position: sticky; top: 0; z-index: 5; align-items: center; gap: 10px; }
 .form-tutorial-guide:not([hidden]) { display: flex; }
 .form-tutorial-guide > div { min-width: 0; flex: 1; }

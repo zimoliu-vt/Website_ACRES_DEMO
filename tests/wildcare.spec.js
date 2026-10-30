@@ -21,6 +21,7 @@ async function enterDemo(page) {
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    localStorage.setItem("wildcare-desktop-tutorial-seen-v1", "true");
     sessionStorage.setItem("wildcare-auto-location-requested-v2", "true");
     localStorage.setItem("wildcare-volunteer-tutorial-seen-v1", "true");
     localStorage.setItem("wildcare-team-tutorial-seen-v1", "true");
@@ -43,6 +44,7 @@ test("first entry requests an approximate location and starts in satellite mode"
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    localStorage.setItem("wildcare-desktop-tutorial-seen-v1", "true");
     localStorage.setItem("wildcare-volunteer-tutorial-seen-v1", "true");
     localStorage.setItem("wildcare-team-tutorial-seen-v1", "true");
     // Simulate a tab that still has the pre-cache request marker. The current
@@ -70,6 +72,7 @@ test("failed automatic location falls back closer and retries after reload", asy
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    localStorage.setItem("wildcare-desktop-tutorial-seen-v1", "true");
     Object.defineProperty(navigator, "geolocation", {
       configurable: true,
       value: { getCurrentPosition(_success, failure) {
@@ -86,18 +89,15 @@ test("failed automatic location falls back closer and retries after reload", asy
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-failed-geolocation-calls"))).toBe("2");
 });
 
-test("phone has detailed volunteer and rescue team walkthroughs", async ({ page, isMobile }) => {
+test("desktop and phone have detailed volunteer and rescue team walkthroughs", async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    localStorage.setItem("wildcare-desktop-tutorial-seen-v1", "true");
     sessionStorage.setItem("wildcare-auto-location-requested-v1", "true");
   });
   await page.goto(`/?portal-tutorial-test=${Date.now()}`);
   await page.getByRole("button", { name: "Volunteer" }).click();
-  if (!isMobile) {
-    await expect(page.locator("#portal-tutorial-dialog")).not.toBeVisible();
-    return;
-  }
   await expect(page.getByRole("heading", { name: "Create your volunteer profile" })).toBeVisible();
   await page.getByRole("button", { name: "Next" }).click();
   await expect(page.getByRole("heading", { name: "Find a nearby case" })).toBeVisible();
@@ -118,7 +118,7 @@ test("phone has detailed volunteer and rescue team walkthroughs", async ({ page,
   await expect(page.getByRole("heading", { name: "Open the rescue queue" })).toBeVisible();
 });
 
-test("phone tutorial guides the user through real reporting controls", async ({ page, isMobile }) => {
+test("desktop and phone tutorial guides the user through real reporting controls", async ({ page }) => {
   let reportPosts = 0;
   page.on("request", request => {
     if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/api/reports")) reportPosts += 1;
@@ -128,11 +128,6 @@ test("phone tutorial guides the user through real reporting controls", async ({ 
     sessionStorage.setItem("wildcare-auto-location-requested-v1", "true");
   });
   await page.goto(`/?tutorial-test=${Date.now()}`);
-  if (!isMobile) {
-    await expect(page.locator("#phone-tutorial-dialog")).not.toBeVisible();
-    await expect(page.locator("#phone-help")).not.toBeVisible();
-    return;
-  }
   await expect(page.getByRole("heading", { name: "Make a report yourself" })).toBeVisible();
   await expect(page.locator(".tutorial-practice-warning")).toContainText("No report will be submitted, saved, or added to the rescue-team queue.");
   await page.getByRole("button", { name: "Start walkthrough" }).click();

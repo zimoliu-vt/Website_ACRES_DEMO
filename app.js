@@ -1,6 +1,7 @@
 const STORAGE_KEY = "wildcare-demo-reports-v1";
 const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 const PHONE_TUTORIAL_KEY = "wildcare-phone-tutorial-seen-v1";
+const DESKTOP_TUTORIAL_KEY = "wildcare-desktop-tutorial-seen-v1";
 const VOLUNTEER_TUTORIAL_KEY = "wildcare-volunteer-tutorial-seen-v1";
 const TEAM_TUTORIAL_KEY = "wildcare-team-tutorial-seen-v1";
 const AUTO_LOCATION_CACHE_KEY = "wildcare-auto-location-area-v1";
@@ -521,7 +522,7 @@ function switchView(viewName) {
     renderDashboard();
   }
   if (viewName === "volunteer") renderVolunteerPortal();
-  if (phoneViewport.matches && ["volunteer", "worker"].includes(viewName)) setTimeout(() => maybeShowPortalTutorial(viewName), 120);
+  if (["volunteer", "worker"].includes(viewName)) setTimeout(() => maybeShowPortalTutorial(viewName), 120);
 }
 
 function openWorkerLogin() {
@@ -1048,7 +1049,7 @@ function renderPortalTutorial() {
 }
 
 function openPortalTutorial(type) {
-  if (!phoneViewport.matches || portalTutorialDialog.open) return;
+  if (portalTutorialDialog.open) return;
   portalTutorialType = type === "worker" ? "worker" : "volunteer";
   portalTutorialStep = 0;
   renderPortalTutorial();
@@ -1065,12 +1066,16 @@ function maybeShowPortalTutorial(type) {
 }
 
 function openPhoneTutorial() {
-  if (!phoneViewport.matches || phoneTutorialDialog.open) return;
+  if (phoneTutorialDialog.open) return;
   phoneTutorialDialog.showModal();
 }
 
+function reportingTutorialKey() {
+  return phoneViewport.matches ? PHONE_TUTORIAL_KEY : DESKTOP_TUTORIAL_KEY;
+}
+
 function completePhoneTutorial() {
-  localStorage.setItem(PHONE_TUTORIAL_KEY, "true");
+  localStorage.setItem(reportingTutorialKey(), "true");
   interactiveTutorialActive = false;
   if (phoneTutorialDialog.open) phoneTutorialDialog.close();
   document.querySelector("#map-tutorial-guide").hidden = true;
@@ -1110,7 +1115,7 @@ function updateInteractiveTutorialForm(ready) {
 }
 
 function maybeShowPhoneTutorial() {
-  if (phoneViewport.matches && localStorage.getItem(PHONE_TUTORIAL_KEY) !== "true") openPhoneTutorial();
+  if (localStorage.getItem(reportingTutorialKey()) !== "true") openPhoneTutorial();
 }
 
 demoWarningDialog.addEventListener("cancel", event => event.preventDefault());
