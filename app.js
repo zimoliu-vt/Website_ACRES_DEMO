@@ -3,7 +3,9 @@ const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 const PHONE_TUTORIAL_KEY = "wildcare-phone-tutorial-seen-v1";
 const VOLUNTEER_TUTORIAL_KEY = "wildcare-volunteer-tutorial-seen-v1";
 const TEAM_TUTORIAL_KEY = "wildcare-team-tutorial-seen-v1";
-const AUTO_LOCATION_KEY = "wildcare-auto-location-requested-v1";
+// v2 distinguishes the current location-caching flow from older tabs that
+// remembered only that permission had been requested, but not the map area.
+const AUTO_LOCATION_KEY = "wildcare-auto-location-requested-v2";
 const AUTO_LOCATION_CACHE_KEY = "wildcare-auto-location-area-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";

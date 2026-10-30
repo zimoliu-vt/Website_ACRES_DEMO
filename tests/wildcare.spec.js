@@ -21,7 +21,7 @@ async function enterDemo(page) {
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
-    sessionStorage.setItem("wildcare-auto-location-requested-v1", "true");
+    sessionStorage.setItem("wildcare-auto-location-requested-v2", "true");
     localStorage.setItem("wildcare-volunteer-tutorial-seen-v1", "true");
     localStorage.setItem("wildcare-team-tutorial-seen-v1", "true");
   });
@@ -45,6 +45,9 @@ test("first entry requests an approximate location and starts in satellite mode"
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
     localStorage.setItem("wildcare-volunteer-tutorial-seen-v1", "true");
     localStorage.setItem("wildcare-team-tutorial-seen-v1", "true");
+    // Simulate a tab that still has the pre-cache request marker. The current
+    // flow must request once, save the area, and then restore it on reload.
+    sessionStorage.setItem("wildcare-auto-location-requested-v1", "true");
     Object.defineProperty(navigator, "geolocation", {
       configurable: true,
       value: { getCurrentPosition(success) {
