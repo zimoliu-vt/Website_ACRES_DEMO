@@ -1264,6 +1264,11 @@ function maybeAutoLocate() {
   // rather than a request flag, is the only reliable proof of success.
   if (autoLocationAttempted) return;
   autoLocationAttempted = true;
+  // Do not leave the user at the country-wide overview while the browser is
+  // resolving permission. Start closer immediately, then move to their
+  // approximate area when geolocation succeeds.
+  map.flyTo([1.3521, 103.8198], 13, { duration: .45 });
+  document.querySelector("#map-hint").innerHTML = "<span>⌖</span> Finding your nearby area…";
   requestNearbyLocation({ automatic: true });
 }
 
