@@ -153,6 +153,7 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .status-acknowledged { color: #82611c; background: #fff0bd; }
 .status-assigned { color: #275d80; background: #d9edfa; }
 .status-resolved { color: #2e694c; background: #dcefe4; }
+.status-trash { color: #fff; background: #68716c; }
 .status-reported-deceased { color: #fff; background: #4a4a4a; }
 .status-urgent { color: #fff; background: #c52f2f; box-shadow: 0 0 0 3px rgba(197,47,47,.12); }
 .detail-panel { min-height: 300px; position: sticky; top: 18px; }
@@ -187,6 +188,15 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .case-evidence .case-photo img { max-height: 260px; }
 .status-control label { display: block; margin-bottom: 7px; font-size: 10px; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
 .status-control select { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--forest); background: white; font-weight: 750; }
+.status-control > small { margin-top: 7px; display: block; color: var(--muted); font-size: 9px; line-height: 1.45; }
+.trash-report-button { width: 100%; margin-top: 12px; padding: 12px; border: 1px solid #e4bbb7; border-radius: 10px; color: #98362f; background: #fff5f3; font-weight: 850; }
+.trash-report-button:hover, .trash-report-button:focus-visible { border-color: #b3443b; background: #ffe8e4; outline: 3px solid rgba(179,68,59,.14); }
+.trash-retention { margin-top: 18px; padding: 14px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; border: 1px solid #cfd6d1; border-radius: 13px; background: #f3f5f3; }
+.trash-retention > span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #68716c; font-size: 19px; }
+.trash-retention strong { color: var(--forest); font-size: 11px; }
+.trash-retention p { margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.45; }
+.trash-retention button { white-space: nowrap; }
+.trash-icon { color: #fff; background: #68716c; }
 .case-timeline { margin: 18px 0; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: #fbfcf9; }
 .timeline-heading { margin-bottom: 12px; display: flex; justify-content: space-between; gap: 10px; }
 .timeline-heading span { color: var(--forest); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
@@ -571,8 +581,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .queue-panel, .detail-panel { border-radius: 16px; }
   .detail-panel { margin-top: 14px; scroll-margin-top: 12px; }
   .panel-heading { min-height: auto; padding: 15px; align-items: stretch; flex-direction: column; gap: 12px; }
-  .filters { width: 100%; }
-  .filter { min-height: 42px; flex: 1; }
+  .filters { width: 100%; flex-wrap: wrap; }
+  .filter { min-width: calc(33.333% - 4px); min-height: 42px; flex: 1; }
   .queue-tools { margin: 12px; grid-template-columns: 1fr; }
   .case-search input { min-height: 44px; font-size: 13px; }
   .case-sort { min-height: 44px; justify-content: space-between; }
@@ -589,6 +599,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .case-evidence-grid { grid-template-columns: 1fr; }
   .meta-box { padding: 13px; }
   .status-control select { min-height: 48px; font-size: 16px; }
+  .trash-retention { grid-template-columns: auto 1fr; }
+  .trash-retention button { grid-column: 1 / -1; width: 100%; }
   .field-row { grid-template-columns: 1fr; gap: 0; }
   dialog { margin: auto; }
   .report-dialog { width: 100%; max-width: none; max-height: 100dvh; border-radius: 22px 22px 0 0; }

@@ -208,6 +208,7 @@
                 <button class="filter" data-filter="volunteers" type="button" role="tab" aria-selected="false">Volunteers</button>
                 <button class="filter" data-filter="all" type="button" role="tab" aria-selected="false">All</button>
                 <button class="filter" data-filter="resolved" type="button" role="tab" aria-selected="false">Closed</button>
+                <button class="filter" data-filter="trash" type="button" role="tab" aria-selected="false">Trash</button>
               </div>
             </div>
             <div class="queue-tools">
@@ -335,6 +336,19 @@
       </div>
     </dialog>
 
+    <dialog id="trash-report-dialog" class="reopen-dialog">
+      <div class="reopen-content">
+        <div class="reopen-icon trash-icon" aria-hidden="true">♲</div>
+        <p class="eyebrow">Move completed case to Trash?</p>
+        <h2>It will be kept for 30 days.</h2>
+        <p>Case <strong id="trash-case-id"></strong> will leave the normal case lists. The rescue team can restore it from Trash until it is permanently deleted after 30 days.</p>
+        <div class="reopen-actions">
+          <button id="cancel-report-trash" class="secondary-button" type="button">Keep case</button>
+          <button id="confirm-report-trash" class="danger-button" type="button">Move to Trash</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="report-dialog" class="report-dialog">
       <form id="report-form" novalidate>
         <div class="dialog-head">
@@ -429,6 +443,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=63"></script>
+  <script src="app.js?v=64"></script>
   </body>
 </html>

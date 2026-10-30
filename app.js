@@ -55,6 +55,7 @@ let selectedPhotoDataUrl = "";
 let photoAnalysis = null;
 let randomReportMode = false;
 let pendingReopen = null;
+let pendingTrashReport = null;
 let volunteer = loadVolunteer();
 if (volunteer && !volunteerToken) {
   volunteer = null;
@@ -489,7 +490,7 @@ async function searchSingapore(query) {
 function drawReportMarkers() {
   if (!map) return;
   reportMarkers.forEach(marker => marker.remove());
-  reportMarkers = reports.filter(report => report.status !== "Resolved").map(report => {
+  reportMarkers = reports.filter(report => report.status !== "Resolved" && !report.trashedAt).map(report => {
     const icon = L.divIcon({ className: "report-marker", html: `<span>${animalEmoji[report.animal] || "🐾"}</span>`, iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -28] });
     return L.marker([report.lat, report.lng], { icon }).addTo(map).bindPopup(`<strong>${report.animal}</strong><br>${report.condition}`);
   });
@@ -610,21 +611,32 @@ function reportResponders(report) {
   return [{ id: report.volunteerId, name: report.volunteerName || "Volunteer", status: report.volunteerStatus || "On the way", arrivedAt: report.volunteerArrivedAt || null }];
 }
 
+function isTrashed(report) {
+  return Number.isFinite(Number(report?.trashedAt));
+}
+
+function trashDaysRemaining(report) {
+  return Math.max(0, Math.ceil((Number(report.deleteAfter) - Date.now()) / (24 * 60 * 60 * 1000)));
+}
+
 function renderDashboard() {
-  const active = reports.filter(report => report.status !== "Resolved");
-  const newReports = reports.filter(report => report.status === "New");
-  const assigned = reports.filter(report => report.status === "Assigned");
-  const resolved = reports.filter(report => report.status === "Resolved");
-  const deceased = reports.filter(report => report.status === "Reported deceased");
+  const availableReports = reports.filter(report => !isTrashed(report));
+  const active = availableReports.filter(report => report.status !== "Resolved");
+  const newReports = availableReports.filter(report => report.status === "New");
+  const assigned = availableReports.filter(report => report.status === "Assigned");
+  const resolved = availableReports.filter(report => report.status === "Resolved");
+  const deceased = availableReports.filter(report => report.status === "Reported deceased");
   const stats = [
     ["Submitted", newReports.length, "●"],
     ["Active cases", active.length, "↗"],
-    ["Volunteer responses", reports.filter(report => report.volunteerStatus).length, "♡"],
+    ["Volunteer responses", availableReports.filter(report => report.volunteerStatus).length, "♡"],
     ["Deceased reports", deceased.length, "!"]
   ];
   document.querySelector("#stats-grid").innerHTML = stats.map(([label, number, icon]) => `<article class="stat-card"><div class="stat-top"><span>${label}</span><span class="stat-icon">${icon}</span></div><div class="stat-number">${number}</div></article>`).join("");
 
   const visible = reports.filter(report => {
+    if (currentFilter === "trash") return isTrashed(report);
+    if (isTrashed(report)) return false;
     if (currentFilter === "active") return report.status !== "Resolved";
     if (currentFilter === "volunteers") return Boolean(report.volunteerStatus);
     if (currentFilter === "resolved") return report.status === "Resolved";
@@ -641,7 +653,7 @@ function renderDashboard() {
     ? (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt)
     : casePriority(a) - casePriority(b) || (b.volunteerUpdatedAt || b.createdAt) - (a.volunteerUpdatedAt || a.createdAt));
 
-  const headings = { active: "Active reports", volunteers: "Reports with volunteers", all: "All reports", resolved: "Closed reports" };
+  const headings = { active: "Active reports", volunteers: "Reports with volunteers", all: "All reports", resolved: "Closed reports", trash: "Trash · deleted after 30 days" };
   document.querySelector("#queue-heading").textContent = headings[currentFilter] || "Reports";
   if (!visible.some(report => report.id === selectedReportId)) selectedReportId = visible[0]?.id || null;
 
@@ -651,7 +663,7 @@ function renderDashboard() {
     <button class="report-card ${selectedReportId === report.id ? "selected" : ""}" data-report-id="${report.id}" type="button">
       <span class="animal-avatar">${animalEmoji[report.animal] || "🐾"}</span>
       <span class="report-copy"><strong>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</strong><p>${escapeHtml(report.notes)}</p>${report.volunteerStatus ? `<span class="volunteer-card-badge">♡ ${escapeHtml(report.volunteerStatus)}</span>` : ""}${validPhotoSource(report.photo) || validPhotoSource(report.volunteerPhoto) ? `<span class="report-evidence-preview">${validPhotoSource(report.photo) ? `<img src="${validPhotoSource(report.photo)}" alt="Reporter evidence thumbnail for ${escapeHtml(report.id)}" title="Reporter photo" />` : ""}${validPhotoSource(report.volunteerPhoto) ? `<img src="${validPhotoSource(report.volunteerPhoto)}" alt="Volunteer evidence thumbnail for ${escapeHtml(report.id)}" title="Volunteer observation photo" />` : ""}<small>Photo evidence</small></span>` : ""}<small>⌖ ${escapeHtml(report.area)}</small><small class="report-time">${relativeTime(report.createdAt)} · ${exactTime(report.createdAt)}</small></span>
-      <span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span>
+      <span class="status-pill ${isTrashed(report) ? "status-trash" : `status-${statusClass(report.status)}`}">${isTrashed(report) ? `${trashDaysRemaining(report)} days left` : escapeHtml(statusLabel(report.status))}</span>
     </button>`).join("") : `<div class="empty-detail"><span>${caseSearch ? "⌕" : "✓"}</span><h3>${caseSearch ? "No matching reports" : "No reports here"}</h3><p>${caseSearch ? "Try another case number or keyword." : "There are no reports matching this filter."}</p></div>`;
 
   list.querySelectorAll("[data-report-id]").forEach(button => button.addEventListener("click", () => selectReport(button.dataset.reportId)));
@@ -671,6 +683,11 @@ function renderReportDetail(id) {
   const report = reports.find(item => item.id === id);
   if (!report) return;
   const panel = document.querySelector("#detail-panel");
+  const caseControls = isTrashed(report)
+    ? `<section class="trash-retention"><span aria-hidden="true">♲</span><div><strong>In Trash · ${trashDaysRemaining(report)} days remaining</strong><p>This completed case will be permanently deleted on ${exactTime(report.deleteAfter)}.</p></div><button id="restore-report" class="secondary-button" type="button">Restore case</button></section>`
+    : `<div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
+      ${["New", "Acknowledged", "Assigned", "Urgent", "Reported deceased", "Resolved"].map(status => `<option value="${status}" ${status === report.status ? "selected" : ""}>${escapeHtml(statusLabel(status))}</option>`).join("")}
+    </select>${report.status === "Resolved" ? '<button id="trash-report" class="trash-report-button" type="button"><span aria-hidden="true">♲</span> Move completed case to Trash</button><small>Recoverable for 30 days, then permanently deleted.</small>' : ""}</div>`;
   panel.innerHTML = `<div class="detail-content">
     <div class="detail-top"><div><span class="case-id">Case ${escapeHtml(report.id)}</span><h2>${animalEmoji[report.animal]} ${escapeHtml(report.animal)}</h2><span class="status-pill status-${statusClass(report.status)}">${escapeHtml(statusLabel(report.status))}</span></div><span class="animal-avatar">${animalEmoji[report.animal]}</span></div>
     <div class="detail-map" id="detail-map" aria-label="Map showing the selected report location"></div>
@@ -685,11 +702,9 @@ function renderReportDetail(id) {
     ${report.aiAssessment ? `<section class="ai-assessment ${report.aiAssessment.rescueNeeded ? "attention" : "monitor"}"><div><span>✦</span><div><small>JEV photo review · advisory</small><strong>${report.aiAssessment.rescueNeeded ? "Possible rescue attention needed" : "No clear rescue need visible"}</strong></div></div><p>${escapeHtml(report.aiAssessment.animal || "Other")} · ${escapeHtml(report.aiAssessment.condition || "Not sure")} · ${Math.round(Number(report.aiAssessment.rescueProbability || 0) * 100)}% rescue-need confidence</p><small>A person should review the full situation; a photo may miss important context.</small></section>` : ""}
     ${reportResponders(report).length ? `<section class="volunteer-update"><div><span>♡</span><div class="responder-list"><small>Volunteer responses · ${reportResponders(report).length}/3</small>${reportResponders(report).map(item => `<div class="responder-detail"><strong>${escapeHtml(item.name)} · ${escapeHtml(item.status)}</strong>${Array.isArray(item.experience) && item.experience.length ? `<small>Training: ${escapeHtml(item.experience.join(", "))}${item.experienceDetails ? ` — ${escapeHtml(item.experienceDetails)}` : ""}</small>` : ""}${Array.isArray(item.animalPreferences) ? `<small>Preferred animals: ${item.animalPreferences.length ? escapeHtml(item.animalPreferences.join(", ")) : "Any"}</small>` : ""}</div>`).join("")}</div></div>${report.volunteerAssessment ? `<p><strong>${escapeHtml(report.volunteerAssessment)}</strong>${report.volunteerNotes ? ` — ${escapeHtml(report.volunteerNotes)}` : ""}</p>` : ""}</section>` : ""}
     <section class="case-timeline"><div class="timeline-heading"><span>Case progress</span><small>Newest update last</small></div><ol>${(Array.isArray(report.history) ? report.history : [{ label: "Report submitted", at: report.createdAt }]).map((event, index, history) => `<li class="${index === history.length - 1 ? "current" : ""}"><span></span><div><strong>${escapeHtml(event.label)}</strong><small>${relativeTime(event.at)} · ${exactTime(event.at)}</small></div></li>`).join("")}</ol></section>
-    <div class="status-control"><label for="case-status">Update case status</label><select id="case-status">
-      ${["New", "Acknowledged", "Assigned", "Urgent", "Reported deceased", "Resolved"].map(status => `<option value="${status}" ${status === report.status ? "selected" : ""}>${escapeHtml(statusLabel(status))}</option>`).join("")}
-    </select></div>
+    ${caseControls}
   </div>`;
-  panel.querySelector("#case-status").addEventListener("change", event => {
+  panel.querySelector("#case-status")?.addEventListener("change", event => {
     const nextStatus = event.target.value;
     if (report.status === "Resolved" && nextStatus !== "Resolved") {
       event.target.value = "Resolved";
@@ -700,7 +715,44 @@ function renderReportDetail(id) {
     }
     updateReportStatus(report, nextStatus);
   });
+  panel.querySelector("#trash-report")?.addEventListener("click", () => {
+    pendingTrashReport = report;
+    document.querySelector("#trash-case-id").textContent = report.id;
+    document.querySelector("#trash-report-dialog").showModal();
+  });
+  panel.querySelector("#restore-report")?.addEventListener("click", () => restoreTrashedReport(report));
   setTimeout(() => renderDetailMap(report), 0);
+}
+
+async function moveReportToTrash(report) {
+  try {
+    const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/trash`, { method: "POST" });
+    reports[reports.indexOf(report)] = updated;
+    selectedReportId = null;
+    drawReportMarkers();
+    renderDashboard();
+    showToast(`Case ${report.id} moved to Trash for 30 days.`);
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function restoreTrashedReport(report) {
+  try {
+    const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/restore`, { method: "POST" });
+    reports[reports.indexOf(report)] = updated;
+    selectedReportId = updated.id;
+    currentFilter = "resolved";
+    document.querySelectorAll(".filter").forEach(item => {
+      const active = item.dataset.filter === currentFilter;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-selected", String(active));
+    });
+    renderDashboard();
+    showToast(`Case ${report.id} restored to Closed reports.`);
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
 function renderVolunteerPortal() {
@@ -1159,6 +1211,18 @@ document.querySelector("#confirm-reopen").addEventListener("click", () => {
   if (pendingReopen) updateReportStatus(pendingReopen.report, pendingReopen.nextStatus);
   pendingReopen = null;
   reopenDialog.close();
+});
+const trashReportDialog = document.querySelector("#trash-report-dialog");
+trashReportDialog.addEventListener("cancel", () => { pendingTrashReport = null; });
+document.querySelector("#cancel-report-trash").addEventListener("click", () => {
+  pendingTrashReport = null;
+  trashReportDialog.close();
+});
+document.querySelector("#confirm-report-trash").addEventListener("click", async () => {
+  const report = pendingTrashReport;
+  pendingTrashReport = null;
+  trashReportDialog.close();
+  if (report) await moveReportToTrash(report);
 });
 document.querySelector("#close-login").addEventListener("click", () => document.querySelector("#login-dialog").close());
 document.querySelector("#login-form").addEventListener("submit", async event => {

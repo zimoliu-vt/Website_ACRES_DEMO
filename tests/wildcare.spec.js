@@ -277,6 +277,28 @@ test("team filters keep the visible list and detail panel synchronized", async (
   await expect(page.getByRole("img", { name: "Volunteer observation photo for case WC-2002" })).toBeVisible();
 });
 
+test("only completed cases can enter the 30-day trash and be restored", async ({ page }) => {
+  const trashed = { ...reports[2], trashedAt: Date.now(), deleteAfter: Date.now() + 30 * 24 * 60 * 60 * 1000 };
+  await page.route("**/api/reports/WC-2001/trash", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(trashed) }));
+  await page.route("**/api/reports/WC-2001/restore", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(reports[2]) }));
+  await enterDemo(page);
+  await openTeam(page);
+
+  await expect(page.getByRole("button", { name: /Move completed case to Trash/ })).toHaveCount(0);
+  await page.getByRole("tab", { name: "Closed" }).click();
+  await expect(page.getByRole("button", { name: /Move completed case to Trash/ })).toBeVisible();
+  await page.getByRole("button", { name: /Move completed case to Trash/ }).click();
+  await expect(page.getByRole("heading", { name: "It will be kept for 30 days." })).toBeVisible();
+  await page.getByRole("button", { name: "Move to Trash" }).click();
+
+  await page.getByRole("tab", { name: "Trash" }).click();
+  await expect(page.getByRole("heading", { name: "Trash · deleted after 30 days" })).toBeVisible();
+  await expect(page.getByText("30 days remaining")).toBeVisible();
+  await page.getByRole("button", { name: "Restore case" }).click();
+  await expect(page.getByRole("heading", { name: "Closed reports" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Move completed case to Trash/ })).toBeVisible();
+});
+
 test("new report clears old reporting and team search context", async ({ page }) => {
   await enterDemo(page);
   await openTeam(page);

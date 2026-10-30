@@ -16,6 +16,7 @@ const jevModel = process.env.JEV_MODEL || "jev-preview";
 const scrypt = promisify(crypto.scrypt);
 const analysisRequests = new Map();
 const devLoginRequests = new Map();
+const trashRetentionMs = 30 * 24 * 60 * 60 * 1000;
 
 if (!jwtSecret || jwtSecret.length < 24) throw new Error("JWT_SECRET must contain at least 24 characters");
 
@@ -148,6 +149,14 @@ async function seedDatabase() {
   for (const report of seedReports) {
     await pool.query("INSERT INTO reports (id, payload) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET payload = excluded.payload, updated_at = now()", [report.id, report]);
   }
+}
+
+async function purgeExpiredTrash() {
+  const result = await pool.query(`DELETE FROM reports
+    WHERE (payload->>'deleteAfter') ~ '^[0-9]+$'
+      AND (payload->>'deleteAfter')::bigint <= $1`, [Date.now()]);
+  if (result.rowCount) console.log(`Permanently deleted ${result.rowCount} expired trashed report(s)`);
+  return result.rowCount;
 }
 
 function requireWorker(request, response, next) {
@@ -437,9 +446,10 @@ app.post("/analyze-animal", async (request, response) => {
 });
 
 app.get("/reports", async (request, response) => {
+  await purgeExpiredTrash();
   const { rows } = await pool.query("SELECT payload FROM reports ORDER BY created_at DESC");
   const reports = rows.map(row => row.payload);
-  response.json(isWorkerRequest(request) ? reports : reports.map(publicReport));
+  response.json(isWorkerRequest(request) ? reports : reports.filter(report => !report.trashedAt).map(publicReport));
 });
 
 app.post("/reports", async (request, response) => {
@@ -471,10 +481,39 @@ app.post("/reports", async (request, response) => {
 });
 
 app.put("/reports/:id", requireWorker, async (request, response) => {
-  const report = { ...request.body, id: request.params.id };
+  const existing = await pool.query("SELECT payload FROM reports WHERE id = $1", [request.params.id]);
+  if (!existing.rows[0]) return response.status(404).json({ error: "Report not found" });
+  if (existing.rows[0].payload.trashedAt) return response.status(409).json({ error: "Restore this case before editing it" });
+  const { trashedAt: _trashedAt, deleteAfter: _deleteAfter, ...safeBody } = request.body || {};
+  const report = { ...safeBody, id: request.params.id };
   const result = await pool.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1 RETURNING payload", [request.params.id, report]);
-  if (!result.rowCount) return response.status(404).json({ error: "Report not found" });
   response.json(result.rows[0].payload);
+});
+
+app.post("/reports/:id/trash", requireWorker, async (request, response) => {
+  const result = await pool.query("SELECT payload FROM reports WHERE id = $1 FOR UPDATE", [request.params.id]);
+  if (!result.rows[0]) return response.status(404).json({ error: "Report not found" });
+  const report = result.rows[0].payload;
+  if (report.status !== "Resolved") return response.status(409).json({ error: "Only completed cases can be moved to Trash" });
+  if (!report.trashedAt) {
+    report.trashedAt = Date.now();
+    report.deleteAfter = report.trashedAt + trashRetentionMs;
+    addHistory(report, "Moved to Trash · scheduled for deletion in 30 days");
+    await pool.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1", [request.params.id, report]);
+  }
+  response.json(report);
+});
+
+app.post("/reports/:id/restore", requireWorker, async (request, response) => {
+  const result = await pool.query("SELECT payload FROM reports WHERE id = $1 FOR UPDATE", [request.params.id]);
+  if (!result.rows[0]) return response.status(404).json({ error: "Report not found" });
+  const report = result.rows[0].payload;
+  if (!report.trashedAt) return response.status(409).json({ error: "This case is not in Trash" });
+  delete report.trashedAt;
+  delete report.deleteAfter;
+  addHistory(report, "Restored from Trash");
+  await pool.query("UPDATE reports SET payload = $2, updated_at = now() WHERE id = $1", [request.params.id, report]);
+  response.json(report);
 });
 
 app.post("/reports/reset", requireWorker, async (_request, response) => {
@@ -688,5 +727,7 @@ app.use((error, _request, response, _next) => {
 });
 
 await initialiseDatabase();
+await purgeExpiredTrash();
+setInterval(() => purgeExpiredTrash().catch(error => console.error("Trash cleanup failed:", error.message)), 60 * 60 * 1000).unref();
 app.listen(port, "0.0.0.0", () => console.log(`WildCare demo API listening on ${port}`));
 
