@@ -182,6 +182,8 @@ test("report flow explains requirements and protects a changed draft", async ({ 
 
   await expect(page.getByText("Step 2 of 3 · report details")).toBeVisible();
   await expect(page.getByLabel("Open camera or choose an animal photo")).toBeAttached();
+  await expect(page.locator('.numbered-report-step > legend > span')).not.toBeVisible();
+  await expect(page.locator('.numbered-field-label > span').first()).not.toBeVisible();
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeDisabled();
 
   await page.getByRole("radio", { name: /Bird/ }).check();

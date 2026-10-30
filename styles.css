@@ -226,7 +226,7 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 fieldset { margin: 20px 0 16px; padding: 0; border: 0; }
 legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .numbered-report-step > legend, .numbered-field-label { display: inline-flex; align-items: center; gap: 7px; color: #293b35; font-size: 12px; font-weight: 850; }
-.numbered-report-step > legend > span, .numbered-field-label > span { width: 22px; height: 22px; display: inline-grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 10px; font-weight: 950; }
+.numbered-report-step > legend > span, .numbered-field-label > span { width: 22px; height: 22px; display: none; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 10px; font-weight: 950; }
 .animal-options { margin-top: 9px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .animal-options input { position: absolute; opacity: 0; }
 .animal-options label { padding: 11px 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); font-size: 10px; font-weight: 800; cursor: pointer; }
@@ -380,6 +380,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-form-active .random-report-button,
 .tutorial-form-active .field-row,
 .tutorial-form-active .privacy-copy { display: none; }
+.tutorial-form-active .numbered-report-step > legend > span,
+.tutorial-form-active .numbered-field-label > span { display: inline-grid; }
 .tutorial-form-active .animal-options,
 .tutorial-form-active .field:has([name="condition"]),
 .tutorial-form-active .field:has([name="notes"]) { border-radius: 12px; outline: 3px solid rgba(215,243,108,.72); outline-offset: 3px; }
