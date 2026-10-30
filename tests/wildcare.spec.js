@@ -134,12 +134,15 @@ test("desktop and phone tutorial guides the user through real reporting controls
   await expect(page.getByText("Choose the animal’s location")).toBeVisible();
   await expect(page.locator("#map-tutorial-guide")).toContainText("nothing will be submitted or saved");
   await page.locator("#map").click();
-  await expect(page.locator("#report-tutorial-title")).toHaveText("Describe the animal");
-  await expect(page.locator("#report-tutorial-guide")).toContainText("this will not create a case");
+  await expect(page.locator("#report-tutorial-title")).toHaveText("Complete 3 short steps");
+  await expect(page.locator("#report-tutorial-guide")).toContainText("nothing will be submitted or saved");
+  await expect(page.locator(".tutorial-form-checklist")).toContainText("1 Animal");
+  await expect(page.locator(".photo-first-step")).not.toBeVisible();
   await page.getByRole("radio", { name: /Bird/ }).check();
   await page.getByLabel("What seems to be wrong?").selectOption("Unable to move or fly");
   await page.getByLabel(/Describe what you can see/).fill("Interactive tutorial test");
-  await expect(page.locator("#report-tutorial-title")).toHaveText("Your report is ready");
+  await expect(page.locator("#report-tutorial-title")).toHaveText("All 3 steps are complete");
+  await expect(page.locator(".tutorial-form-checklist li.complete")).toHaveCount(3);
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
   await page.getByRole("button", { name: /Send demo report/ }).click();
   await expect(page.getByText("Walkthrough complete — no report was submitted.")).toBeVisible();

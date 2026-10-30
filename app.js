@@ -1100,18 +1100,28 @@ function advanceInteractiveTutorialToForm() {
   const form = document.querySelector("#report-form");
   form.classList.add("tutorial-form-active");
   document.querySelector("#report-tutorial-guide").hidden = false;
-  document.querySelector("#report-tutorial-title").textContent = "Describe the animal";
-  document.querySelector("#report-tutorial-copy").textContent = "Choose its type and condition, then describe what you can see. A photo is optional.";
+  document.querySelector("#report-tutorial-title").textContent = "Complete 3 short steps";
+  document.querySelector("#report-tutorial-copy").textContent = "Work through the numbered fields below in order. Optional items are hidden during this practice walkthrough.";
+  updateInteractiveTutorialForm(false);
 }
 
 function updateInteractiveTutorialForm(ready) {
   if (!interactiveTutorialActive || !document.querySelector("#report-dialog")?.open) return;
   const form = document.querySelector("#report-form");
+  const completed = {
+    animal: Boolean(form.querySelector('[name="animal"]:checked')),
+    condition: Boolean(form.elements.condition.value),
+    notes: Boolean(form.elements.notes.value.trim())
+  };
+  form.querySelector('fieldset[data-report-step="1"]')?.classList.toggle("tutorial-step-complete", completed.animal);
+  form.elements.condition.closest(".numbered-report-step")?.classList.toggle("tutorial-step-complete", completed.condition);
+  form.elements.notes.closest(".numbered-report-step")?.classList.toggle("tutorial-step-complete", completed.notes);
+  document.querySelectorAll("[data-tutorial-check]").forEach(item => item.classList.toggle("complete", completed[item.dataset.tutorialCheck]));
   form.classList.toggle("tutorial-form-ready", ready);
-  document.querySelector("#report-tutorial-title").textContent = ready ? "Your report is ready" : "Describe the animal";
+  document.querySelector("#report-tutorial-title").textContent = ready ? "All 3 steps are complete" : "Complete 3 short steps";
   document.querySelector("#report-tutorial-copy").textContent = ready
-    ? "Great — tap Send demo report to finish this walkthrough. This practice report will not be submitted."
-    : "Choose its type and condition, then describe what you can see. A photo is optional.";
+    ? "Great — select Send demo report to finish the walkthrough. Nothing will be submitted or saved."
+    : "Work through the numbered fields below in order. Optional items are hidden during this practice walkthrough.";
 }
 
 function maybeShowPhoneTutorial() {

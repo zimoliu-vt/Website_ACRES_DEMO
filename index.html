@@ -16,7 +16,7 @@
     <script defer src="https://analytics.liusida.com/umami/script.js" data-website-id="3421d06e-63c1-4985-a7e3-1ce278eb85b4" data-domains="wildcare.liuzimo.cn" data-exclude-search="true"></script>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=52" />
+    <link rel="stylesheet" href="styles.css?v=53" />
   </head>
   <body class="phone-report-map">
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -357,8 +357,8 @@
         </div>
         <div id="report-tutorial-guide" class="interactive-guide form-tutorial-guide" role="status" hidden>
           <span class="interactive-step">2</span>
-          <div><strong id="report-tutorial-title">Describe the animal</strong><p id="report-tutorial-copy">Choose its type and condition, then describe what you can see. A photo is optional.</p><small>Practice mode — this will not create a case.</small></div>
-          <button id="finish-interactive-tutorial" type="button">Finish guide</button>
+          <div><strong id="report-tutorial-title">Complete 3 short steps</strong><p id="report-tutorial-copy">Work through the numbered fields below in order.</p><ol class="tutorial-form-checklist"><li data-tutorial-check="animal"><span>1</span> Animal</li><li data-tutorial-check="condition"><span>2</span> Condition</li><li data-tutorial-check="notes"><span>3</span> Description</li></ol><small>Practice only — nothing will be submitted or saved.</small></div>
+          <button id="finish-interactive-tutorial" type="button">Exit walkthrough</button>
         </div>
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
         <p id="report-form-error" class="form-error" role="alert" hidden></p>
@@ -383,8 +383,8 @@
 
         <button id="random-report-button" class="random-report-button" type="button"><span>✦</span><div><strong>Fill a random demo report</strong><small>Random animal and condition · name “Random” · no contact number</small></div></button>
 
-        <fieldset>
-          <legend>What kind of animal is it?</legend>
+        <fieldset class="numbered-report-step" data-report-step="1">
+          <legend><span>1</span> What kind of animal is it?</legend>
           <div class="animal-options">
             <label><input type="radio" name="animal" value="Bird" required /><span>🐦</span>Bird</label>
             <label><input type="radio" name="animal" value="Mammal" /><span>🐒</span>Mammal</label>
@@ -393,7 +393,7 @@
           </div>
         </fieldset>
 
-        <label class="field">What seems to be wrong?
+        <label class="field numbered-report-step" data-report-step="2"><strong class="numbered-field-label"><span>2</span> What seems to be wrong?</strong>
           <select name="condition" required>
             <option value="">Select a condition</option>
             <option>Injured or bleeding</option>
@@ -405,7 +405,7 @@
           </select>
         </label>
 
-        <label class="field">Describe what you can see <span>(required without a photo)</span>
+        <label class="field numbered-report-step" data-report-step="3"><strong class="numbered-field-label"><span>3</span> Describe what you can see</strong> <span>(required without a photo)</span>
           <textarea name="notes" rows="3" maxlength="280" placeholder="For example: small bird under a tree, one wing held low…"></textarea>
         </label>
 
@@ -443,6 +443,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=65"></script>
+  <script src="app.js?v=66"></script>
   </body>
 </html>
