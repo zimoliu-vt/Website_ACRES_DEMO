@@ -47,13 +47,20 @@ test("first entry requests an approximate location and starts in satellite mode"
     localStorage.setItem("wildcare-team-tutorial-seen-v1", "true");
     Object.defineProperty(navigator, "geolocation", {
       configurable: true,
-      value: { getCurrentPosition(success) { success({ coords: { latitude: 1.3521, longitude: 103.8198, accuracy: 80 } }); } }
+      value: { getCurrentPosition(success) {
+        sessionStorage.setItem("test-geolocation-calls", String(Number(sessionStorage.getItem("test-geolocation-calls") || 0) + 1));
+        success({ coords: { latitude: 1.3521, longitude: 103.8198, accuracy: 80 } });
+      } }
     });
   });
   await page.goto(`/?auto-location-test=${Date.now()}`);
   await expect(page.locator("#map-hint")).toContainText("Your nearby area is highlighted");
   await expect(page.getByRole("button", { name: "Satellite" })).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => page.locator(".report-marker").first().evaluate(element => getComputedStyle(element).marginTop)).toBe("-32px");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-geolocation-calls"))).toBe("1");
+  await page.reload();
+  await expect(page.locator("#map-hint")).toContainText("Your nearby area is highlighted");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-geolocation-calls"))).toBe("1");
 });
 
 test("phone has detailed volunteer and rescue team walkthroughs", async ({ page, isMobile }) => {

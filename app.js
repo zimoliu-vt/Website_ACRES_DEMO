@@ -4,6 +4,7 @@ const PHONE_TUTORIAL_KEY = "wildcare-phone-tutorial-seen-v1";
 const VOLUNTEER_TUTORIAL_KEY = "wildcare-volunteer-tutorial-seen-v1";
 const TEAM_TUTORIAL_KEY = "wildcare-team-tutorial-seen-v1";
 const AUTO_LOCATION_KEY = "wildcare-auto-location-requested-v1";
+const AUTO_LOCATION_CACHE_KEY = "wildcare-auto-location-area-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
 if (window.location.pathname === "/rescue") history.replaceState({}, "", "/");
@@ -1202,18 +1203,16 @@ document.querySelector("#reset-demo").addEventListener("click", async () => {
   }
 });
 
-function requestNearbyLocation() {
-  if (!navigator.geolocation) return showToast("Location is not available in this browser.");
-  if (!map || !window.L) return showToast("The map is not ready yet.");
-  navigator.geolocation.getCurrentPosition(position => {
-    const { latitude, longitude } = position.coords;
+function showNearbyArea(latitude, longitude, accuracy = 200, remember = true) {
+  if (!map || !window.L) return false;
     if (!isSingaporePoint(latitude, longitude)) {
       showToast("Your location appears to be outside Singapore and cannot be selected.");
-      return;
+      return false;
     }
     const approximateLat = Number(latitude.toFixed(3));
     const approximateLng = Number(longitude.toFixed(3));
-    const radius = Math.min(500, Math.max(150, Number(position.coords.accuracy) || 200));
+    const radius = Math.min(500, Math.max(150, Number(accuracy) || 200));
+    if (remember) sessionStorage.setItem(AUTO_LOCATION_CACHE_KEY, JSON.stringify([approximateLat, approximateLng, radius]));
     selectedLocation = null;
     if (locationMarker) {
       locationMarker.remove();
@@ -1232,6 +1231,14 @@ function requestNearbyLocation() {
     const hint = document.querySelector("#map-hint");
     hint.innerHTML = "<span>＋</span> Your nearby area is highlighted — tap the animal’s location";
     showToast("Nearby area found. Now tap the map where you saw the animal.");
+    return true;
+}
+
+function requestNearbyLocation() {
+  if (!navigator.geolocation) return showToast("Location is not available in this browser.");
+  if (!map || !window.L) return showToast("The map is not ready yet.");
+  navigator.geolocation.getCurrentPosition(position => {
+    showNearbyArea(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
   }, () => showToast("We could not access your location. Tap the map instead."), {
     enableHighAccuracy: false,
     maximumAge: 60000,
@@ -1240,6 +1247,13 @@ function requestNearbyLocation() {
 }
 
 function maybeAutoLocate() {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(AUTO_LOCATION_CACHE_KEY));
+    if (Array.isArray(cached) && cached.length === 3 && cached.every(Number.isFinite)) {
+      showNearbyArea(cached[0], cached[1], cached[2], false);
+      return;
+    }
+  } catch {}
   if (sessionStorage.getItem(AUTO_LOCATION_KEY) === "true") return;
   sessionStorage.setItem(AUTO_LOCATION_KEY, "true");
   requestNearbyLocation();
