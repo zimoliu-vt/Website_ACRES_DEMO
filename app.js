@@ -994,7 +994,7 @@ function updateInteractiveTutorialForm(ready) {
   form.classList.toggle("tutorial-form-ready", ready);
   document.querySelector("#report-tutorial-title").textContent = ready ? "Your report is ready" : "Describe the animal";
   document.querySelector("#report-tutorial-copy").textContent = ready
-    ? "Great — review your information, then use Send demo report when you are ready. Nothing was submitted by the tutorial."
+    ? "Great — tap Send demo report to finish this walkthrough. This practice report will not be submitted."
     : "Choose its type and condition, then describe what you can see. A photo is optional.";
 }
 
@@ -1210,12 +1210,18 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     target.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
+  if (interactiveTutorialActive) {
+    completePhoneTutorial();
+    document.querySelector("#report-dialog").close();
+    resetReportDraft();
+    showToast("Walkthrough complete — no report was submitted.");
+    return;
+  }
   error.hidden = true;
   submitButton.disabled = true;
   submitButton.setAttribute("aria-busy", "true");
   submitButton.querySelector("span").textContent = "Sending…";
   const reportDialog = document.querySelector("#report-dialog");
-  if (interactiveTutorialActive) completePhoneTutorial();
   reportDialog.close();
   showToast("Sending your report…");
   const data = new FormData(event.currentTarget);

@@ -37,6 +37,10 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("phone tutorial guides the user through real reporting controls", async ({ page, isMobile }) => {
+  let reportPosts = 0;
+  page.on("request", request => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/api/reports")) reportPosts += 1;
+  });
   await page.addInitScript(() => sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true"));
   await page.goto(`/?tutorial-test=${Date.now()}`);
   if (!isMobile) {
@@ -55,11 +59,10 @@ test("phone tutorial guides the user through real reporting controls", async ({ 
   await page.getByLabel(/Describe what you can see/).fill("Interactive tutorial test");
   await expect(page.locator("#report-tutorial-title")).toHaveText("Your report is ready");
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
-  await page.getByRole("button", { name: "Finish guide" }).click();
-  await expect(page.locator("#phone-tutorial-dialog")).not.toBeVisible();
-  await expect(page.locator("#report-tutorial-guide")).not.toBeVisible();
-  page.once("dialog", dialog => dialog.accept());
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: /Send demo report/ }).click();
+  await expect(page.getByText("Walkthrough complete — no report was submitted.")).toBeVisible();
+  await expect(page.locator("#report-dialog")).not.toBeVisible();
+  expect(reportPosts).toBe(0);
   await page.getByRole("button", { name: "Open reporting tutorial" }).click();
   await expect(page.getByRole("heading", { name: "Make a report yourself" })).toBeVisible();
 });
