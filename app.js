@@ -3,9 +3,6 @@ const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
 const PHONE_TUTORIAL_KEY = "wildcare-phone-tutorial-seen-v1";
 const VOLUNTEER_TUTORIAL_KEY = "wildcare-volunteer-tutorial-seen-v1";
 const TEAM_TUTORIAL_KEY = "wildcare-team-tutorial-seen-v1";
-// v2 distinguishes the current location-caching flow from older tabs that
-// remembered only that permission had been requested, but not the map area.
-const AUTO_LOCATION_KEY = "wildcare-auto-location-requested-v2";
 const AUTO_LOCATION_CACHE_KEY = "wildcare-auto-location-area-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
@@ -52,6 +49,7 @@ let caseSearch = "";
 let caseSort = "priority";
 let volunteerToken = localStorage.getItem("wildcare-volunteer-token") || "";
 let backendReady = false;
+let autoLocationAttempted = false;
 let reverseLookupTimer = null;
 let selectedPhotoDataUrl = "";
 let photoAnalysis = null;
@@ -1236,12 +1234,18 @@ function showNearbyArea(latitude, longitude, accuracy = 200, remember = true) {
     return true;
 }
 
-function requestNearbyLocation() {
+function requestNearbyLocation({ automatic = false } = {}) {
   if (!navigator.geolocation) return showToast("Location is not available in this browser.");
   if (!map || !window.L) return showToast("The map is not ready yet.");
   navigator.geolocation.getCurrentPosition(position => {
     showNearbyArea(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
-  }, () => showToast("We could not access your location. Tap the map instead."), {
+  }, () => {
+    if (automatic) {
+      map.flyTo([1.3521, 103.8198], 13, { duration: .6 });
+      document.querySelector("#map-hint").innerHTML = "<span>＋</span> Location access unavailable — search or tap the animal’s location";
+    }
+    showToast("We could not access your location. Use the pin button to try again, or tap the map.");
+  }, {
     enableHighAccuracy: false,
     maximumAge: 60000,
     timeout: 10000
@@ -1256,12 +1260,14 @@ function maybeAutoLocate() {
       return;
     }
   } catch {}
-  if (sessionStorage.getItem(AUTO_LOCATION_KEY) === "true") return;
-  sessionStorage.setItem(AUTO_LOCATION_KEY, "true");
-  requestNearbyLocation();
+  // Retry on a later reload when a previous request failed. The cached area,
+  // rather than a request flag, is the only reliable proof of success.
+  if (autoLocationAttempted) return;
+  autoLocationAttempted = true;
+  requestNearbyLocation({ automatic: true });
 }
 
-document.querySelector("#locate-button").addEventListener("click", requestNearbyLocation);
+document.querySelector("#locate-button").addEventListener("click", () => requestNearbyLocation());
 
 document.querySelector("#random-report-button").addEventListener("click", () => {
   const form = document.querySelector("#report-form");

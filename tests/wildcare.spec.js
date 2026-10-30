@@ -66,6 +66,26 @@ test("first entry requests an approximate location and starts in satellite mode"
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-geolocation-calls"))).toBe("1");
 });
 
+test("failed automatic location falls back closer and retries after reload", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
+    localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    Object.defineProperty(navigator, "geolocation", {
+      configurable: true,
+      value: { getCurrentPosition(_success, failure) {
+        sessionStorage.setItem("test-failed-geolocation-calls", String(Number(sessionStorage.getItem("test-failed-geolocation-calls") || 0) + 1));
+        failure(new Error("Location unavailable"));
+      } }
+    });
+  });
+  await page.goto(`/?auto-location-fallback-test=${Date.now()}`);
+  await expect(page.locator("#map-hint")).toContainText("Location access unavailable");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-failed-geolocation-calls"))).toBe("1");
+  await page.reload();
+  await expect(page.locator("#map-hint")).toContainText("Location access unavailable");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-failed-geolocation-calls"))).toBe("2");
+});
+
 test("phone has detailed volunteer and rescue team walkthroughs", async ({ page, isMobile }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
