@@ -377,7 +377,6 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-form-checklist li > span { width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; color: var(--forest); background: rgba(215,243,108,.72); font-size: 8px; }
 .tutorial-form-checklist li.complete { color: #fff; border-color: var(--lime); background: rgba(215,243,108,.15); }
 .tutorial-form-checklist li.complete > span { background: var(--lime); }
-.tutorial-form-active .photo-first-step,
 .tutorial-form-active .random-report-button,
 .tutorial-form-active .field-row,
 .tutorial-form-active .privacy-copy { display: none; }

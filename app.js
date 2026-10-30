@@ -1297,19 +1297,14 @@ function showNearbyArea(latitude, longitude, accuracy = 200, remember = true) {
       locationMarker.remove();
       locationMarker = null;
     }
-    if (searchAreaMarker) searchAreaMarker.remove();
-    searchAreaMarker = L.circle([approximateLat, approximateLng], {
-      radius,
-      color: "#173f35",
-      weight: 3,
-      fillColor: "#d7f36c",
-      fillOpacity: .24,
-      interactive: false
-    }).addTo(map);
+    if (searchAreaMarker) {
+      searchAreaMarker.remove();
+      searchAreaMarker = null;
+    }
     map?.flyTo([approximateLat, approximateLng], 15, { duration: .8 });
     const hint = document.querySelector("#map-hint");
-    hint.innerHTML = "<span>＋</span> Your nearby area is highlighted — tap the animal’s location";
-    showToast("Nearby area found. Now tap the map where you saw the animal.");
+    hint.innerHTML = "<span>＋</span> Map zoomed near you — tap the animal’s exact location";
+    showToast("Zoomed to your nearby area. Now tap where you saw the animal.");
     return true;
 }
 

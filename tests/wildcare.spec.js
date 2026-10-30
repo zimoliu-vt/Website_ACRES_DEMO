@@ -59,12 +59,13 @@ test("first entry requests an approximate location and starts in satellite mode"
     });
   });
   await page.goto(`/?auto-location-test=${Date.now()}`);
-  await expect(page.locator("#map-hint")).toContainText("Your nearby area is highlighted");
+  await expect(page.locator("#map-hint")).toContainText("Map zoomed near you");
+  await expect(page.locator("#map path.leaflet-interactive")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Satellite" })).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => page.locator(".report-marker").first().evaluate(element => getComputedStyle(element).marginTop)).toBe("-32px");
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-geolocation-calls"))).toBe("1");
   await page.reload();
-  await expect(page.locator("#map-hint")).toContainText("Your nearby area is highlighted");
+  await expect(page.locator("#map-hint")).toContainText("Map zoomed near you");
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-geolocation-calls"))).toBe("1");
 });
 
@@ -137,7 +138,8 @@ test("desktop and phone tutorial guides the user through real reporting controls
   await expect(page.locator("#report-tutorial-title")).toHaveText("Complete 3 short steps");
   await expect(page.locator("#report-tutorial-guide")).toContainText("nothing will be submitted or saved");
   await expect(page.locator(".tutorial-form-checklist")).toContainText("1 Animal");
-  await expect(page.locator(".photo-first-step")).not.toBeVisible();
+  await expect(page.locator(".photo-first-step")).toBeVisible();
+  await expect(page.locator(".photo-first-step")).toContainText("Photo is optional");
   await page.getByRole("radio", { name: /Bird/ }).check();
   await page.getByLabel("What seems to be wrong?").selectOption("Unable to move or fly");
   await page.getByLabel(/Describe what you can see/).fill("Interactive tutorial test");
