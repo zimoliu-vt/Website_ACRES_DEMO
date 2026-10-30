@@ -11,6 +11,8 @@ function syncPhoneLayout(event = phoneViewport) {
   const isPhone = event.matches;
   document.documentElement.classList.toggle("phone-layout", isPhone);
   document.documentElement.dataset.layout = isPhone ? "phone" : "desktop";
+  const reporterActive = document.querySelector("#reporter-view")?.classList.contains("active");
+  document.body?.classList.toggle("phone-report-map", Boolean(isPhone && reporterActive));
   const locationSearch = document.querySelector("#map-search-input");
   if (locationSearch) locationSearch.placeholder = isPhone ? "Search street, park or area" : "Search street, park or postcode";
 }
@@ -501,6 +503,7 @@ function switchView(viewName) {
   if (viewName === "worker") teamShortcut.setAttribute("aria-current", "page");
   else teamShortcut.removeAttribute("aria-current");
   document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `${viewName}-view`));
+  document.body.classList.toggle("phone-report-map", phoneViewport.matches && viewName === "reporter");
   if (viewName === "reporter" && map) setTimeout(() => map.invalidateSize(), 80);
   if (viewName === "worker") {
     caseSearch = "";

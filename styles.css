@@ -632,6 +632,10 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   /* Phone mode: keep the current task prominent and move portal switching
      into a familiar, thumb-reachable bottom navigation bar. */
   .phone-layout body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .phone-layout body.phone-report-map { height: 100dvh; padding-bottom: 0; overflow: hidden; overscroll-behavior: none; }
+  .phone-layout body.phone-report-map #reporter-view { height: calc(100dvh - 92px); overflow: hidden; }
+  .phone-layout body.phone-report-map .reporter-layout,
+  .phone-layout body.phone-report-map .map-panel { height: 100%; min-height: 0; }
   .phone-layout .demo-banner { min-height: 34px; padding: 6px 10px; display: grid; }
   .phone-layout .demo-banner strong { font-size: 9px; line-height: 1.25; letter-spacing: .055em; }
   .phone-layout .demo-banner small { display: none; }

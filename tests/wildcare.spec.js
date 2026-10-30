@@ -78,6 +78,13 @@ test("automatically detects phone-sized layouts", async ({ page, isMobile }) => 
   await expect.poll(() => page.locator(".demo-banner small").evaluate(element => getComputedStyle(element).display)).toBe(isMobile ? "none" : "block");
   await expect.poll(() => page.locator(".intro-panel").evaluate(element => getComputedStyle(element).display)).toBe(isMobile ? "none" : "flex");
   await expect(page.locator("#map-search-input")).toHaveAttribute("placeholder", isMobile ? "Search street, park or area" : "Search street, park or postcode");
+  await expect(page.locator("body")).toHaveClass(isMobile ? /phone-report-map/ : /^(?!.*phone-report-map)/);
+  await expect.poll(() => page.locator("body").evaluate(element => getComputedStyle(element).overflowY)).toBe(isMobile ? "hidden" : "visible");
+  if (isMobile) {
+    await page.getByRole("button", { name: "Volunteer" }).click();
+    await expect(page.locator("body")).not.toHaveClass(/phone-report-map/);
+    await expect.poll(() => page.locator("body").evaluate(element => getComputedStyle(element).overflowY)).not.toBe("hidden");
+  }
 });
 
 test("report flow explains requirements and protects a changed draft", async ({ page, isMobile }) => {
