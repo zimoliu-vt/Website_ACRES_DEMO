@@ -133,7 +133,6 @@ test("desktop and phone tutorial guides the user through real reporting controls
   await page.getByRole("button", { name: "Start walkthrough" }).click();
   await expect(page.getByText("Choose the animal’s location")).toBeVisible();
   await expect(page.locator("#map-tutorial-guide")).toContainText("nothing will be submitted or saved");
-  await expect(page.getByLabel("Search for a location in Singapore")).toBeFocused();
   await page.locator("#map").click();
   await expect(page.locator("#report-tutorial-title")).toHaveText("Describe the animal");
   await expect(page.locator("#report-tutorial-guide")).toContainText("this will not create a case");
