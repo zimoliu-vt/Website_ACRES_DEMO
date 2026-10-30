@@ -32,6 +32,7 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .brand strong { font-family: Georgia, serif; font-size: 21px; }
 .brand small { margin-top: 5px; font-size: 9px; text-transform: uppercase; letter-spacing: .22em; font-weight: 800; }
 .demo-chip { margin-left: 4px; padding: 5px 8px; border-radius: 7px; color: #fff; background: #c52f2f; font-size: 9px; font-weight: 950; letter-spacing: .12em; box-shadow: 0 3px 8px rgba(197,47,47,.22); }
+.phone-help { display: none; }
 .mode-switch { display: flex; gap: 5px; padding: 5px; border-radius: 999px; background: #ecede7; }
 .mode-button { padding: 10px 17px; border: 0; border-radius: 999px; color: #65706b; background: transparent; font-size: 13px; font-weight: 750; }
 .mode-button.active { color: #fff; background: var(--forest); box-shadow: 0 4px 14px rgba(23,63,53,.2); }
@@ -306,6 +307,24 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .warning-details p { margin: 0; font-size: 12px; line-height: 1.5; font-weight: 700; }
 .warning-button { width: 100%; padding: 15px 18px; border: 0; border-radius: 12px; color: #fff; background: #b52626; font-weight: 850; }
 .warning-button:hover, .warning-button:focus-visible { background: #941d1d; outline: 3px solid rgba(197,47,47,.2); }
+
+.phone-tutorial-dialog { width: min(390px, calc(100% - 24px)); padding: 0; border: 0; border-radius: 24px; background: var(--paper); box-shadow: 0 30px 100px rgba(10,31,26,.34); }
+.phone-tutorial-dialog::backdrop { background: rgba(12,32,27,.58); backdrop-filter: blur(5px); }
+.phone-tutorial-content { min-height: 390px; padding: 30px 24px 22px; position: relative; display: flex; flex-direction: column; }
+.tutorial-skip { position: absolute; top: 17px; right: 18px; padding: 8px; border: 0; color: var(--muted); background: transparent; font-size: 11px; font-weight: 800; }
+.tutorial-step { flex: 1; padding-top: 22px; text-align: center; }
+.tutorial-step[hidden] { display: none; }
+.tutorial-icon { width: 66px; height: 66px; margin: 0 auto 22px; display: grid; place-items: center; border-radius: 21px; color: var(--lime); background: var(--forest); box-shadow: 0 10px 24px rgba(23,63,53,.2); font-size: 30px; font-weight: 900; transform: rotate(-3deg); }
+.tutorial-step .eyebrow { margin-bottom: 8px; }
+.tutorial-step h2 { margin: 0 0 12px; color: var(--forest); font: 600 31px/1.05 Georgia, serif; }
+.tutorial-step > p:last-child { max-width: 310px; margin: 0 auto; color: var(--muted); font-size: 13px; line-height: 1.58; }
+.tutorial-progress { margin: 18px 0; display: flex; justify-content: center; gap: 7px; }
+.tutorial-progress i { width: 7px; height: 7px; border-radius: 99px; background: #cbd5ce; transition: width .18s, background .18s; }
+.tutorial-progress i.active { width: 22px; background: var(--forest); }
+.tutorial-actions { display: grid; grid-template-columns: auto 1fr; gap: 9px; }
+.tutorial-actions .primary-button { min-height: 50px; }
+.tutorial-actions .secondary-button[hidden] { display: none; }
+.tutorial-actions:has(.secondary-button[hidden]) .primary-button { grid-column: 1 / -1; }
 
 .success-dialog { width: min(500px, calc(100% - 30px)); padding: 0; border: 0; border-radius: 24px; background: var(--paper); box-shadow: 0 30px 100px rgba(10,31,26,.32); }
 .success-content { padding: 38px; text-align: center; }
@@ -588,13 +607,51 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .nearby-case h3 { line-height: 1.35; }
   .volunteer-guide { padding: 20px; }
   .assessment-options label { min-height: 72px; }
+
+  /* Phone mode: keep the current task prominent and move portal switching
+     into a familiar, thumb-reachable bottom navigation bar. */
+  .phone-layout body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .phone-layout .demo-banner { min-height: 34px; padding: 6px 10px; display: grid; }
+  .phone-layout .demo-banner strong { font-size: 9px; line-height: 1.25; letter-spacing: .055em; }
+  .phone-layout .demo-banner small { display: none; }
+  .phone-layout .site-header { height: 58px; padding: 9px 14px; flex-direction: row; border-bottom-color: #e8ebe6; backdrop-filter: none; }
+  .phone-layout .brand { align-self: center; }
+  .phone-layout .brand-mark { width: 34px; height: 34px; font-size: 18px; }
+  .phone-layout .brand strong { font-size: 21px; }
+  .phone-layout .phone-help { width: 38px; height: 38px; margin-left: auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--forest); background: #f3f6f1; font-size: 17px; font-weight: 900; }
+  .phone-layout .mode-switch { position: fixed; left: 10px; right: 10px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 1500; width: auto; min-height: 58px; margin: 0; padding: 5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border: 1px solid rgba(23,63,53,.1); border-radius: 18px; background: rgba(255,254,250,.97); box-shadow: 0 10px 34px rgba(23,63,53,.2); backdrop-filter: blur(18px); }
+  .phone-layout .mode-button,
+  .phone-layout .rescue-shortcut { min-width: 0; min-height: 48px; padding: 7px 5px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 13px; font-size: 11px; font-weight: 850; }
+  .phone-layout .rescue-shortcut { color: #65706b; background: transparent; }
+  .phone-layout .rescue-shortcut span { margin-right: 3px; }
+  .phone-layout .reporter-layout { display: block; }
+  .phone-layout .intro-panel { display: none; }
+  .phone-layout .eyebrow { margin-bottom: 7px; font-size: 9px; }
+  .phone-layout .intro-panel h1 { max-width: 340px; margin-bottom: 10px; font-size: clamp(34px, 10vw, 41px); line-height: .96; }
+  .phone-layout .lede { margin-bottom: 16px; font-size: 14px; line-height: 1.42; }
+  .phone-layout .start-report-button { min-height: 52px; max-width: none; border-radius: 14px; }
+  .phone-layout .safety-line { margin-top: 12px; font-size: 10px; line-height: 1.4; }
+  .phone-layout .map-panel { min-height: calc(100svh - 92px); }
+  .phone-layout .map-toolbar { top: 9px; left: 9px; right: 9px; gap: 6px; }
+  .phone-layout .map-search { min-height: 48px; padding: 4px; border-radius: 13px; }
+  .phone-layout .map-search > span { font-size: 18px; }
+  .phone-layout .map-search button { min-width: 64px; min-height: 38px; }
+  .phone-layout .map-actions { justify-content: space-between; }
+  .phone-layout .map-style-switch { min-height: 42px; }
+  .phone-layout .icon-button { width: 44px; height: 44px; }
+  .phone-layout .map-hint { bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .phone-layout .leaflet-bottom.leaflet-right { bottom: 112px; }
+  .phone-layout #worker-view,
+  .phone-layout .volunteer-shell { padding-bottom: 30px; }
+  .phone-layout .report-dialog { height: 100dvh; border-radius: 0; }
+  .phone-layout .report-dialog form { height: 100dvh; }
 }
 
 @media (max-width: 370px) {
   .intro-panel h1 { font-size: 36px; }
   .mode-button { font-size: 10px; }
-  .mode-switch { flex-wrap: wrap; }
-  .mode-button { min-width: calc(50% - 3px); }
+  .mode-switch:not(.phone-layout .mode-switch) { flex-wrap: wrap; }
+  .mode-button:not(.phone-layout .mode-button) { min-width: calc(50% - 3px); }
   .map-search > span { display: none; }
   .map-search { grid-template-columns: minmax(0,1fr) auto; }
   .map-style-switch button { padding-inline: 9px; }

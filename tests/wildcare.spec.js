@@ -18,7 +18,10 @@ async function mockBackend(page) {
 }
 
 async function enterDemo(page) {
-  await page.addInitScript(() => sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true"));
+  await page.addInitScript(() => {
+    sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
+    localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+  });
   await page.goto(`/?deployment-test=${Date.now()}`);
 }
 
@@ -33,10 +36,43 @@ test.beforeEach(async ({ page }) => {
   await mockBackend(page);
 });
 
-test("report flow explains requirements and protects a changed draft", async ({ page }) => {
+test("phone tutorial explains reporting and can be reopened", async ({ page, isMobile }) => {
+  await page.addInitScript(() => sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true"));
+  await page.goto(`/?tutorial-test=${Date.now()}`);
+  if (!isMobile) {
+    await expect(page.locator("#phone-tutorial-dialog")).not.toBeVisible();
+    await expect(page.locator("#phone-help")).not.toBeVisible();
+    return;
+  }
+  await expect(page.getByRole("heading", { name: "Start a wildlife report" })).toBeVisible();
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("heading", { name: "Choose the exact spot" })).toBeVisible();
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("heading", { name: "Describe and send" })).toBeVisible();
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("heading", { name: "Explore the demo" })).toBeVisible();
+  await page.getByRole("button", { name: "Got it" }).click();
+  await expect(page.locator("#phone-tutorial-dialog")).not.toBeVisible();
+  await page.getByRole("button", { name: "Open reporting tutorial" }).click();
+  await expect(page.getByRole("heading", { name: "Start a wildlife report" })).toBeVisible();
+});
+
+test("automatically detects phone-sized layouts", async ({ page, isMobile }) => {
   await enterDemo(page);
-  await page.getByRole("button", { name: /Choose a location/ }).click();
-  await expect(page.getByLabel("Search for a location in Singapore")).toBeFocused();
+  await expect(page.locator("html")).toHaveAttribute("data-layout", isMobile ? "phone" : "desktop");
+  await expect(page.locator("html")).toHaveClass(isMobile ? /phone-layout/ : /^(?!.*phone-layout)/);
+  await expect.poll(() => page.locator(".mode-switch").evaluate(element => getComputedStyle(element).position)).toBe(isMobile ? "fixed" : "static");
+  await expect.poll(() => page.locator(".demo-banner small").evaluate(element => getComputedStyle(element).display)).toBe(isMobile ? "none" : "block");
+  await expect.poll(() => page.locator(".intro-panel").evaluate(element => getComputedStyle(element).display)).toBe(isMobile ? "none" : "flex");
+  await expect(page.locator("#map-search-input")).toHaveAttribute("placeholder", isMobile ? "Search street, park or area" : "Search street, park or postcode");
+});
+
+test("report flow explains requirements and protects a changed draft", async ({ page, isMobile }) => {
+  await enterDemo(page);
+  if (!isMobile) {
+    await page.getByRole("button", { name: /Choose a location/ }).click();
+    await expect(page.getByLabel("Search for a location in Singapore")).toBeFocused();
+  }
   await page.locator("#map").click();
 
   await expect(page.getByText("Step 2 of 3 · report details")).toBeVisible();
@@ -60,7 +96,7 @@ test("report flow explains requirements and protects a changed draft", async ({ 
   await expect(page.getByLabel("Your name (optional)")).toHaveValue("Random");
 });
 
-test("photo uploads are normalized to dimensions accepted by Jev", async ({ page }) => {
+test("photo uploads are normalized to dimensions accepted by Jev", async ({ page, isMobile }) => {
   await page.route("**/api/analyze-animal", async route => {
     const image = JSON.parse(route.request().postData() || "{}").image;
     expect(image).toMatch(/^data:image\/jpeg;base64,/);
@@ -71,7 +107,7 @@ test("photo uploads are normalized to dimensions accepted by Jev", async ({ page
     });
   });
   await enterDemo(page);
-  await page.getByRole("button", { name: /Choose a location/ }).click();
+  if (!isMobile) await page.getByRole("button", { name: /Choose a location/ }).click();
   await page.locator("#map").click();
   await page.getByLabel("Open camera or choose an animal photo").setInputFiles({
     name: "tiny image with spaces.png",

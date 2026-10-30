@@ -1,8 +1,22 @@
 const STORAGE_KEY = "wildcare-demo-reports-v1";
 const DEMO_WARNING_KEY = "wildcare-demo-warning-ack-v1";
+const PHONE_TUTORIAL_KEY = "wildcare-phone-tutorial-seen-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
 if (window.location.pathname === "/rescue") history.replaceState({}, "", "/");
+
+const phoneViewport = window.matchMedia("(max-width: 620px)");
+
+function syncPhoneLayout(event = phoneViewport) {
+  const isPhone = event.matches;
+  document.documentElement.classList.toggle("phone-layout", isPhone);
+  document.documentElement.dataset.layout = isPhone ? "phone" : "desktop";
+  const locationSearch = document.querySelector("#map-search-input");
+  if (locationSearch) locationSearch.placeholder = isPhone ? "Search street, park or area" : "Search street, park or postcode";
+}
+
+syncPhoneLayout();
+phoneViewport.addEventListener("change", syncPhoneLayout);
 
 const sampleReports = [
   { id: "WC-1043", animal: "Bird", condition: "Unable to move or fly", notes: "A small green bird is on the grass beside the footpath. It tries to hop but cannot fly.", reporter: "Mei", contact: "", lat: 1.3048, lng: 103.8318, area: "Singapore Botanic Gardens", status: "New", createdAt: Date.now() - 12 * 60 * 1000 },
@@ -934,10 +948,59 @@ document.querySelector("#map-search-form").addEventListener("submit", async even
   }
 });
 const demoWarningDialog = document.querySelector("#demo-warning-dialog");
+const phoneTutorialDialog = document.querySelector("#phone-tutorial-dialog");
+let phoneTutorialStep = 0;
+
+function renderPhoneTutorial() {
+  const steps = [...document.querySelectorAll("[data-tutorial-step]")];
+  steps.forEach((step, index) => {
+    step.hidden = index !== phoneTutorialStep;
+    step.classList.toggle("active", index === phoneTutorialStep);
+  });
+  document.querySelectorAll(".tutorial-progress i").forEach((dot, index) => dot.classList.toggle("active", index === phoneTutorialStep));
+  const back = document.querySelector("#phone-tutorial-back");
+  const next = document.querySelector("#phone-tutorial-next");
+  back.hidden = phoneTutorialStep === 0;
+  next.textContent = phoneTutorialStep === steps.length - 1 ? "Got it" : "Next";
+}
+
+function openPhoneTutorial() {
+  if (!phoneViewport.matches || phoneTutorialDialog.open) return;
+  phoneTutorialStep = 0;
+  renderPhoneTutorial();
+  phoneTutorialDialog.showModal();
+}
+
+function completePhoneTutorial() {
+  localStorage.setItem(PHONE_TUTORIAL_KEY, "true");
+  phoneTutorialDialog.close();
+}
+
+function maybeShowPhoneTutorial() {
+  if (phoneViewport.matches && localStorage.getItem(PHONE_TUTORIAL_KEY) !== "true") openPhoneTutorial();
+}
+
 demoWarningDialog.addEventListener("cancel", event => event.preventDefault());
 document.querySelector("#acknowledge-demo").addEventListener("click", () => {
   sessionStorage.setItem(DEMO_WARNING_KEY, "true");
   demoWarningDialog.close();
+  maybeShowPhoneTutorial();
+});
+document.querySelector("#phone-help").addEventListener("click", openPhoneTutorial);
+document.querySelector("#skip-phone-tutorial").addEventListener("click", completePhoneTutorial);
+document.querySelector("#phone-tutorial-back").addEventListener("click", () => {
+  phoneTutorialStep = Math.max(0, phoneTutorialStep - 1);
+  renderPhoneTutorial();
+});
+document.querySelector("#phone-tutorial-next").addEventListener("click", () => {
+  const finalStep = document.querySelectorAll("[data-tutorial-step]").length - 1;
+  if (phoneTutorialStep === finalStep) return completePhoneTutorial();
+  phoneTutorialStep += 1;
+  renderPhoneTutorial();
+});
+phoneTutorialDialog.addEventListener("cancel", event => {
+  event.preventDefault();
+  completePhoneTutorial();
 });
 document.querySelectorAll("[data-guide-step]").forEach(button => button.addEventListener("click", () => {
   const mapPanel = document.querySelector(".map-panel");
@@ -1470,3 +1533,4 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && livePortalOpen) loadBackendReports(true);
 });
 if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();
+else maybeShowPhoneTutorial();
