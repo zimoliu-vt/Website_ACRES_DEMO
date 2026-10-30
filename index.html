@@ -16,7 +16,7 @@
     <script defer src="https://analytics.liusida.com/umami/script.js" data-website-id="3421d06e-63c1-4985-a7e3-1ce278eb85b4" data-domains="wildcare.liuzimo.cn" data-exclude-search="true"></script>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=55" />
+    <link rel="stylesheet" href="styles.css?v=56" />
   </head>
   <body class="phone-report-map">
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -30,12 +30,14 @@
         <span><strong>WildCare</strong><small>Singapore</small></span>
         <b class="demo-chip">DEMO</b>
       </a>
-      <button id="phone-help" class="phone-help" type="button" aria-label="Open reporting tutorial">?</button>
-      <nav class="mode-switch" aria-label="Choose interface">
-        <button class="mode-button active" data-view="reporter" type="button">Report</button>
-        <button class="mode-button" data-view="volunteer" type="button">Volunteer</button>
-        <a id="team-shortcut" class="rescue-shortcut" href="/" title="Rescue team sign-in" aria-label="Rescue team sign-in"><span aria-hidden="true">⌘</span> Team</a>
-      </nav>
+      <div class="header-tools">
+        <nav class="mode-switch" aria-label="Choose interface">
+          <button class="mode-button active" data-view="reporter" type="button">Report</button>
+          <button class="mode-button" data-view="volunteer" type="button">Volunteer</button>
+          <a id="team-shortcut" class="rescue-shortcut" href="/" title="Rescue team sign-in" aria-label="Rescue team sign-in"><span aria-hidden="true">⌘</span> Team</a>
+        </nav>
+        <button id="phone-help" class="phone-help" type="button" aria-label="Open reporting tutorial" title="Open walkthrough">?</button>
+      </div>
     </header>
 
     <main>
@@ -357,14 +359,14 @@
         </div>
         <div id="report-tutorial-guide" class="interactive-guide form-tutorial-guide" role="status" hidden>
           <span class="interactive-step">2</span>
-          <div><strong id="report-tutorial-title">Complete 3 short steps</strong><p id="report-tutorial-copy">Work through the numbered fields below in order.</p><ol class="tutorial-form-checklist"><li data-tutorial-check="animal"><span>1</span> Animal</li><li data-tutorial-check="condition"><span>2</span> Condition</li><li data-tutorial-check="notes"><span>3</span> Description</li></ol><small>Practice only — nothing will be submitted or saved.</small></div>
+          <div><strong id="report-tutorial-title">Try the photo, then add details</strong><p id="report-tutorial-copy">Start with a photo only if it is safe. You can continue without one.</p><ol class="tutorial-form-checklist"><li class="optional" data-tutorial-check="photo"><span>1</span> Photo <em>optional</em></li><li class="required" data-tutorial-check="animal"><span>2</span> Animal</li><li class="required" data-tutorial-check="condition"><span>3</span> Condition</li><li class="required" data-tutorial-check="notes"><span>4</span> Description</li></ol><small>Practice only — nothing will be submitted or saved.</small></div>
           <button id="finish-interactive-tutorial" type="button">Exit walkthrough</button>
         </div>
         <div class="selected-location"><span>⌖</span><div><strong>Selected location</strong><small id="coordinates">Choose a point on the map</small></div></div>
         <p id="report-form-error" class="form-error" role="alert" hidden></p>
 
         <section class="photo-first-step">
-          <div><p class="eyebrow">Photo is optional</p><h3>Photograph the animal only if it is safe</h3><p>A photo can help suggest the animal type and possible condition, but you can submit without one by completing the animal details below.</p></div>
+          <div><p class="eyebrow"><span class="photo-tutorial-number">1</span> Photo is optional</p><h3>Photograph the animal only if it is safe</h3><p>A photo can help suggest the animal type and possible condition, but you can submit without one by completing the animal details below.</p></div>
           <label class="photo-field camera-photo-field">
             <input id="photo-input" name="photo" type="file" accept="image/*" capture="environment" aria-label="Open camera or choose an animal photo" />
             <span>⌾</span><strong>Open camera or choose photo</strong><small>Do not move closer or put yourself in danger for a photo.</small>
@@ -383,8 +385,8 @@
 
         <button id="random-report-button" class="random-report-button" type="button"><span>✦</span><div><strong>Fill a random demo report</strong><small>Random animal and condition · name “Random” · no contact number</small></div></button>
 
-        <fieldset class="numbered-report-step" data-report-step="1">
-          <legend><span>1</span> What kind of animal is it?</legend>
+        <fieldset class="numbered-report-step" data-report-step="2">
+          <legend><span>2</span> What kind of animal is it?</legend>
           <div class="animal-options">
             <label><input type="radio" name="animal" value="Bird" required /><span>🐦</span>Bird</label>
             <label><input type="radio" name="animal" value="Mammal" /><span>🐒</span>Mammal</label>
@@ -393,7 +395,7 @@
           </div>
         </fieldset>
 
-        <label class="field numbered-report-step" data-report-step="2"><strong class="numbered-field-label"><span>2</span> What seems to be wrong?</strong>
+        <label class="field numbered-report-step" data-report-step="3"><strong class="numbered-field-label"><span>3</span> What seems to be wrong?</strong>
           <select name="condition" required>
             <option value="">Select a condition</option>
             <option>Injured or bleeding</option>
@@ -405,7 +407,7 @@
           </select>
         </label>
 
-        <label class="field numbered-report-step" data-report-step="3"><strong class="numbered-field-label"><span>3</span> Describe what you can see</strong> <span>(required without a photo)</span>
+        <label class="field numbered-report-step" data-report-step="4"><strong class="numbered-field-label"><span>4</span> Describe what you can see</strong> <span>(required without a photo)</span>
           <textarea name="notes" rows="3" maxlength="280" placeholder="For example: small bird under a tree, one wing held low…"></textarea>
         </label>
 
@@ -443,6 +445,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=67"></script>
+  <script src="app.js?v=69"></script>
   </body>
 </html>

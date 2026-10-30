@@ -32,6 +32,7 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .brand strong { font-family: Georgia, serif; font-size: 21px; }
 .brand small { margin-top: 5px; font-size: 9px; text-transform: uppercase; letter-spacing: .22em; font-weight: 800; }
 .demo-chip { margin-left: 4px; padding: 5px 8px; border-radius: 7px; color: #fff; background: #c52f2f; font-size: 9px; font-weight: 950; letter-spacing: .12em; box-shadow: 0 3px 8px rgba(197,47,47,.22); }
+.header-tools { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .phone-help { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--forest); background: #f3f6f1; font-size: 17px; font-weight: 900; }
 .phone-help:hover, .phone-help:focus-visible { border-color: #afc1b7; background: #fff; outline: 3px solid rgba(23,63,53,.1); }
 .mode-switch { display: flex; gap: 5px; padding: 5px; border-radius: 999px; background: #ecede7; }
@@ -233,6 +234,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .animal-options label span { font-size: 23px; }
 .animal-options label:has(input:checked) { color: var(--forest); border-color: var(--forest); background: #f0f7f2; box-shadow: inset 0 0 0 1px var(--forest); }
 .photo-first-step { margin: 20px 0; padding: 17px; border: 1px solid #bdd8cc; border-radius: 16px; background: #f1f8f4; }
+.photo-tutorial-number { width: 22px; height: 22px; margin-right: 6px; display: none; place-items: center; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 10px; font-weight: 950; }
 .photo-first-step h3 { margin: 3px 0 5px; color: var(--forest); font: 600 20px/1.2 Georgia, serif; }
 .photo-first-step > div:first-child > p:last-child { margin: 0 0 12px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .camera-photo-field { margin: 0; background: #fff; }
@@ -375,6 +377,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-form-checklist { margin: 7px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; list-style: none; }
 .tutorial-form-checklist li { padding: 4px 7px 4px 4px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,.22); border-radius: 99px; color: rgba(255,255,255,.76); font-size: 8px; font-weight: 850; }
 .tutorial-form-checklist li > span { width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; color: var(--forest); background: rgba(215,243,108,.72); font-size: 8px; }
+.tutorial-form-checklist li em { color: var(--lime); font-size: 7px; font-style: normal; text-transform: uppercase; letter-spacing: .04em; }
 .tutorial-form-checklist li.complete { color: #fff; border-color: var(--lime); background: rgba(215,243,108,.15); }
 .tutorial-form-checklist li.complete > span { background: var(--lime); }
 .tutorial-form-active .random-report-button,
@@ -382,6 +385,9 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-form-active .privacy-copy { display: none; }
 .tutorial-form-active .numbered-report-step > legend > span,
 .tutorial-form-active .numbered-field-label > span { display: inline-grid; }
+.tutorial-form-active .photo-tutorial-number { display: inline-grid; }
+.tutorial-form-active .photo-first-step { outline: 3px solid rgba(215,243,108,.72); outline-offset: 3px; }
+.tutorial-form-active .camera-photo-field { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(215,243,108,.25); }
 .tutorial-form-active .animal-options,
 .tutorial-form-active .field:has([name="condition"]),
 .tutorial-form-active .field:has([name="notes"]) { border-radius: 12px; outline: 3px solid rgba(215,243,108,.72); outline-offset: 3px; }
@@ -687,6 +693,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .brand { align-self: center; }
   .phone-layout .brand-mark { width: 34px; height: 34px; font-size: 18px; }
   .phone-layout .brand strong { font-size: 21px; }
+  .phone-layout .header-tools { margin-left: auto; }
   .phone-layout .phone-help { width: 38px; height: 38px; margin-left: auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--forest); background: #f3f6f1; font-size: 17px; font-weight: 900; }
   .phone-layout .portal-tutorial-dialog { width: calc(100% - 16px); max-height: calc(100dvh - 16px); border-radius: 24px; }
   .phone-layout .portal-tutorial-content { min-height: min(650px, calc(100dvh - 16px)); padding: 30px 22px 20px; }

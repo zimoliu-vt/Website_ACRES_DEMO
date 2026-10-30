@@ -1100,8 +1100,8 @@ function advanceInteractiveTutorialToForm() {
   const form = document.querySelector("#report-form");
   form.classList.add("tutorial-form-active");
   document.querySelector("#report-tutorial-guide").hidden = false;
-  document.querySelector("#report-tutorial-title").textContent = "Complete 3 short steps";
-  document.querySelector("#report-tutorial-copy").textContent = "Work through the numbered fields below in order. Optional items are hidden during this practice walkthrough.";
+  document.querySelector("#report-tutorial-title").textContent = "Try the photo, then add details";
+  document.querySelector("#report-tutorial-copy").textContent = "Start with a photo only if it is safe. You can continue without one, then complete steps 2–4.";
   updateInteractiveTutorialForm(false);
 }
 
@@ -1109,19 +1109,21 @@ function updateInteractiveTutorialForm(ready) {
   if (!interactiveTutorialActive || !document.querySelector("#report-dialog")?.open) return;
   const form = document.querySelector("#report-form");
   const completed = {
+    photo: Boolean(selectedPhotoDataUrl),
     animal: Boolean(form.querySelector('[name="animal"]:checked')),
     condition: Boolean(form.elements.condition.value),
     notes: Boolean(form.elements.notes.value.trim())
   };
-  form.querySelector('fieldset[data-report-step="1"]')?.classList.toggle("tutorial-step-complete", completed.animal);
+  form.querySelector(".photo-first-step")?.classList.toggle("tutorial-step-complete", completed.photo);
+  form.querySelector('fieldset[data-report-step="2"]')?.classList.toggle("tutorial-step-complete", completed.animal);
   form.elements.condition.closest(".numbered-report-step")?.classList.toggle("tutorial-step-complete", completed.condition);
   form.elements.notes.closest(".numbered-report-step")?.classList.toggle("tutorial-step-complete", completed.notes);
   document.querySelectorAll("[data-tutorial-check]").forEach(item => item.classList.toggle("complete", completed[item.dataset.tutorialCheck]));
   form.classList.toggle("tutorial-form-ready", ready);
-  document.querySelector("#report-tutorial-title").textContent = ready ? "All 3 steps are complete" : "Complete 3 short steps";
+  document.querySelector("#report-tutorial-title").textContent = ready ? "Required details are complete" : "Try the photo, then add details";
   document.querySelector("#report-tutorial-copy").textContent = ready
     ? "Great — select Send demo report to finish the walkthrough. Nothing will be submitted or saved."
-    : "Work through the numbered fields below in order. Optional items are hidden during this practice walkthrough.";
+    : "Start with a photo only if it is safe. You can continue without one, then complete steps 2–4.";
 }
 
 function maybeShowPhoneTutorial() {
