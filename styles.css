@@ -325,7 +325,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-progress { margin: 18px 0; display: flex; justify-content: center; gap: 7px; }
 .tutorial-progress i { width: 7px; height: 7px; border-radius: 99px; background: #cbd5ce; transition: width .18s, background .18s; }
 .tutorial-progress i.active { width: 22px; background: var(--forest); }
-.tutorial-actions { display: grid; grid-template-columns: auto 1fr; gap: 9px; }
+.tutorial-actions { margin-top: 20px; display: grid; grid-template-columns: auto 1fr; gap: 9px; }
 .tutorial-actions .primary-button { min-height: 50px; }
 .tutorial-actions .secondary-button[hidden] { display: none; }
 .tutorial-actions:has(.secondary-button[hidden]) .primary-button { grid-column: 1 / -1; }
