@@ -238,6 +238,64 @@ test("photo uploads are normalized to dimensions accepted by Jev", async ({ page
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
 });
 
+test("phone can start with a photo and fall back to current location", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "Phone-only camera-first flow");
+  await page.addInitScript(() => {
+    navigator.geolocation.getCurrentPosition = success => success({ coords: { latitude: 1.3816, longitude: 103.7622, accuracy: 18 } });
+  });
+  await page.route("**/api/analyze-animal", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ isAnimal: true, animal: "Bird", animalConfidence: .9, condition: "Not sure", conditionConfidence: .9, rescueNeeded: false, rescueProbability: .1, model: "test" })
+  }));
+  await enterDemo(page);
+  await expect(page.getByRole("button", { name: "Take photo to start" })).toBeVisible();
+  await page.getByLabel("Open camera or choose an animal photo").setInputFiles({
+    name: "camera-photo.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2nKAAAAAASUVORK5CYII=", "base64")
+  });
+  await expect(page.locator("#report-dialog")).toBeVisible();
+  await expect(page.locator("#coordinates")).toContainText("1.3816, 103.7622");
+  await expect(page.locator("#photo-preview")).toBeVisible();
+});
+
+test("reads Singapore GPS coordinates from JPEG EXIF metadata", async ({ page }) => {
+  await enterDemo(page);
+  const gps = await page.evaluate(async () => {
+    const tiff = new Uint8Array(128);
+    const view = new DataView(tiff.buffer);
+    const set16 = (offset, value) => view.setUint16(offset, value, true);
+    const set32 = (offset, value) => view.setUint32(offset, value, true);
+    tiff.set([0x49, 0x49], 0);
+    set16(2, 42);
+    set32(4, 8);
+    set16(8, 1);
+    set16(10, 0x8825); set16(12, 4); set32(14, 1); set32(18, 26);
+    set16(26, 4);
+    const writeEntry = (offset, tag, type, count, value) => {
+      set16(offset, tag); set16(offset + 2, type); set32(offset + 4, count); set32(offset + 8, value);
+    };
+    writeEntry(28, 1, 2, 2, 0x4e);
+    writeEntry(40, 2, 5, 3, 80);
+    writeEntry(52, 3, 2, 2, 0x45);
+    writeEntry(64, 4, 5, 3, 104);
+    [[80, 1, 1], [88, 22, 1], [96, 5376, 100], [104, 103, 1], [112, 45, 1], [120, 4392, 100]].forEach(([offset, numerator, denominator]) => {
+      set32(offset, numerator); set32(offset + 4, denominator);
+    });
+    const exif = new Uint8Array(6 + tiff.length);
+    exif.set([0x45, 0x78, 0x69, 0x66, 0, 0]);
+    exif.set(tiff, 6);
+    const jpeg = new Uint8Array(2 + 4 + exif.length + 2);
+    jpeg.set([0xff, 0xd8, 0xff, 0xe1, (exif.length + 2) >> 8, (exif.length + 2) & 0xff], 0);
+    jpeg.set(exif, 6);
+    jpeg.set([0xff, 0xd9], 6 + exif.length);
+    return extractPhotoGps(new File([jpeg], "location.jpg", { type: "image/jpeg" }));
+  });
+  expect(gps.lat).toBeCloseTo(1.3816, 4);
+  expect(gps.lng).toBeCloseTo(103.7622, 4);
+});
+
 test("Umami records safe portal and click events", async ({ page }) => {
   await enterDemo(page);
   await page.getByRole("button", { name: "Volunteer" }).click();

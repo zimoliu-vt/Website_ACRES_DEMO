@@ -97,6 +97,7 @@ h1 { max-width: 620px; margin-bottom: 22px; font: 500 clamp(40px, 5vw, 70px)/.98
 .icon-button svg circle { fill: currentColor; stroke: none; }
 .map-hint { position: absolute; left: 50%; bottom: 25px; z-index: 500; transform: translateX(-50%); min-width: max-content; padding: 12px 18px; border-radius: 999px; color: white; background: rgba(23,63,53,.93); box-shadow: var(--shadow); font-size: 12px; font-weight: 750; pointer-events: none; }
 .map-hint span { margin-right: 6px; color: var(--lime); }
+.phone-photo-start { display: none; }
 .leaflet-control-zoom { border: 0 !important; box-shadow: var(--shadow) !important; }
 .leaflet-control-zoom a { color: var(--forest) !important; border: 0 !important; }
 .leaflet-control-attribution { font-size: 9px !important; }
@@ -732,6 +733,9 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .map-actions { justify-content: space-between; }
   .phone-layout .map-style-switch { min-height: 42px; }
   .phone-layout .icon-button { width: 44px; height: 44px; }
+  .phone-layout .phone-photo-start { min-height: 48px; padding: 0 18px; position: absolute; left: 14px; right: 14px; bottom: calc(124px + env(safe-area-inset-bottom)); z-index: 700; display: flex; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 15px; color: #fff; background: var(--forest); box-shadow: 0 10px 28px rgba(10,31,26,.28); font-size: 13px; font-weight: 900; }
+  .phone-layout .phone-photo-start > span { color: var(--lime); font-size: 19px; }
+  .phone-layout .phone-photo-start:hover, .phone-layout .phone-photo-start:focus-visible { background: var(--forest-2); outline: 3px solid var(--lime); }
   .phone-layout .map-hint { bottom: calc(76px + env(safe-area-inset-bottom)); }
   .phone-layout .leaflet-bottom.leaflet-right { bottom: 112px; }
   .phone-layout #worker-view,

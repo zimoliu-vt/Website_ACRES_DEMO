@@ -203,6 +203,109 @@ function compressPhoto(file) {
   });
 }
 
+function extractPhotoGps(file) {
+  return file.arrayBuffer().then(buffer => {
+    const view = new DataView(buffer);
+    if (view.byteLength < 16 || view.getUint16(0, false) !== 0xffd8) return null;
+    let marker = 2;
+    while (marker + 4 < view.byteLength) {
+      if (view.getUint8(marker) !== 0xff) break;
+      const type = view.getUint8(marker + 1);
+      if (type === 0xda || type === 0xd9) break;
+      const size = view.getUint16(marker + 2, false);
+      if (size < 2 || marker + 2 + size > view.byteLength) break;
+      const dataStart = marker + 4;
+      const isExif = type === 0xe1
+        && size >= 14
+        && view.getUint32(dataStart, false) === 0x45786966
+        && view.getUint16(dataStart + 4, false) === 0;
+      if (isExif) {
+        const tiff = dataStart + 6;
+        const byteOrder = view.getUint16(tiff, false);
+        const littleEndian = byteOrder === 0x4949;
+        if (!littleEndian && byteOrder !== 0x4d4d) return null;
+        const get16 = offset => view.getUint16(offset, littleEndian);
+        const get32 = offset => view.getUint32(offset, littleEndian);
+        const inRange = (offset, length = 1) => offset >= 0 && offset + length <= view.byteLength;
+        const readIfd = offset => {
+          if (!inRange(offset, 2)) return [];
+          const count = get16(offset);
+          const entries = [];
+          for (let index = 0; index < count; index += 1) {
+            const entry = offset + 2 + index * 12;
+            if (!inRange(entry, 12)) break;
+            entries.push({ tag: get16(entry), type: get16(entry + 2), count: get32(entry + 4), value: get32(entry + 8), entry });
+          }
+          return entries;
+        };
+        if (!inRange(tiff + 8, 2) || get16(tiff + 2) !== 42) return null;
+        const ifd0 = tiff + get32(tiff + 4);
+        const gpsPointer = readIfd(ifd0).find(entry => entry.tag === 0x8825)?.value;
+        if (!gpsPointer) return null;
+        const gpsEntries = readIfd(tiff + gpsPointer);
+        const entryFor = tag => gpsEntries.find(entry => entry.tag === tag);
+        const readRef = entry => entry && String.fromCharCode(view.getUint8(entry.entry + 8)).toUpperCase();
+        const readCoordinate = entry => {
+          if (!entry || entry.type !== 5 || entry.count < 3) return null;
+          const start = tiff + entry.value;
+          if (!inRange(start, 24)) return null;
+          const numbers = [0, 8, 16].map(delta => {
+            const numerator = get32(start + delta);
+            const denominator = get32(start + delta + 4);
+            return denominator ? numerator / denominator : NaN;
+          });
+          if (!numbers.every(Number.isFinite)) return null;
+          return numbers[0] + numbers[1] / 60 + numbers[2] / 3600;
+        };
+        let lat = readCoordinate(entryFor(2));
+        let lng = readCoordinate(entryFor(4));
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        if (readRef(entryFor(1)) === "S") lat *= -1;
+        if (readRef(entryFor(3)) === "W") lng *= -1;
+        return { lat, lng };
+      }
+      marker += size + 2;
+    }
+    return null;
+  }).catch(() => null);
+}
+
+function requestReportLocationFromDevice() {
+  if (!navigator.geolocation) {
+    showToast("This photo has no GPS location. Tap the map to choose where you saw the animal.");
+    return;
+  }
+  showToast("No photo location found. Requesting your phone’s current location…");
+  navigator.geolocation.getCurrentPosition(position => {
+    const { latitude, longitude } = position.coords;
+    if (!isSingaporePoint(latitude, longitude)) {
+      showToast("Your current location is outside Singapore. Tap the map to choose the animal’s location.");
+      return;
+    }
+    map?.flyTo([latitude, longitude], 17, { duration: .7 });
+    chooseLocation(latitude, longitude);
+    showToast("Current phone location added. Check it before sending.");
+  }, () => {
+    showToast("Location was unavailable. Your photo is saved—tap the map to choose the location.");
+  }, { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 });
+}
+
+async function resolveLocationFromPhoto(file) {
+  const gps = await extractPhotoGps(file);
+  if (gps && isSingaporePoint(gps.lat, gps.lng)) {
+    const usePhotoLocation = window.confirm("This photo contains a location in Singapore. Use it for this report?\n\nYou can still adjust the map pin afterwards.");
+    if (usePhotoLocation) {
+      map?.flyTo([gps.lat, gps.lng], 17, { duration: .7 });
+      chooseLocation(gps.lat, gps.lng);
+      showToast("Photo location added. Check it before sending.");
+      return;
+    }
+  } else if (gps) {
+    showToast("The photo location is outside Singapore, so it was not used.");
+  }
+  if (!selectedLocation) requestReportLocationFromDevice();
+}
+
 function clearSelectedPhoto() {
   selectedPhotoDataUrl = "";
   photoAnalysis = null;
@@ -1506,6 +1609,7 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
   if (!file) return clearSelectedPhoto();
   helper.textContent = "Preparing photo preview…";
   try {
+    const locationPromise = resolveLocationFromPhoto(file);
     selectedPhotoDataUrl = await compressPhoto(file);
     document.querySelector("#photo-preview-image").src = selectedPhotoDataUrl;
     document.querySelector("#photo-preview-name").textContent = file.name;
@@ -1514,6 +1618,7 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
     helper.textContent = "Photo ready — checking with Jev…";
     randomReportMode = false;
     await analyzeAnimalPhoto();
+    await locationPromise;
   } catch (error) {
     clearSelectedPhoto();
     helper.textContent = "Open camera or choose another photo";
@@ -1521,6 +1626,7 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
   }
 });
 document.querySelector("#remove-photo").addEventListener("click", clearSelectedPhoto);
+document.querySelector("#phone-photo-start").addEventListener("click", () => document.querySelector("#photo-input").click());
 
 function setVolunteerAccountMode(mode) {
   const signingIn = mode === "signin";
