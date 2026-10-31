@@ -72,6 +72,25 @@ let volunteerMap = null;
 let volunteerLocationMarker = null;
 let volunteerRadiusCircle = null;
 
+function workerTokenIsCurrent(token = workerToken) {
+  if (!token) return false;
+  const parts = token.split(".");
+  if (parts.length !== 3) return true;
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return !payload.exp || payload.exp * 1000 > Date.now() + 5000;
+  } catch {
+    return false;
+  }
+}
+
+if (workerAuthenticated && !workerTokenIsCurrent()) {
+  workerAuthenticated = false;
+  workerToken = "";
+  sessionStorage.removeItem("wildcare-worker-auth");
+  sessionStorage.removeItem("wildcare-worker-token");
+}
+
 function trackAnalytics(name, data = {}) {
   if (window.umami?.track) window.umami.track(name, data);
 }
@@ -153,6 +172,8 @@ async function apiFetch(path, options = {}) {
       workerToken = "";
       sessionStorage.removeItem("wildcare-worker-auth");
       sessionStorage.removeItem("wildcare-worker-token");
+      if (portalTutorialDialog?.open && portalTutorialType === "worker") completePortalTutorial();
+      switchView("reporter");
       setTimeout(() => {
         const dialog = document.querySelector("#login-dialog");
         if (!dialog.open) openWorkerLogin();
@@ -617,7 +638,11 @@ function drawReportMarkers() {
 
 function switchView(viewName) {
   trackAnalytics("portal_view", { view: viewName });
-  if (viewName === "worker" && !workerAuthenticated) {
+  if (viewName === "worker" && (!workerAuthenticated || !workerTokenIsCurrent())) {
+    workerAuthenticated = false;
+    workerToken = "";
+    sessionStorage.removeItem("wildcare-worker-auth");
+    sessionStorage.removeItem("wildcare-worker-token");
     openWorkerLogin();
     return;
   }

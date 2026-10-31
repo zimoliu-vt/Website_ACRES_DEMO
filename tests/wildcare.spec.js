@@ -191,6 +191,25 @@ test("expired team sessions show a friendly sign-in prompt", async ({ page }) =>
   await expect(page.locator("#toast")).toContainText("Team session expired");
   await expect(page.getByRole("heading", { name: "Rescue Team Portal" })).toBeVisible();
   await expect(page.locator("#worker-pin")).toBeFocused();
+  await expect(page.locator("#worker-view")).not.toHaveClass(/active/);
+  await expect(page.locator("#reporter-view")).toHaveClass(/active/);
+});
+
+test("an already expired team token cannot open the dashboard", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
+    sessionStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    sessionStorage.setItem("wildcare-desktop-tutorial-seen-v1", "true");
+    sessionStorage.setItem("wildcare-auto-location-requested-v2", "true");
+    sessionStorage.setItem("wildcare-worker-auth", "true");
+    const encode = value => btoa(JSON.stringify(value)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+    sessionStorage.setItem("wildcare-worker-token", `${encode({ alg: "none" })}.${encode({ role: "worker", exp: 1 })}.expired`);
+  });
+  await page.goto(`/?expired-worker-token=${Date.now()}`);
+  await expect(page.locator("#reporter-view")).toHaveClass(/active/);
+  await page.getByRole("link", { name: "Rescue team sign-in" }).click();
+  await expect(page.getByRole("heading", { name: "Rescue Team Portal" })).toBeVisible();
+  await expect(page.locator("#worker-view")).not.toHaveClass(/active/);
 });
 
 test("desktop and phone tutorial guides the user through real reporting controls", async ({ page }) => {
