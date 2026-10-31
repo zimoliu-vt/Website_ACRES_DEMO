@@ -300,6 +300,15 @@ test("phone landscape keeps the compact phone interface", async ({ page }) => {
   await expect(page.locator("html")).toHaveClass(/phone-layout/);
   await expect.poll(() => page.locator(".mode-switch").evaluate(element => getComputedStyle(element).position)).toBe("fixed");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await expect.poll(() => page.locator(".site-header").evaluate(element => Math.round(element.getBoundingClientRect().height))).toBeLessThanOrEqual(46);
+  await expect.poll(() => page.locator("#phone-photo-start").evaluate(element => Math.round(element.getBoundingClientRect().width))).toBeLessThanOrEqual(210);
+  await expect.poll(() => page.evaluate(() => {
+    const hint = document.querySelector("#map-hint").getBoundingClientRect();
+    const photo = document.querySelector("#phone-photo-start").getBoundingClientRect();
+    const nav = document.querySelector(".mode-switch").getBoundingClientRect();
+    const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    return !overlaps(hint, photo) && !overlaps(hint, nav) && !overlaps(photo, nav);
+  })).toBe(true);
   await openTeam(page);
   await expect.poll(() => page.locator(".dashboard-head").evaluate(element => getComputedStyle(element).flexDirection)).toBe("column");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
