@@ -225,6 +225,7 @@ test("photo uploads are normalized to dimensions accepted by Jev", async ({ page
   await enterDemo(page);
   if (!isMobile) await page.getByRole("button", { name: /Choose a location/ }).click();
   await page.locator("#map").click();
+  await expect(page.locator(".camera-photo-field strong")).toContainText(isMobile ? "Tap here" : "Click here");
   await page.getByLabel("Open camera or choose an animal photo").setInputFiles({
     name: "tiny image with spaces.png",
     mimeType: "image/png",

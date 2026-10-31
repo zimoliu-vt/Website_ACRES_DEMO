@@ -272,12 +272,14 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .account-mode-button.active { color: #fff; background: var(--forest); box-shadow: 0 3px 10px rgba(15, 86, 62, .2); }
 .account-mode-button:focus-visible { outline: 3px solid rgba(34,91,75,.18); outline-offset: 2px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.photo-field { padding: 14px; display: grid; grid-template-columns: auto 1fr; column-gap: 10px; border: 1px dashed #aebbb3; border-radius: 12px; cursor: pointer; }
+.photo-field { padding: 14px; display: grid; grid-template-columns: auto 1fr; column-gap: 10px; border: 1px dashed #78998a; border-radius: 12px; cursor: pointer; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
 .photo-field input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .photo-field:focus-within { outline: 3px solid rgba(34,91,75,.18); outline-offset: 2px; }
+.photo-field:hover { border-color: var(--forest); background: #f5faf7; transform: translateY(-1px); }
 .photo-field > span { grid-row: 1 / 3; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--mint); color: var(--forest); }
-.photo-field strong { font-size: 11px; }
+.photo-field strong { color: var(--forest); font-size: 12px; }
 .photo-field small { color: var(--muted); font-size: 9px; }
+.phone-action-copy { display: none; }
 .photo-preview { margin-top: 9px; padding: 10px; display: grid; grid-template-columns: 64px 1fr auto; gap: 11px; align-items: center; border: 1px solid var(--line); border-radius: 12px; background: #f4f7f3; }
 .photo-preview[hidden] { display: none; }
 .photo-preview img { width: 64px; height: 54px; border-radius: 8px; object-fit: cover; background: #dfe7df; }
@@ -749,6 +751,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .photo-first-step > div:first-child > p:last-child { font-size: 13px; line-height: 1.45; }
   .phone-layout .photo-field strong { font-size: 14px; }
   .phone-layout .photo-field small { font-size: 12px; line-height: 1.35; }
+  .phone-layout .desktop-action-copy { display: none; }
+  .phone-layout .phone-action-copy { display: inline; }
   .phone-layout .random-report-button strong { font-size: 14px; }
   .phone-layout .random-report-button small { font-size: 12px; line-height: 1.35; }
   .phone-layout .numbered-report-step > legend,
