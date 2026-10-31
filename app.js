@@ -1125,6 +1125,7 @@ const portalTutorialDialog = document.querySelector("#portal-tutorial-dialog");
 let interactiveTutorialActive = false;
 let portalTutorialType = "volunteer";
 let portalTutorialStep = 0;
+let activePortalTutorialSteps = [];
 const portalTutorials = {
   volunteer: [
     { icon: "⌖", title: "Create your volunteer profile", copy: "Set up the demo profile that controls which cases you can see.", points: ["Choose your approximate location on the map.", "Customise how far you are willing to travel.", "Add relevant animal-care or handling experience."] },
@@ -1143,7 +1144,7 @@ function portalTutorialKey(type) {
 }
 
 function renderPortalTutorial() {
-  const steps = portalTutorials[portalTutorialType];
+  const steps = activePortalTutorialSteps;
   const current = steps[portalTutorialStep];
   document.querySelector("#portal-tutorial-icon").textContent = current.icon;
   document.querySelector("#portal-tutorial-step").textContent = `Step ${portalTutorialStep + 1} of ${steps.length}`;
@@ -1158,6 +1159,10 @@ function renderPortalTutorial() {
 function openPortalTutorial(type) {
   if (portalTutorialDialog.open) return;
   portalTutorialType = type === "worker" ? "worker" : "volunteer";
+  activePortalTutorialSteps = portalTutorials[portalTutorialType];
+  if (portalTutorialType === "volunteer" && volunteer && volunteerToken) {
+    activePortalTutorialSteps = activePortalTutorialSteps.slice(1);
+  }
   portalTutorialStep = 0;
   renderPortalTutorial();
   portalTutorialDialog.showModal();
@@ -1280,7 +1285,7 @@ document.querySelector("#portal-tutorial-back").addEventListener("click", () => 
   renderPortalTutorial();
 });
 document.querySelector("#portal-tutorial-next").addEventListener("click", () => {
-  const finalStep = portalTutorials[portalTutorialType].length - 1;
+  const finalStep = activePortalTutorialSteps.length - 1;
   if (portalTutorialStep === finalStep) return completePortalTutorial();
   portalTutorialStep += 1;
   renderPortalTutorial();

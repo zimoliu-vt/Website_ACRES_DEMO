@@ -119,6 +119,31 @@ test("desktop and phone have detailed volunteer and rescue team walkthroughs", a
   await expect(page.getByRole("heading", { name: "Open the rescue queue" })).toBeVisible();
 });
 
+test("signed-in volunteers skip the profile walkthrough slide", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
+    sessionStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
+    sessionStorage.setItem("wildcare-desktop-tutorial-seen-v1", "true");
+    sessionStorage.setItem("wildcare-auto-location-requested-v2", "true");
+    localStorage.setItem("wildcare-volunteer-token", "demo-volunteer-token");
+    localStorage.setItem("wildcare-demo-volunteer-v1", JSON.stringify({
+      id: "vol-returning",
+      name: "Returning Volunteer",
+      lat: 1.3521,
+      lng: 103.8198,
+      areaName: "Central Singapore",
+      radius: 5,
+      animalPreferences: ["Bird"],
+      canTravelToIslands: false
+    }));
+  });
+  await page.goto(`/?returning-volunteer-tutorial=${Date.now()}`);
+  await page.getByRole("button", { name: "Volunteer" }).click();
+  await expect(page.getByRole("heading", { name: "Find a nearby case" })).toBeVisible();
+  await expect(page.locator("#portal-tutorial-step")).toHaveText("Step 1 of 2");
+  await expect(page.getByRole("heading", { name: "Create your volunteer profile" })).toHaveCount(0);
+});
+
 test("desktop and phone tutorial guides the user through real reporting controls", async ({ page }) => {
   let reportPosts = 0;
   page.on("request", request => {
