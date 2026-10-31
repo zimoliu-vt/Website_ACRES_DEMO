@@ -74,7 +74,7 @@
               </div>
             </div>
             <div id="map" role="application" aria-label="Interactive map of Singapore"></div>
-            <button id="phone-photo-start" class="phone-photo-start" type="button"><span aria-hidden="true">⌾</span> Take a photo</button>
+            <button id="phone-photo-start" class="phone-photo-start" type="button"><span aria-hidden="true">⌾</span> Take or upload a photo</button>
             <div class="map-hint" id="map-hint"><span>＋</span> Select the animal’s location on the map</div>
             <div id="map-tutorial-guide" class="interactive-guide map-tutorial-guide" role="status" hidden>
               <span class="interactive-step">1</span>
@@ -375,8 +375,8 @@
             <p>A photo can help identify the animal. If it contains a saved GPS location, you can choose to use it. Other camera details are ignored, and you may continue without a photo.</p>
           </details>
           <label class="photo-field camera-photo-field">
-            <input id="photo-input" name="photo" type="file" accept="image/*" capture="environment" aria-label="Open camera or choose an animal photo" />
-            <span>⌾</span><strong>Take or choose a photo →</strong><small>Stay at a safe distance.</small>
+            <input id="photo-input" name="photo" type="file" accept="image/*" aria-label="Open camera or choose an animal photo" />
+            <span>⌾</span><strong>Take or upload a photo →</strong><small>Use your camera or photo library. Stay at a safe distance.</small>
           </label>
           <div id="photo-preview" class="photo-preview" hidden>
             <img id="photo-preview-image" alt="Selected animal photo preview" />

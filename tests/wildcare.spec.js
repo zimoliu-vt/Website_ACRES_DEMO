@@ -393,7 +393,7 @@ test("photo uploads are normalized to dimensions accepted by Jev", async ({ page
   await enterDemo(page);
   if (!isMobile) await page.getByRole("button", { name: /Choose a location/ }).click();
   await page.locator("#map").click();
-  await expect(page.locator(".camera-photo-field strong")).toContainText("Take or choose a photo");
+  await expect(page.locator(".camera-photo-field strong")).toContainText("Take or upload a photo");
   await expect(page.locator(".photo-learn-more summary")).toContainText(isMobile ? "Tap here to learn more" : "Click here to learn more");
   await page.locator(".photo-learn-more summary").click();
   await expect(page.locator(".photo-learn-more p")).toContainText("saved GPS location");
@@ -421,7 +421,8 @@ test("phone can start with a photo and fall back to current location", async ({ 
     body: JSON.stringify({ isAnimal: true, animal: "Bird", animalConfidence: .9, condition: "Not sure", conditionConfidence: .9, rescueNeeded: false, rescueProbability: .1, model: "test" })
   }));
   await enterDemo(page);
-  await expect(page.getByRole("button", { name: "Take a photo" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Take or upload a photo" })).toBeVisible();
+  await expect(page.locator("#photo-input")).not.toHaveAttribute("capture");
   await page.getByLabel("Open camera or choose an animal photo").setInputFiles({
     name: "camera-photo.png",
     mimeType: "image/png",
