@@ -117,6 +117,9 @@ test("desktop and phone have detailed volunteer and rescue team walkthroughs", a
   await expect(page.locator("#portal-tutorial-dialog")).toHaveClass(/interactive-team-tutorial/);
   await expect(page.locator(".queue-panel")).toHaveClass(/portal-tutorial-focus/);
   await expect(page.locator("#portal-tutorial-practice")).toContainText("no case status or team action will be saved");
+  await page.getByRole("button", { name: "Reset shared demo" }).click();
+  await expect(page.locator("#toast")).toContainText("Practice only");
+  expect(teamMutationRequests).toBe(0);
   await page.locator(".report-card").first().click();
   await expect(page.getByRole("heading", { name: "Review the evidence" })).toBeVisible();
   await expect(page.locator("#detail-panel")).toHaveClass(/portal-tutorial-focus/);
@@ -173,6 +176,21 @@ test("signed-in volunteers skip the profile walkthrough slide", async ({ page })
   await expect(page.locator(".volunteer-guide")).toHaveClass(/portal-tutorial-focus/);
   await expect(practiceAction).toBeVisible();
   expect(volunteerResponseRequests).toBe(0);
+});
+
+test("expired team sessions show a friendly sign-in prompt", async ({ page }) => {
+  await page.route("**/api/reports/reset", route => route.fulfill({
+    status: 401,
+    contentType: "application/json",
+    body: JSON.stringify({ error: "Worker authentication required" })
+  }));
+  await enterDemo(page);
+  await openTeam(page);
+  page.once("dialog", dialog => dialog.accept());
+  await page.getByRole("button", { name: "Reset shared demo" }).click();
+  await expect(page.locator("#toast")).toContainText("Team session expired");
+  await expect(page.getByRole("heading", { name: "Rescue Team Portal" })).toBeVisible();
+  await expect(page.locator("#worker-pin")).toBeFocused();
 });
 
 test("desktop and phone tutorial guides the user through real reporting controls", async ({ page }) => {

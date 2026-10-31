@@ -148,6 +148,17 @@ async function apiFetch(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!response.ok) {
     const result = await response.json().catch(() => ({}));
+    if (response.status === 401 && result.error === "Worker authentication required") {
+      workerAuthenticated = false;
+      workerToken = "";
+      sessionStorage.removeItem("wildcare-worker-auth");
+      sessionStorage.removeItem("wildcare-worker-token");
+      setTimeout(() => {
+        const dialog = document.querySelector("#login-dialog");
+        if (!dialog.open) openWorkerLogin();
+      }, 0);
+      throw new Error("Your Team session expired. Enter the demo PIN again.");
+    }
     throw new Error(result.error || "The demo backend is unavailable.");
   }
   return response.status === 204 ? null : response.json();
@@ -835,11 +846,21 @@ function renderReportDetail(id) {
     updateReportStatus(report, nextStatus);
   });
   panel.querySelector("#trash-report")?.addEventListener("click", () => {
+    if (portalTutorialDialog.open && portalTutorialType === "worker") {
+      showToast("Practice only — this case was not moved to Trash.");
+      return;
+    }
     pendingTrashReport = report;
     document.querySelector("#trash-case-id").textContent = report.id;
     document.querySelector("#trash-report-dialog").showModal();
   });
-  panel.querySelector("#restore-report")?.addEventListener("click", () => restoreTrashedReport(report));
+  panel.querySelector("#restore-report")?.addEventListener("click", () => {
+    if (portalTutorialDialog.open && portalTutorialType === "worker") {
+      showToast("Practice only — this case was not restored or changed.");
+      return;
+    }
+    restoreTrashedReport(report);
+  });
   setTimeout(() => renderDetailMap(report), 0);
 }
 
@@ -1457,6 +1478,10 @@ document.querySelector("#login-form").addEventListener("submit", async event => 
 });
 document.querySelector("#worker-logout").addEventListener("click", logoutWorker);
 document.querySelector("#new-report-worker").addEventListener("click", () => {
+  if (portalTutorialDialog.open && portalTutorialType === "worker") {
+    showToast("Practice only — finish the guide before starting a report.");
+    return;
+  }
   resetReportDraft();
   switchView("reporter");
   document.querySelector(".map-panel").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1464,6 +1489,10 @@ document.querySelector("#new-report-worker").addEventListener("click", () => {
   showToast("New report started. Choose a location first.");
 });
 document.querySelector("#reset-demo").addEventListener("click", async () => {
+  if (portalTutorialDialog.open && portalTutorialType === "worker") {
+    showToast("Practice only — the shared demo was not reset.");
+    return;
+  }
   if (!window.confirm("Reset all shared demo reports?\n\nThis restores the starting cases for everyone using this demo. Volunteer accounts are not deleted.")) return;
   try {
     reports = await apiFetch("/reports/reset", { method: "POST" });
