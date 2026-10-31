@@ -1164,12 +1164,12 @@ function openPortalTutorial(type) {
 }
 
 function completePortalTutorial() {
-  localStorage.setItem(portalTutorialKey(portalTutorialType), "true");
+  sessionStorage.setItem(portalTutorialKey(portalTutorialType), "true");
   if (portalTutorialDialog.open) portalTutorialDialog.close();
 }
 
 function maybeShowPortalTutorial(type) {
-  if (localStorage.getItem(portalTutorialKey(type)) !== "true") openPortalTutorial(type);
+  if (sessionStorage.getItem(portalTutorialKey(type)) !== "true") openPortalTutorial(type);
 }
 
 function openPhoneTutorial() {
@@ -1182,7 +1182,7 @@ function reportingTutorialKey() {
 }
 
 function completePhoneTutorial() {
-  localStorage.setItem(reportingTutorialKey(), "true");
+  sessionStorage.setItem(reportingTutorialKey(), "true");
   interactiveTutorialActive = false;
   if (phoneTutorialDialog.open) phoneTutorialDialog.close();
   document.querySelector("#map-tutorial-guide").hidden = true;
@@ -1250,7 +1250,7 @@ function updateInteractiveTutorialForm(ready) {
 }
 
 function maybeShowPhoneTutorial() {
-  if (localStorage.getItem(reportingTutorialKey()) !== "true") openPhoneTutorial();
+  if (sessionStorage.getItem(reportingTutorialKey()) !== "true") openPhoneTutorial();
 }
 
 demoWarningDialog.addEventListener("cancel", event => event.preventDefault());
