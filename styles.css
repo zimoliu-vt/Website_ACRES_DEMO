@@ -865,10 +865,9 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .case-timeline li strong { font-size: 13px; }
 }
 
-/* A phone held sideways has very little vertical space. Keep the map dominant
-   by arranging controls horizontally instead of stretching portrait controls. */
+/* A phone held sideways has very little vertical space. Keep the map full-size
+   and stack only the portal switcher vertically along the right edge. */
 @media (min-width: 621px) and (max-width: 950px) and (max-height: 600px) {
-  .phone-layout body { --landscape-rail: clamp(230px, 31vw, 260px); }
   .phone-layout .demo-banner { min-height: 24px; padding: 4px 10px; }
   .phone-layout .demo-banner strong { font-size: 8px; }
   .phone-layout .site-header { height: 44px; padding: 5px 10px; }
@@ -876,22 +875,23 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .brand strong { font-size: 18px; }
   .phone-layout .phone-help { width: 32px; height: 32px; font-size: 15px; }
   .phone-layout body.phone-report-map #reporter-view { height: calc(100dvh - 68px); }
-  .phone-layout .map-panel { min-height: calc(100dvh - 68px); background: #eef1eb; }
-  .phone-layout #map { right: calc(var(--landscape-rail) + 12px); border-right: 1px solid var(--line); }
-  .phone-layout .map-toolbar { top: 7px; left: auto; right: 6px; width: var(--landscape-rail); grid-template-columns: 1fr; gap: 7px; align-items: start; }
+  .phone-layout .map-panel { min-height: calc(100dvh - 68px); }
+  .phone-layout #map { inset: 0; border: 0; }
+  .phone-layout .map-toolbar { top: 7px; left: 8px; right: 104px; width: auto; grid-template-columns: minmax(280px, 430px) auto; gap: 7px; align-items: start; }
   .phone-layout .map-search-wrap { grid-column: 1; }
   .phone-layout .map-search { min-height: 44px; }
   .phone-layout .map-search input { min-height: 34px; }
   .phone-layout .map-search button { min-height: 36px; }
-  .phone-layout .map-actions { grid-column: 1; grid-row: 2; gap: 7px; justify-content: space-between; }
+  .phone-layout .map-actions { grid-column: 2; grid-row: 1; gap: 7px; justify-content: flex-start; }
   .phone-layout .map-style-switch { min-height: 44px; }
   .phone-layout .map-style-switch button { min-height: 34px; padding: 7px 10px; }
   .phone-layout .icon-button { width: 44px; height: 44px; }
-  .phone-layout .phone-photo-start { left: auto; right: 6px; bottom: calc(120px + env(safe-area-inset-bottom)); width: var(--landscape-rail); height: 44px; min-height: 44px; padding: 0 12px; font-size: 14px; }
-  .phone-layout .map-hint { left: auto; right: 6px; bottom: calc(64px + env(safe-area-inset-bottom)); width: var(--landscape-rail); height: 42px; min-height: 42px; padding: 8px 10px; display: grid; place-items: center; font-size: 11px; }
-  .phone-layout .mode-switch { left: auto; right: 6px; bottom: calc(6px + env(safe-area-inset-bottom)); width: var(--landscape-rail); height: 50px; min-height: 50px; padding: 4px; border-radius: 15px; }
+  .phone-layout .phone-photo-start { left: 10px; right: auto; bottom: calc(10px + env(safe-area-inset-bottom)); width: 240px; height: 46px; min-height: 46px; padding: 0 12px; font-size: 14px; }
+  .phone-layout .map-hint { left: 260px; right: 104px; bottom: calc(10px + env(safe-area-inset-bottom)); width: auto; height: 46px; min-height: 46px; padding: 8px 12px; display: grid; place-items: center; font-size: 11px; }
+  .phone-layout .mode-switch { top: 50%; left: auto; right: 7px; bottom: auto; width: 88px; height: auto; min-height: 0; padding: 4px; grid-template-columns: 1fr; grid-template-rows: repeat(3, 48px); transform: translateY(-50%); border-radius: 16px; }
   .phone-layout .mode-button,
-  .phone-layout .rescue-shortcut { min-height: 42px; border-radius: 11px; font-size: 11px; }
+  .phone-layout .rescue-shortcut { min-height: 48px; padding: 5px 3px; flex-direction: column; gap: 1px; border-radius: 11px; font-size: 10px; }
+  .phone-layout .rescue-shortcut span { margin: 0; }
   .phone-layout .leaflet-bottom.leaflet-right { bottom: 8px; }
   .phone-layout #worker-view,
   .phone-layout .volunteer-shell { padding-top: 16px; }

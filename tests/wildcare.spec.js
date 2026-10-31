@@ -301,16 +301,21 @@ test("phone landscape keeps the compact phone interface", async ({ page }) => {
   await expect.poll(() => page.locator(".mode-switch").evaluate(element => getComputedStyle(element).position)).toBe("fixed");
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect.poll(() => page.locator(".site-header").evaluate(element => Math.round(element.getBoundingClientRect().height))).toBeLessThanOrEqual(46);
-  await expect.poll(() => page.locator("#phone-photo-start").evaluate(element => Math.round(element.getBoundingClientRect().width))).toBeLessThanOrEqual(270);
+  await expect.poll(() => page.locator("#phone-photo-start").evaluate(element => Math.round(element.getBoundingClientRect().width))).toBeLessThanOrEqual(250);
   await expect.poll(() => page.locator("#map").evaluate(element => {
     const box = element.getBoundingClientRect();
     return box.width / box.height;
-  })).toBeLessThan(1.65);
+  })).toBeGreaterThan(1.8);
   await expect.poll(() => page.evaluate(() => {
     const map = document.querySelector("#map").getBoundingClientRect();
-    const controls = document.querySelector(".map-toolbar").getBoundingClientRect();
-    return controls.left - map.right;
-  })).toBeGreaterThanOrEqual(-1);
+    const panel = document.querySelector(".map-panel").getBoundingClientRect();
+    return Math.abs(map.width - panel.width) <= 1 && Math.abs(map.height - panel.height) <= 1;
+  })).toBe(true);
+  await expect.poll(() => page.locator(".mode-switch").evaluate(element => {
+    const style = getComputedStyle(element);
+    const box = element.getBoundingClientRect();
+    return style.gridTemplateColumns.split(" ").length === 1 && box.height > box.width;
+  })).toBe(true);
   await expect.poll(() => page.evaluate(() => {
     const hint = document.querySelector("#map-hint").getBoundingClientRect();
     const photo = document.querySelector("#phone-photo-start").getBoundingClientRect();
