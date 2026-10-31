@@ -782,6 +782,10 @@ function renderDashboard() {
 function selectReport(id) {
   selectedReportId = id;
   renderDashboard();
+  if (portalTutorialDialog.open && portalTutorialType === "worker" && portalTutorialStep === 0) {
+    portalTutorialStep = 1;
+    renderPortalTutorial();
+  }
   if (window.matchMedia("(max-width: 950px)").matches) {
     setTimeout(() => document.querySelector("#detail-panel")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
   }
@@ -814,6 +818,13 @@ function renderReportDetail(id) {
   </div>`;
   panel.querySelector("#case-status")?.addEventListener("change", event => {
     const nextStatus = event.target.value;
+    if (portalTutorialDialog.open && portalTutorialType === "worker") {
+      event.target.value = report.status;
+      portalTutorialStep = activePortalTutorialSteps.length - 1;
+      renderPortalTutorial();
+      showToast("Practice only — the case status was not changed or saved.");
+      return;
+    }
     if (report.status === "Resolved" && nextStatus !== "Resolved") {
       event.target.value = "Resolved";
       pendingReopen = { report, nextStatus };
@@ -1168,7 +1179,11 @@ function renderPortalTutorial() {
   document.querySelector("#portal-tutorial-step").textContent = `Step ${portalTutorialStep + 1} of ${steps.length}`;
   document.querySelector("#portal-tutorial-title").textContent = current.title;
   document.querySelector("#portal-tutorial-copy").textContent = current.copy;
-  document.querySelector("#portal-tutorial-practice").hidden = portalTutorialType !== "volunteer";
+  const practiceNotice = document.querySelector("#portal-tutorial-practice");
+  practiceNotice.hidden = false;
+  practiceNotice.innerHTML = portalTutorialType === "volunteer"
+    ? "<strong>Practice only</strong> — no response, arrival, or update will be saved."
+    : "<strong>Practice only</strong> — no case status or team action will be saved.";
   document.querySelector("#portal-tutorial-points").innerHTML = current.points.map(point => `<li>${escapeHtml(point)}</li>`).join("");
   document.querySelector("#portal-tutorial-progress").innerHTML = steps.map((_step, index) => `<i class="${index === portalTutorialStep ? "active" : ""}"></i>`).join("");
   document.querySelector("#portal-tutorial-back").hidden = portalTutorialStep === 0;
@@ -1184,6 +1199,14 @@ function renderPortalTutorial() {
         : document.querySelector(".volunteer-guide");
     target?.classList.add("portal-tutorial-focus");
     setTimeout(() => target?.scrollIntoView({ block: "center" }), 80);
+  } else {
+    const target = current.title === "Open the rescue queue"
+      ? document.querySelector(".queue-panel")
+      : current.title === "Review the evidence"
+        ? document.querySelector("#detail-panel")
+        : document.querySelector(".status-control") || document.querySelector("#detail-panel");
+    target?.classList.add("portal-tutorial-focus");
+    setTimeout(() => target?.scrollIntoView({ block: "center" }), 80);
   }
 }
 
@@ -1196,15 +1219,16 @@ function openPortalTutorial(type) {
   }
   portalTutorialStep = 0;
   renderPortalTutorial();
+  portalTutorialDialog.classList.add("interactive-portal-tutorial");
   portalTutorialDialog.classList.toggle("interactive-volunteer-tutorial", portalTutorialType === "volunteer");
-  if (portalTutorialType === "volunteer") portalTutorialDialog.show();
-  else portalTutorialDialog.showModal();
+  portalTutorialDialog.classList.toggle("interactive-team-tutorial", portalTutorialType === "worker");
+  portalTutorialDialog.show();
 }
 
 function completePortalTutorial() {
   sessionStorage.setItem(portalTutorialKey(portalTutorialType), "true");
   document.querySelectorAll(".portal-tutorial-focus").forEach(element => element.classList.remove("portal-tutorial-focus"));
-  portalTutorialDialog.classList.remove("interactive-volunteer-tutorial");
+  portalTutorialDialog.classList.remove("interactive-portal-tutorial", "interactive-volunteer-tutorial", "interactive-team-tutorial");
   if (portalTutorialDialog.open) portalTutorialDialog.close();
 }
 

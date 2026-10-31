@@ -91,6 +91,10 @@ test("failed automatic location falls back closer and retries after reload", asy
 });
 
 test("desktop and phone have detailed volunteer and rescue team walkthroughs", async ({ page }) => {
+  let teamMutationRequests = 0;
+  page.on("request", request => {
+    if (request.method() !== "GET" && /\/api\/reports\//.test(new URL(request.url()).pathname)) teamMutationRequests += 1;
+  });
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     sessionStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
@@ -110,10 +114,21 @@ test("desktop and phone have detailed volunteer and rescue team walkthroughs", a
   await page.getByLabel("Demo PIN").fill("0000");
   await page.getByRole("button", { name: "Open dashboard" }).click();
   await expect(page.getByRole("heading", { name: "Open the rescue queue" })).toBeVisible();
-  await page.getByRole("button", { name: "Next step" }).click();
+  await expect(page.locator("#portal-tutorial-dialog")).toHaveClass(/interactive-team-tutorial/);
+  await expect(page.locator(".queue-panel")).toHaveClass(/portal-tutorial-focus/);
+  await expect(page.locator("#portal-tutorial-practice")).toContainText("no case status or team action will be saved");
+  await page.locator(".report-card").first().click();
   await expect(page.getByRole("heading", { name: "Review the evidence" })).toBeVisible();
+  await expect(page.locator("#detail-panel")).toHaveClass(/portal-tutorial-focus/);
   await page.getByRole("button", { name: "Next step" }).click();
   await expect(page.getByRole("heading", { name: "Manage the case" })).toBeVisible();
+  await expect(page.locator(".status-control")).toHaveClass(/portal-tutorial-focus/);
+  const originalStatus = await page.locator("#case-status").inputValue();
+  const practiceStatus = originalStatus === "Acknowledged" ? "Assigned" : "Acknowledged";
+  await page.locator("#case-status").selectOption(practiceStatus);
+  await expect(page.locator("#case-status")).toHaveValue(originalStatus);
+  await expect(page.locator("#toast")).toContainText("Practice only");
+  expect(teamMutationRequests).toBe(0);
   await page.getByRole("button", { name: "Finish guide" }).click();
   await page.getByRole("button", { name: "Open rescue team walkthrough" }).click();
   await expect(page.getByRole("heading", { name: "Open the rescue queue" })).toBeVisible();
