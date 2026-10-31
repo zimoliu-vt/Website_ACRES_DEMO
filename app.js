@@ -1118,6 +1118,22 @@ function updateInteractiveTutorialForm(ready) {
   form.querySelector('fieldset[data-report-step="2"]')?.classList.toggle("tutorial-step-complete", completed.animal);
   form.elements.condition.closest(".numbered-report-step")?.classList.toggle("tutorial-step-complete", completed.condition);
   form.elements.notes.closest(".numbered-report-step")?.classList.toggle("tutorial-step-complete", completed.notes);
+  const tutorialSteps = {
+    photo: form.querySelector(".photo-first-step"),
+    animal: form.querySelector('fieldset[data-report-step="2"]'),
+    condition: form.elements.condition.closest(".numbered-report-step"),
+    notes: form.elements.notes.closest(".numbered-report-step")
+  };
+  const currentStep = ready
+    ? null
+    : !completed.animal
+      ? (completed.photo ? "animal" : "photo")
+      : !completed.condition
+        ? "condition"
+        : !completed.photo && !completed.notes
+          ? "notes"
+          : "photo";
+  Object.entries(tutorialSteps).forEach(([name, element]) => element?.classList.toggle("tutorial-step-current", name === currentStep));
   document.querySelectorAll("[data-tutorial-check]").forEach(item => item.classList.toggle("complete", completed[item.dataset.tutorialCheck]));
   form.classList.toggle("tutorial-form-ready", ready);
   document.querySelector("#report-tutorial-title").textContent = ready ? "Required details are complete" : "Use a photo or describe what you see";

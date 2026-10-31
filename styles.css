@@ -391,13 +391,18 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .tutorial-form-active .numbered-report-step > legend > span,
 .tutorial-form-active .numbered-field-label > span { display: inline-grid; }
 .tutorial-form-active .photo-tutorial-number { display: inline-grid; }
-.tutorial-form-active .photo-first-step { outline: 3px solid rgba(215,243,108,.72); outline-offset: 3px; }
 .tutorial-form-active .photo-or-divider { display: grid; }
-.tutorial-form-active .camera-photo-field { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(215,243,108,.25); }
+.tutorial-form-active .photo-first-step,
 .tutorial-form-active .animal-options,
 .tutorial-form-active .field:has([name="condition"]),
-.tutorial-form-active .field:has([name="notes"]) { border-radius: 12px; outline: 3px solid rgba(215,243,108,.72); outline-offset: 3px; }
-.tutorial-form-active .numbered-report-step.tutorial-step-complete { outline-color: rgba(73,139,97,.45); }
+.tutorial-form-active .field:has([name="notes"]) { border-radius: 12px; outline: 2px solid #d8e0dc; outline-offset: 3px; transition: outline-color .2s ease, box-shadow .2s ease; }
+.tutorial-form-active .photo-first-step.tutorial-step-current,
+.tutorial-form-active fieldset.tutorial-step-current .animal-options,
+.tutorial-form-active .field.tutorial-step-current { outline: 3px solid var(--lime); box-shadow: 0 0 0 5px rgba(215,243,108,.1); }
+.tutorial-form-active .photo-first-step.tutorial-step-current .camera-photo-field { border-color: var(--forest); box-shadow: 0 0 0 3px rgba(215,243,108,.18); }
+.tutorial-form-active .photo-first-step.tutorial-step-complete,
+.tutorial-form-active fieldset.tutorial-step-complete .animal-options,
+.tutorial-form-active .field.tutorial-step-complete { outline-color: rgba(73,139,97,.4); box-shadow: none; }
 .tutorial-form-ready #send-report-button { outline: 4px solid var(--lime); outline-offset: 3px; animation: tutorialPulse 1.25s ease-in-out infinite; }
 @keyframes tutorialPulse { 50% { box-shadow: 0 0 0 8px rgba(215,243,108,.15); } }
 

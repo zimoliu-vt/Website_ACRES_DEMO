@@ -143,12 +143,17 @@ test("desktop and phone tutorial guides the user through real reporting controls
   await expect(page.getByLabel("Open camera or choose an animal photo")).toBeVisible();
   await expect(page.locator(".photo-or-divider")).toContainText("OR");
   await expect(page.locator(".photo-or-divider")).toContainText("Continue without a photo");
+  await expect(page.locator(".tutorial-step-current")).toHaveCount(1);
+  await expect(page.locator(".photo-first-step")).toHaveClass(/tutorial-step-current/);
   await page.getByRole("radio", { name: /Bird/ }).check();
+  await expect(page.locator('[data-report-step="3"]')).toHaveClass(/tutorial-step-current/);
   await page.getByLabel("What seems to be wrong?").selectOption("Unable to move or fly");
+  await expect(page.locator('[data-report-step="4"]')).toHaveClass(/tutorial-step-current/);
   await page.getByLabel(/Describe what you can see/).fill("Interactive tutorial test");
   await expect(page.locator("#report-tutorial-title")).toHaveText("Required details are complete");
   await expect(page.locator(".tutorial-form-checklist li.required.complete")).toHaveCount(3);
   await expect(page.locator('[data-tutorial-check="photo"]')).not.toHaveClass(/complete/);
+  await expect(page.locator(".tutorial-step-current")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
   await page.getByRole("button", { name: /Send demo report/ }).click();
   await expect(page.getByText("Walkthrough complete — no report was submitted.")).toBeVisible();
