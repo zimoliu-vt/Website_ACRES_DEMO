@@ -237,7 +237,10 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .photo-first-step { margin: 20px 0; padding: 17px; border: 1px solid #bdd8cc; border-radius: 16px; background: #f1f8f4; }
 .photo-tutorial-number { width: 22px; height: 22px; margin-right: 6px; display: none; place-items: center; border-radius: 50%; color: var(--forest); background: var(--lime); font-size: 10px; font-weight: 950; }
 .photo-first-step h3 { margin: 3px 0 5px; color: var(--forest); font: 600 20px/1.2 Georgia, serif; }
-.photo-first-step > div:first-child > p:last-child { margin: 0 0 12px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.photo-learn-more { margin: 7px 0 13px; }
+.photo-learn-more summary { width: fit-content; color: var(--forest-2); font-size: 11px; font-weight: 850; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.photo-learn-more summary::marker { color: var(--forest-2); }
+.photo-learn-more p { margin: 9px 0 0; padding: 11px 12px; border-left: 3px solid var(--lime); border-radius: 0 9px 9px 0; color: var(--muted); background: rgba(255,255,255,.66); font-size: 10px; line-height: 1.5; }
 .photo-or-divider { margin: -4px 0 18px; display: none; grid-template-columns: auto 1fr; align-items: center; gap: 11px; color: var(--forest); }
 .photo-or-divider > span { width: 38px; height: 38px; display: grid; place-items: center; border: 2px solid var(--lime); border-radius: 50%; background: var(--paper); font-size: 10px; font-weight: 950; letter-spacing: .08em; }
 .photo-or-divider > div { display: flex; flex-direction: column; gap: 2px; }
@@ -748,7 +751,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .dialog-head h2 { font-size: 31px; line-height: 1.05; }
   .phone-layout .selected-location strong { font-size: 15px; }
   .phone-layout .selected-location small { font-size: 13px; line-height: 1.35; }
-  .phone-layout .photo-first-step > div:first-child > p:last-child { font-size: 13px; line-height: 1.45; }
+  .phone-layout .photo-learn-more summary { font-size: 14px; }
+  .phone-layout .photo-learn-more p { font-size: 13px; line-height: 1.5; }
   .phone-layout .photo-field strong { font-size: 14px; }
   .phone-layout .photo-field small { font-size: 12px; line-height: 1.35; }
   .phone-layout .desktop-action-copy { display: none; }

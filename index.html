@@ -16,7 +16,7 @@
     <script defer src="https://analytics.liusida.com/umami/script.js" data-website-id="3421d06e-63c1-4985-a7e3-1ce278eb85b4" data-domains="wildcare.liuzimo.cn" data-exclude-search="true"></script>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=62" />
+    <link rel="stylesheet" href="styles.css?v=63" />
   </head>
   <body class="phone-report-map">
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -367,10 +367,14 @@
         <p id="report-form-error" class="form-error" role="alert" hidden></p>
 
         <section class="photo-first-step">
-          <div><p class="eyebrow"><span class="photo-tutorial-number">1</span> Photo is optional</p><h3>Photograph the animal only if it is safe</h3><p>A photo can help identify the animal. You can continue without one.</p></div>
+          <div><p class="eyebrow"><span class="photo-tutorial-number">1</span> Photo is optional</p><h3>Photograph the animal only if it is safe</h3></div>
+          <details class="photo-learn-more">
+            <summary><span class="desktop-action-copy">Click here to learn more</span><span class="phone-action-copy">Tap here to learn more</span></summary>
+            <p>A photo can help identify the animal. If it contains a saved GPS location, you can choose to use it. Other camera details are ignored, and you may continue without a photo.</p>
+          </details>
           <label class="photo-field camera-photo-field">
             <input id="photo-input" name="photo" type="file" accept="image/*" capture="environment" aria-label="Open camera or choose an animal photo" />
-            <span>⌾</span><strong><span class="desktop-action-copy">Click here to choose a photo →</span><span class="phone-action-copy">Tap here to take or choose a photo →</span></strong><small>We only check saved GPS. Stay at a safe distance.</small>
+            <span>⌾</span><strong>Take or choose a photo →</strong><small>Stay at a safe distance.</small>
           </label>
           <div id="photo-preview" class="photo-preview" hidden>
             <img id="photo-preview-image" alt="Selected animal photo preview" />
