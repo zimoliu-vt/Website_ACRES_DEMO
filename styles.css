@@ -742,6 +742,32 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .volunteer-shell { padding-bottom: 30px; }
   .phone-layout .report-dialog { height: 100dvh; border-radius: 0; }
   .phone-layout .report-dialog form { height: 100dvh; }
+  .phone-layout .report-dialog .eyebrow { font-size: 11px; line-height: 1.35; }
+  .phone-layout .dialog-head h2 { font-size: 31px; line-height: 1.05; }
+  .phone-layout .selected-location strong { font-size: 15px; }
+  .phone-layout .selected-location small { font-size: 13px; line-height: 1.35; }
+  .phone-layout .photo-first-step > div:first-child > p:last-child { font-size: 13px; line-height: 1.45; }
+  .phone-layout .photo-field strong { font-size: 14px; }
+  .phone-layout .photo-field small { font-size: 12px; line-height: 1.35; }
+  .phone-layout .random-report-button strong { font-size: 14px; }
+  .phone-layout .random-report-button small { font-size: 12px; line-height: 1.35; }
+  .phone-layout .numbered-report-step > legend,
+  .phone-layout .numbered-field-label,
+  .phone-layout .field { font-size: 14px; }
+  .phone-layout .field > span { font-size: 13px; }
+  .phone-layout .animal-options label { font-size: 13px; }
+  .phone-layout .field input,
+  .phone-layout .field select,
+  .phone-layout .field textarea { font-size: 16px; }
+  .phone-layout .photo-or-divider strong { font-size: 14px; }
+  .phone-layout .photo-or-divider small,
+  .phone-layout .photo-sharing-consent small,
+  .phone-layout .photo-preview small { font-size: 12px; }
+  .phone-layout .photo-sharing-consent strong,
+  .phone-layout .photo-preview strong { font-size: 13px; }
+  .phone-layout .jev-analysis,
+  .phone-layout .form-requirements { font-size: 13px; line-height: 1.45; }
+  .phone-layout .privacy-copy { font-size: 12px; line-height: 1.4; }
 }
 
 @media (max-width: 370px) {
