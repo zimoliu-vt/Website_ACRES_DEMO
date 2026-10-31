@@ -1164,7 +1164,7 @@ function renderPortalTutorial() {
         ? document.querySelector(".nearby-panel")
         : document.querySelector(".volunteer-guide");
     target?.classList.add("portal-tutorial-focus");
-    setTimeout(() => target?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+    setTimeout(() => target?.scrollIntoView({ block: "center" }), 80);
   }
 }
 
