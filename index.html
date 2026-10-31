@@ -16,7 +16,7 @@
     <script defer src="https://analytics.liusida.com/umami/script.js" data-website-id="3421d06e-63c1-4985-a7e3-1ce278eb85b4" data-domains="wildcare.liuzimo.cn" data-exclude-search="true"></script>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=67" />
+    <link rel="stylesheet" href="styles.css?v=68" />
   </head>
   <body class="phone-report-map">
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -297,6 +297,7 @@
         </div>
         <label class="pin-field" for="worker-pin">Demo PIN</label>
         <input id="worker-pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="••••" required />
+        <label class="worker-remember"><input id="worker-remember" name="remember" type="checkbox" /><span><strong>Keep me logged in for 15 days</strong><small>Only use this on your own device.</small></span></label>
         <p id="login-error" class="login-error" role="alert"></p>
         <button class="submit-button" type="submit">Open dashboard <span>→</span></button>
       </form>
@@ -456,6 +457,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=83"></script>
+    <script src="app.js?v=84"></script>
   </body>
 </html>

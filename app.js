@@ -48,8 +48,8 @@ let reportMarkers = [];
 let detailMap = null;
 let selectedReportId = null;
 let currentFilter = "active";
-let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "true";
-let workerToken = sessionStorage.getItem("wildcare-worker-token") || "";
+let workerAuthenticated = sessionStorage.getItem("wildcare-worker-auth") === "true" || localStorage.getItem("wildcare-worker-auth") === "true";
+let workerToken = sessionStorage.getItem("wildcare-worker-token") || localStorage.getItem("wildcare-worker-token") || "";
 let caseSearch = "";
 let caseSort = "priority";
 let volunteerToken = localStorage.getItem("wildcare-volunteer-token") || "";
@@ -84,11 +84,17 @@ function workerTokenIsCurrent(token = workerToken) {
   }
 }
 
+function clearWorkerSession() {
+  sessionStorage.removeItem("wildcare-worker-auth");
+  sessionStorage.removeItem("wildcare-worker-token");
+  localStorage.removeItem("wildcare-worker-auth");
+  localStorage.removeItem("wildcare-worker-token");
+}
+
 if (workerAuthenticated && !workerTokenIsCurrent()) {
   workerAuthenticated = false;
   workerToken = "";
-  sessionStorage.removeItem("wildcare-worker-auth");
-  sessionStorage.removeItem("wildcare-worker-token");
+  clearWorkerSession();
 }
 
 function trackAnalytics(name, data = {}) {
@@ -170,8 +176,7 @@ async function apiFetch(path, options = {}) {
     if (response.status === 401 && result.error === "Worker authentication required") {
       workerAuthenticated = false;
       workerToken = "";
-      sessionStorage.removeItem("wildcare-worker-auth");
-      sessionStorage.removeItem("wildcare-worker-token");
+      clearWorkerSession();
       if (portalTutorialDialog?.open && portalTutorialType === "worker") completePortalTutorial();
       switchView("reporter");
       setTimeout(() => {
@@ -641,8 +646,7 @@ function switchView(viewName) {
   if (viewName === "worker" && (!workerAuthenticated || !workerTokenIsCurrent())) {
     workerAuthenticated = false;
     workerToken = "";
-    sessionStorage.removeItem("wildcare-worker-auth");
-    sessionStorage.removeItem("wildcare-worker-token");
+    clearWorkerSession();
     openWorkerLogin();
     return;
   }
@@ -672,14 +676,14 @@ function openWorkerLogin() {
   const dialog = document.querySelector("#login-dialog");
   document.querySelector("#login-error").textContent = "";
   document.querySelector("#worker-pin").value = "";
+  document.querySelector("#worker-remember").checked = false;
   dialog.showModal();
   setTimeout(() => document.querySelector("#worker-pin").focus(), 50);
 }
 
 function logoutWorker() {
   workerAuthenticated = false;
-  sessionStorage.removeItem("wildcare-worker-auth");
-  sessionStorage.removeItem("wildcare-worker-token");
+  clearWorkerSession();
   workerToken = "";
   loadBackendReports();
   switchView("reporter");
@@ -1485,8 +1489,9 @@ document.querySelector("#close-login").addEventListener("click", () => document.
 document.querySelector("#login-form").addEventListener("submit", async event => {
   event.preventDefault();
   const pinInput = document.querySelector("#worker-pin");
+  const remember = document.querySelector("#worker-remember").checked;
   try {
-    const result = await apiFetch("/auth/worker", { method: "POST", body: JSON.stringify({ pin: pinInput.value }) });
+    const result = await apiFetch("/auth/worker", { method: "POST", body: JSON.stringify({ pin: pinInput.value, remember }) });
     workerToken = result.token;
   } catch {
     document.querySelector("#login-error").textContent = "That PIN is incorrect or the demo backend is unavailable.";
@@ -1494,8 +1499,10 @@ document.querySelector("#login-form").addEventListener("submit", async event => 
     return;
   }
   workerAuthenticated = true;
-  sessionStorage.setItem("wildcare-worker-auth", "true");
-  sessionStorage.setItem("wildcare-worker-token", workerToken);
+  clearWorkerSession();
+  const authStorage = remember ? localStorage : sessionStorage;
+  authStorage.setItem("wildcare-worker-auth", "true");
+  authStorage.setItem("wildcare-worker-token", workerToken);
   await loadBackendReports();
   document.querySelector("#login-dialog").close();
   switchView("worker");

@@ -212,6 +212,25 @@ test("an already expired team token cannot open the dashboard", async ({ page })
   await expect(page.locator("#worker-view")).not.toHaveClass(/active/);
 });
 
+test("team login can be remembered for 15 days", async ({ page }) => {
+  let loginBody;
+  await page.unroute("**/api/auth/worker");
+  await page.route("**/api/auth/worker", async route => {
+    loginBody = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ token: "remembered-worker-token", remembered: true }) });
+  });
+  await enterDemo(page);
+  await page.getByRole("link", { name: "Rescue team sign-in" }).click();
+  await page.getByLabel("Demo PIN").fill("0000");
+  await page.getByLabel("Keep me logged in for 15 days").check();
+  await page.getByRole("button", { name: "Open dashboard" }).click();
+  await expect(page.getByRole("heading", { name: "Wildlife reports" })).toBeVisible();
+  expect(loginBody).toEqual({ pin: "0000", remember: true });
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("wildcare-worker-auth"))).toBe("true");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("wildcare-worker-token"))).toBe("remembered-worker-token");
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("wildcare-worker-token"))).toBe(null);
+});
+
 test("desktop and phone tutorial guides the user through real reporting controls", async ({ page }) => {
   let reportPosts = 0;
   page.on("request", request => {

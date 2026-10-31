@@ -525,7 +525,8 @@ app.post("/reports/reset", requireWorker, async (_request, response) => {
 
 app.post("/auth/worker", (request, response) => {
   if (!safeEqual(request.body?.pin || "", demoPin)) return response.status(401).json({ error: "Incorrect demo PIN" });
-  response.json({ token: jwt.sign({ role: "worker" }, jwtSecret, { expiresIn: "8h" }) });
+  const remembered = request.body?.remember === true;
+  response.json({ token: jwt.sign({ role: "worker" }, jwtSecret, { expiresIn: remembered ? "15d" : "8h" }), remembered });
 });
 
 app.post("/auth/volunteer-signup", async (request, response) => {
