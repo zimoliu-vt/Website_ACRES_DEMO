@@ -716,7 +716,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .portal-tutorial-content { min-height: min(650px, calc(100dvh - 16px)); padding: 30px 22px 20px; }
   .phone-layout .mode-switch { position: fixed; left: 10px; right: 10px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 1500; width: auto; min-height: 58px; margin: 0; padding: 5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border: 1px solid rgba(23,63,53,.1); border-radius: 18px; background: rgba(255,254,250,.97); box-shadow: 0 10px 34px rgba(23,63,53,.2); backdrop-filter: blur(18px); }
   .phone-layout .mode-button,
-  .phone-layout .rescue-shortcut { min-width: 0; min-height: 48px; padding: 7px 5px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 13px; font-size: 11px; font-weight: 850; }
+  .phone-layout .rescue-shortcut { min-width: 0; min-height: 48px; padding: 7px 5px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 13px; font-size: 12px; font-weight: 850; }
   .phone-layout .rescue-shortcut { color: #65706b; background: transparent; }
   .phone-layout .rescue-shortcut span { margin-right: 3px; }
   .phone-layout .reporter-layout { display: block; }
@@ -776,6 +776,74 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .jev-analysis,
   .phone-layout .form-requirements { font-size: 13px; line-height: 1.45; }
   .phone-layout .privacy-copy { font-size: 12px; line-height: 1.4; }
+
+  /* Volunteer and rescue-team portals: use short, readable phone typography. */
+  .phone-layout .volunteer-head > div > p:last-child,
+  .phone-layout .dashboard-head > div > p:last-child { font-size: 16px; line-height: 1.45; }
+  .phone-layout .registration-copy > p,
+  .phone-layout .safety-note span,
+  .phone-layout .signed-in-note,
+  .phone-layout .emergency-note { font-size: 14px; line-height: 1.45; }
+  .phone-layout .volunteer-location-title strong,
+  .phone-layout .volunteer-profile-section legend,
+  .phone-layout .radius-field strong,
+  .phone-layout .island-choice strong { font-size: 15px; }
+  .phone-layout .volunteer-location-title small,
+  .phone-layout .volunteer-location-label small,
+  .phone-layout .volunteer-profile-section > p,
+  .phone-layout .password-note,
+  .phone-layout .radius-field small,
+  .phone-layout .island-choice small,
+  .phone-layout .choice-card-grid small { font-size: 13px; line-height: 1.45; }
+  .phone-layout .volunteer-area-search > input { min-height: 48px; font-size: 16px; }
+  .phone-layout .volunteer-area-search > button { min-width: 76px; font-size: 13px; }
+  .phone-layout .volunteer-location-label strong,
+  .phone-layout .choice-card-grid strong,
+  .phone-layout .volunteer-summary strong { font-size: 14px; }
+  .phone-layout .volunteer-profile-section legend span,
+  .phone-layout .volunteer-summary small { font-size: 11px; }
+  .phone-layout .choice-card-grid label { min-height: 72px; }
+  .phone-layout .radius-field output { font-size: 13px; }
+  .phone-layout .volunteer-agreement { font-size: 14px; line-height: 1.45; }
+  .phone-layout .panel-heading h2 { font-size: 24px; }
+  .phone-layout .nearby-case h3 { font-size: 17px; }
+  .phone-layout .nearby-case > p { font-size: 14px; line-height: 1.5; }
+  .phone-layout .nearby-location,
+  .phone-layout .safe-task,
+  .phone-layout .volunteer-state { font-size: 13px; line-height: 1.45; }
+  .phone-layout .volunteer-guide li strong { font-size: 15px; }
+  .phone-layout .volunteer-guide li small { font-size: 13px; line-height: 1.4; }
+  .phone-layout .assessment-options label strong { font-size: 14px; }
+  .phone-layout .assessment-options label small { font-size: 13px; line-height: 1.4; }
+
+  .phone-layout .stat-card .stat-top { font-size: 12px; }
+  .phone-layout .filter { font-size: 13px; }
+  .phone-layout .case-search input { font-size: 16px; }
+  .phone-layout .case-sort { font-size: 11px; }
+  .phone-layout .case-sort select { font-size: 14px; }
+  .phone-layout .report-copy strong { font-size: 15px; }
+  .phone-layout .report-copy p { font-size: 13px; line-height: 1.45; }
+  .phone-layout .report-copy small,
+  .phone-layout .responder-detail small { font-size: 12px; line-height: 1.4; }
+  .phone-layout .volunteer-card-badge,
+  .phone-layout .status-pill { font-size: 11px; }
+  .phone-layout .detail-top h2 { font-size: 31px; }
+  .phone-layout .case-id { font-size: 12px; }
+  .phone-layout .meta-box small { font-size: 11px; }
+  .phone-layout .meta-box strong { font-size: 14px; }
+  .phone-layout .notes-box { font-size: 14px; line-height: 1.55; }
+  .phone-layout .case-photo figcaption,
+  .phone-layout .evidence-heading small,
+  .phone-layout .no-evidence,
+  .phone-layout .status-control > small,
+  .phone-layout .trash-retention p,
+  .phone-layout .timeline-heading small,
+  .phone-layout .case-timeline li small { font-size: 12px; line-height: 1.4; }
+  .phone-layout .evidence-heading strong,
+  .phone-layout .status-control label,
+  .phone-layout .trash-retention strong,
+  .phone-layout .timeline-heading span,
+  .phone-layout .case-timeline li strong { font-size: 13px; }
 }
 
 @media (max-width: 370px) {

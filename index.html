@@ -16,7 +16,7 @@
     <script defer src="https://analytics.liusida.com/umami/script.js" data-website-id="3421d06e-63c1-4985-a7e3-1ce278eb85b4" data-domains="wildcare.liuzimo.cn" data-exclude-search="true"></script>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=63" />
+    <link rel="stylesheet" href="styles.css?v=64" />
   </head>
   <body class="phone-report-map">
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -91,7 +91,7 @@
             <div>
               <p class="eyebrow">Volunteer</p>
               <h1 id="volunteer-heading">Help from a safe distance.</h1>
-              <p id="volunteer-head-copy">Sign in to view nearby cases or create a volunteer account.</p>
+              <p id="volunteer-head-copy">Sign in or create an account to see nearby cases.</p>
             </div>
             <div id="volunteer-account-actions" class="volunteer-account-actions" hidden>
               <button id="volunteer-reset" class="secondary-button" type="button">Sign out</button>
@@ -122,7 +122,7 @@
                 <label class="field">Password<input name="password" type="password" autocomplete="new-password" minlength="10" placeholder="At least 10 characters" required /></label>
               </div>
               <label class="field">Confirm password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="10" placeholder="Enter the password again" required /></label>
-              <p class="password-note">Use at least 10 characters. We store a secure password hash, never your password.</p>
+              <p class="password-note">Use 10+ characters. Only a secure hash is stored.</p>
               <div class="volunteer-location-field">
                 <div class="volunteer-location-title"><strong>Your approximate area</strong><small>Search or tap the map.</small></div>
                 <div class="volunteer-area-search">
@@ -135,7 +135,7 @@
               </div>
               <fieldset class="volunteer-profile-section" id="experience-section">
                 <legend>Animal medical or care experience <span>Required</span></legend>
-                <p>At least one type of relevant training or experience is required because volunteers may observe injured wildlife. This is self-reported for the demo.</p>
+                <p>Choose at least one relevant skill. Demo self-report only.</p>
                 <div class="choice-card-grid">
                   <label><input type="checkbox" name="experience" value="Veterinary professional or student" /><span><strong>Veterinary</strong><small>Professional or student</small></span></label>
                   <label><input type="checkbox" name="experience" value="Wildlife or animal-care training" /><span><strong>Animal care</strong><small>Wildlife or animal-care training</small></span></label>
@@ -146,7 +146,7 @@
               </fieldset>
               <fieldset class="volunteer-profile-section">
                 <legend>Animals you prefer to help <span>Optional</span></legend>
-                <p>Choose any favourites. Leave all blank if you are happy to help with any animal.</p>
+                <p>Choose favourites, or leave blank for any animal.</p>
                 <div class="choice-card-grid animal-choice-grid">
                   <label><input type="checkbox" name="animalPreference" value="Bird" /><span><strong>🐦 Birds</strong></span></label>
                   <label><input type="checkbox" name="animalPreference" value="Mammal" /><span><strong>🐒 Mammals</strong></span></label>
@@ -155,9 +155,9 @@
                 </div>
               </fieldset>
               <label class="radius-field" for="volunteer-radius"><span><strong>How far can you travel?</strong><output id="volunteer-radius-output" for="volunteer-radius">5 km</output></span><input id="volunteer-radius" name="radius" type="range" min="1" max="30" step="1" value="5" /><small>Choose 1–30 km.</small></label>
-              <label class="island-choice"><input name="canTravelToIslands" type="checkbox" /><span><strong>I can travel to Singapore’s offshore islands</strong><small>For example: Pulau Ubin, Sentosa, or the southern islands.</small></span></label>
+              <label class="island-choice"><input name="canTravelToIslands" type="checkbox" /><span><strong>I can travel to offshore islands</strong><small>Pulau Ubin, Sentosa, or southern islands.</small></span></label>
               <p id="volunteer-form-error" class="form-error" role="alert" hidden></p>
-              <label class="volunteer-agreement"><input name="agreement" type="checkbox" required /><span><strong>I understand this is strictly a demo.</strong> I do not need to travel anywhere, respond to any case, or take any real-world action.</span></label>
+              <label class="volunteer-agreement"><input name="agreement" type="checkbox" required /><span><strong>This is a demo.</strong> No real travel or action is required.</span></label>
               <button class="submit-button" type="submit">Create volunteer profile <span>→</span></button>
               </div>
             </form>
@@ -170,7 +170,7 @@
               <div><small>Travel radius</small><strong id="volunteer-radius-summary"></strong></div>
               <label class="volunteer-islands-summary"><input id="volunteer-islands-toggle" type="checkbox" /><span><small>Offshore islands</small><strong id="volunteer-islands-label">Mainland only</strong></span></label>
             </div>
-            <p class="signed-in-note"><strong id="volunteer-session-label"></strong><span>This browser remembers this demo account. Use “Sign out” above to start with another account.</span></p>
+            <p class="signed-in-note"><strong id="volunteer-session-label"></strong><span>This browser remembers the account.</span></p>
             <div class="volunteer-grid">
               <section class="nearby-panel">
                 <div class="panel-heading"><div><h2>Cases near you</h2><span id="nearby-count" class="count-pill">0</span></div></div>
@@ -178,8 +178,8 @@
               </section>
               <aside class="volunteer-guide">
                 <p class="eyebrow">Safe volunteer steps</p>
-                <ol><li><span>1</span><div><strong>Offer to observe</strong><small>Only choose a case you can reach safely.</small></div></li><li><span>2</span><div><strong>Confirm arrival</strong><small>Stay back and watch the animal.</small></div></li><li><span>3</span><div><strong>Send an update</strong><small>Serious or deceased reports require a clear photo from a safe distance.</small></div></li></ol>
-                <p class="emergency-note"><strong>Do not attempt a rescue.</strong> Volunteers in this demo only provide observations to the rescue team.</p>
+                <ol><li><span>1</span><div><strong>Offer to observe</strong><small>Choose only a safe, reachable case.</small></div></li><li><span>2</span><div><strong>Confirm arrival</strong><small>Stay back and watch.</small></div></li><li><span>3</span><div><strong>Send an update</strong><small>Serious or deceased updates need a safe photo.</small></div></li></ol>
+                <p class="emergency-note"><strong>Do not attempt a rescue.</strong> Observe only.</p>
               </aside>
             </div>
           </section>
@@ -217,7 +217,7 @@
             <div class="queue-tools">
               <label class="case-search" for="case-search-input">
                 <span aria-hidden="true">⌕</span>
-                <input id="case-search-input" type="search" autocomplete="off" aria-label="Search reports" placeholder="Search case ID, animal, location, status…" />
+                <input id="case-search-input" type="search" autocomplete="off" aria-label="Search reports" placeholder="Search cases…" />
                 <button id="clear-case-search" type="button" aria-label="Clear search" hidden>×</button>
               </label>
               <label class="case-sort">Order by<select id="case-sort-select"><option value="priority">Importance</option><option value="newest">Newest</option></select></label>
@@ -455,6 +455,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=74"></script>
+  <script src="app.js?v=75"></script>
   </body>
 </html>

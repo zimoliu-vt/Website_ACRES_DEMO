@@ -872,13 +872,13 @@ function renderVolunteerPortal() {
   accountActions.hidden = !volunteer;
   if (!volunteer) {
     document.querySelector("#volunteer-heading").textContent = "Help from a safe distance.";
-    document.querySelector("#volunteer-head-copy").textContent = "Sign in to view nearby cases or create a volunteer account.";
+    document.querySelector("#volunteer-head-copy").textContent = "Sign in or create an account to see nearby cases.";
     setTimeout(initVolunteerMap, 80);
     return;
   }
 
   document.querySelector("#volunteer-heading").textContent = `Signed in as ${volunteer.name}`;
-  document.querySelector("#volunteer-head-copy").textContent = "View your active response first, then browse other nearby demo cases.";
+  document.querySelector("#volunteer-head-copy").textContent = "View your response and nearby cases.";
   document.querySelector("#volunteer-session-label").textContent = `Demo account active: ${volunteer.name}`;
 
   document.querySelector("#volunteer-name").textContent = volunteer.name;
@@ -888,8 +888,8 @@ function renderVolunteerPortal() {
   document.querySelector("#volunteer-islands-label").textContent = volunteer.canTravelToIslands ? "Available" : "Mainland only";
   const myActiveCase = reports.find(report => report.status !== "Resolved" && reportResponders(report).some(item => item.id === volunteer.id));
   document.querySelector("#volunteer-head-copy").textContent = myActiveCase
-    ? `Your active response to ${myActiveCase.id} is shown first. Other nearby demo cases appear below.`
-    : "Browse nearby demo cases and offer to observe one from a safe distance.";
+    ? `${myActiveCase.id} is shown first. Nearby cases follow.`
+    : "Browse nearby cases and offer to observe safely.";
   const animalPreferences = Array.isArray(volunteer.animalPreferences) ? volunteer.animalPreferences : [];
   const nearby = reports.map(report => ({ report, distance: distanceKm(volunteer.lat, volunteer.lng, report.lat, report.lng) }))
     .filter(item => item.report.status !== "Resolved" && (item.report.id === myActiveCase?.id || (item.distance <= volunteer.radius && (volunteer.canTravelToIslands || !isOffshoreLocation(item.report)))))

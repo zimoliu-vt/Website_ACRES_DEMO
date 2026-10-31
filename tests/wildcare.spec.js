@@ -181,6 +181,22 @@ test("automatically detects phone-sized layouts", async ({ page, isMobile }) => 
   }
 });
 
+test("phone enlarges and shortens volunteer and team portal text", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "Phone-only typography check");
+  await enterDemo(page);
+  await page.getByRole("button", { name: "Volunteer" }).click();
+  await expect(page.locator("#volunteer-head-copy")).toHaveText("Sign in or create an account to see nearby cases.");
+  await expect.poll(() => page.locator("#volunteer-head-copy").evaluate(element => getComputedStyle(element).fontSize)).toBe("16px");
+  await expect.poll(() => page.locator(".volunteer-profile-section > p").first().evaluate(element => getComputedStyle(element).fontSize)).toBe("13px");
+
+  await page.getByRole("link", { name: "Rescue team sign-in" }).click();
+  await page.getByLabel("Demo PIN").fill("0000");
+  await page.getByRole("button", { name: "Open dashboard" }).click();
+  await expect(page.getByRole("heading", { name: "Wildlife reports" })).toBeVisible();
+  await expect.poll(() => page.locator(".report-copy p").first().evaluate(element => getComputedStyle(element).fontSize)).toBe("13px");
+  await expect.poll(() => page.locator(".filter").first().evaluate(element => getComputedStyle(element).fontSize)).toBe("13px");
+});
+
 test("report flow explains requirements and protects a changed draft", async ({ page, isMobile }) => {
   await enterDemo(page);
   if (!isMobile) {
