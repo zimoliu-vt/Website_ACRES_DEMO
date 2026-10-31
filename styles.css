@@ -886,13 +886,14 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .map-style-switch { min-height: 44px; }
   .phone-layout .map-style-switch button { min-height: 34px; padding: 7px 10px; }
   .phone-layout .icon-button { width: 44px; height: 44px; }
-  .phone-layout .phone-photo-start { left: 10px; right: auto; bottom: calc(10px + env(safe-area-inset-bottom)); width: 240px; height: 46px; min-height: 46px; padding: 0 12px; font-size: 14px; }
-  .phone-layout .map-hint { left: 260px; right: 104px; bottom: calc(10px + env(safe-area-inset-bottom)); width: auto; height: 46px; min-height: 46px; padding: 8px 12px; display: grid; place-items: center; font-size: 11px; }
+  .phone-layout .phone-photo-start { left: 10px; right: auto; bottom: calc(30px + env(safe-area-inset-bottom)); width: 240px; height: 46px; min-height: 46px; padding: 0 12px; font-size: 14px; }
+  .phone-layout .map-hint { left: 260px; right: 104px; bottom: calc(30px + env(safe-area-inset-bottom)); width: auto; height: 46px; min-height: 46px; padding: 8px 12px; display: grid; place-items: center; font-size: 11px; }
   .phone-layout .mode-switch { top: 50%; left: auto; right: 7px; bottom: auto; width: 88px; height: auto; min-height: 0; padding: 4px; grid-template-columns: 1fr; grid-template-rows: repeat(3, 48px); transform: translateY(-50%); border-radius: 16px; }
   .phone-layout .mode-button,
   .phone-layout .rescue-shortcut { min-height: 48px; padding: 5px 3px; flex-direction: column; gap: 1px; border-radius: 11px; font-size: 10px; }
   .phone-layout .rescue-shortcut span { margin: 0; }
   .phone-layout .leaflet-bottom.leaflet-right { bottom: 8px; }
+  .phone-layout .leaflet-control-attribution { margin-bottom: 0; }
   .phone-layout #worker-view,
   .phone-layout .volunteer-shell { padding-top: 16px; }
   .phone-layout .dashboard-head h1,

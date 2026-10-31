@@ -320,8 +320,9 @@ test("phone landscape keeps the compact phone interface", async ({ page }) => {
     const hint = document.querySelector("#map-hint").getBoundingClientRect();
     const photo = document.querySelector("#phone-photo-start").getBoundingClientRect();
     const nav = document.querySelector(".mode-switch").getBoundingClientRect();
+    const attribution = document.querySelector(".leaflet-control-attribution").getBoundingClientRect();
     const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-    return !overlaps(hint, photo) && !overlaps(hint, nav) && !overlaps(photo, nav);
+    return !overlaps(hint, photo) && !overlaps(hint, nav) && !overlaps(photo, nav) && !overlaps(hint, attribution);
   })).toBe(true);
   await openTeam(page);
   await expect.poll(() => page.locator(".dashboard-head").evaluate(element => getComputedStyle(element).flexDirection)).toBe("column");
