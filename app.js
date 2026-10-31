@@ -9,7 +9,7 @@ const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
 if (window.location.pathname === "/rescue") history.replaceState({}, "", "/");
 
-const phoneViewport = window.matchMedia("(max-width: 620px)");
+const phoneViewport = window.matchMedia("(max-width: 620px), (max-width: 950px) and (max-height: 600px)");
 
 function syncPhoneLayout(event = phoneViewport) {
   const isPhone = event.matches;

@@ -575,7 +575,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .volunteer-guide { position: static; }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 620px), (max-width: 950px) and (max-height: 600px) {
   html { scroll-padding-top: 12px; }
   body { padding-bottom: env(safe-area-inset-bottom); overflow-x: hidden; }
   .demo-banner { min-height: 52px; padding: 7px 12px; flex-direction: column; gap: 1px; }

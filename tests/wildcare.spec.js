@@ -293,6 +293,18 @@ test("automatically detects phone-sized layouts", async ({ page, isMobile }) => 
   }
 });
 
+test("phone landscape keeps the compact phone interface", async ({ page }) => {
+  await page.setViewportSize({ width: 836, height: 445 });
+  await enterDemo(page);
+  await expect(page.locator("html")).toHaveAttribute("data-layout", "phone");
+  await expect(page.locator("html")).toHaveClass(/phone-layout/);
+  await expect.poll(() => page.locator(".mode-switch").evaluate(element => getComputedStyle(element).position)).toBe("fixed");
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await openTeam(page);
+  await expect.poll(() => page.locator(".dashboard-head").evaluate(element => getComputedStyle(element).flexDirection)).toBe("column");
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("phone enlarges and shortens volunteer and team portal text", async ({ page, isMobile }) => {
   test.skip(!isMobile, "Phone-only typography check");
   await enterDemo(page);
