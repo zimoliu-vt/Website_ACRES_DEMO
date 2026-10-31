@@ -318,8 +318,7 @@ test("phone landscape keeps the compact phone interface", async ({ page }) => {
   })).toBe(true);
   await expect.poll(() => page.evaluate(() => {
     const actions = document.querySelector(".map-actions").getBoundingClientRect();
-    const nav = document.querySelector(".mode-switch").getBoundingClientRect();
-    return actions.right < nav.left && nav.left - actions.right <= 8;
+    return actions.right <= window.innerWidth && window.innerWidth - actions.right <= 12;
   })).toBe(true);
   await expect.poll(() => page.evaluate(() => {
     const hint = document.querySelector("#map-hint").getBoundingClientRect();
