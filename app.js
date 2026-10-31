@@ -1153,7 +1153,19 @@ function renderPortalTutorial() {
   document.querySelector("#portal-tutorial-points").innerHTML = current.points.map(point => `<li>${escapeHtml(point)}</li>`).join("");
   document.querySelector("#portal-tutorial-progress").innerHTML = steps.map((_step, index) => `<i class="${index === portalTutorialStep ? "active" : ""}"></i>`).join("");
   document.querySelector("#portal-tutorial-back").hidden = portalTutorialStep === 0;
-  document.querySelector("#portal-tutorial-next").textContent = portalTutorialStep === steps.length - 1 ? "Got it" : "Next";
+  const nextButton = document.querySelector("#portal-tutorial-next");
+  nextButton.disabled = false;
+  nextButton.textContent = portalTutorialStep === steps.length - 1 ? "Finish guide" : "Next step";
+  document.querySelectorAll(".portal-tutorial-focus").forEach(element => element.classList.remove("portal-tutorial-focus"));
+  if (portalTutorialType === "volunteer") {
+    const target = current.title === "Create your volunteer profile"
+      ? document.querySelector("#volunteer-registration")
+      : current.title === "Find a nearby case"
+        ? document.querySelector(".nearby-panel")
+        : document.querySelector(".volunteer-guide");
+    target?.classList.add("portal-tutorial-focus");
+    setTimeout(() => target?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+  }
 }
 
 function openPortalTutorial(type) {
@@ -1165,12 +1177,23 @@ function openPortalTutorial(type) {
   }
   portalTutorialStep = 0;
   renderPortalTutorial();
-  portalTutorialDialog.showModal();
+  portalTutorialDialog.classList.toggle("interactive-volunteer-tutorial", portalTutorialType === "volunteer");
+  if (portalTutorialType === "volunteer") portalTutorialDialog.show();
+  else portalTutorialDialog.showModal();
 }
 
 function completePortalTutorial() {
   sessionStorage.setItem(portalTutorialKey(portalTutorialType), "true");
+  document.querySelectorAll(".portal-tutorial-focus").forEach(element => element.classList.remove("portal-tutorial-focus"));
+  portalTutorialDialog.classList.remove("interactive-volunteer-tutorial");
   if (portalTutorialDialog.open) portalTutorialDialog.close();
+}
+
+function continueVolunteerTutorialAfterLogin() {
+  if (!portalTutorialDialog.open || portalTutorialType !== "volunteer") return;
+  activePortalTutorialSteps = portalTutorials.volunteer.slice(1);
+  portalTutorialStep = 0;
+  renderPortalTutorial();
 }
 
 function maybeShowPortalTutorial(type) {
@@ -1685,6 +1708,7 @@ document.querySelector("#volunteer-signin-button").addEventListener("click", asy
     localStorage.setItem("wildcare-volunteer-token", volunteerToken);
     saveVolunteer();
     renderVolunteerPortal();
+    continueVolunteerTutorialAfterLogin();
     document.querySelector("#volunteer-form").reset();
     showToast(`Welcome back, ${volunteer.name}.`);
   } catch (signinError) {
@@ -1746,6 +1770,7 @@ document.querySelector("#volunteer-form").addEventListener("submit", async event
   }
   saveVolunteer();
   renderVolunteerPortal();
+  continueVolunteerTutorialAfterLogin();
   showToast("Demo volunteer profile created. Nearby cases are ready.");
 });
 

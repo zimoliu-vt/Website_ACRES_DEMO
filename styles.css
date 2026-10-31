@@ -371,6 +371,14 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .portal-tutorial-actions button { min-height: 50px; }
 .portal-tutorial-actions .secondary-button[hidden] { display: none; }
 .portal-tutorial-actions:has(.secondary-button[hidden]) .primary-button { grid-column: 1 / -1; }
+.portal-tutorial-dialog.interactive-volunteer-tutorial { position: fixed; inset: auto 18px 18px auto; width: min(390px, calc(100% - 36px)); margin: 0; border: 2px solid var(--lime); z-index: 10000; }
+.interactive-volunteer-tutorial .portal-tutorial-content { min-height: 0; padding: 22px; }
+.interactive-volunteer-tutorial .portal-tutorial-icon { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 17px; font-size: 24px; }
+.interactive-volunteer-tutorial .portal-tutorial-content h2 { font-size: 26px; }
+.interactive-volunteer-tutorial .portal-tutorial-copy { margin-bottom: 12px; }
+.interactive-volunteer-tutorial .portal-tutorial-points { gap: 6px; }
+.interactive-volunteer-tutorial .portal-tutorial-points li { padding: 8px 10px; }
+.portal-tutorial-focus { position: relative; z-index: 3; outline: 4px solid var(--lime); outline-offset: 6px; border-radius: 20px; box-shadow: 0 0 0 9999px rgba(12,32,27,.28), 0 18px 50px rgba(10,31,26,.24); }
 
 .interactive-guide { border: 2px solid var(--lime); border-radius: 16px; color: #fff; background: rgba(23,63,53,.97); box-shadow: 0 16px 38px rgba(10,31,26,.3); }
 .interactive-guide[hidden] { display: none !important; }
@@ -714,6 +722,11 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .phone-help { width: 38px; height: 38px; margin-left: auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--forest); background: #f3f6f1; font-size: 17px; font-weight: 900; }
   .phone-layout .portal-tutorial-dialog { width: calc(100% - 16px); max-height: calc(100dvh - 16px); border-radius: 24px; }
   .phone-layout .portal-tutorial-content { min-height: min(650px, calc(100dvh - 16px)); padding: 30px 22px 20px; }
+  .phone-layout .portal-tutorial-dialog.interactive-volunteer-tutorial { inset: auto 8px 86px 8px; width: auto; max-height: 44dvh; overflow: auto; }
+  .phone-layout .interactive-volunteer-tutorial .portal-tutorial-content { min-height: 0; padding: 17px; }
+  .phone-layout .interactive-volunteer-tutorial .portal-tutorial-icon { display: none; }
+  .phone-layout .interactive-volunteer-tutorial .portal-tutorial-content h2 { font-size: 24px; }
+  .phone-layout .interactive-volunteer-tutorial .portal-tutorial-points { display: none; }
   .phone-layout .mode-switch { position: fixed; left: 10px; right: 10px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 1500; width: auto; min-height: 58px; margin: 0; padding: 5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; border: 1px solid rgba(23,63,53,.1); border-radius: 18px; background: rgba(255,254,250,.97); box-shadow: 0 10px 34px rgba(23,63,53,.2); backdrop-filter: blur(18px); }
   .phone-layout .mode-button,
   .phone-layout .rescue-shortcut { min-width: 0; min-height: 48px; padding: 7px 5px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 13px; font-size: 12px; font-weight: 850; }

@@ -100,21 +100,21 @@ test("desktop and phone have detailed volunteer and rescue team walkthroughs", a
   await page.goto(`/?portal-tutorial-test=${Date.now()}`);
   await page.getByRole("button", { name: "Volunteer" }).click();
   await expect(page.getByRole("heading", { name: "Create your volunteer profile" })).toBeVisible();
-  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("button", { name: "Next step" }).click();
   await expect(page.getByRole("heading", { name: "Find a nearby case" })).toBeVisible();
-  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("button", { name: "Next step" }).click();
   await expect(page.getByRole("heading", { name: "Share a safe observation" })).toBeVisible();
-  await page.getByRole("button", { name: "Got it" }).click();
+  await page.getByRole("button", { name: "Finish guide" }).click();
 
   await page.getByRole("link", { name: "Rescue team sign-in" }).click();
   await page.getByLabel("Demo PIN").fill("0000");
   await page.getByRole("button", { name: "Open dashboard" }).click();
   await expect(page.getByRole("heading", { name: "Open the rescue queue" })).toBeVisible();
-  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("button", { name: "Next step" }).click();
   await expect(page.getByRole("heading", { name: "Review the evidence" })).toBeVisible();
-  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("button", { name: "Next step" }).click();
   await expect(page.getByRole("heading", { name: "Manage the case" })).toBeVisible();
-  await page.getByRole("button", { name: "Got it" }).click();
+  await page.getByRole("button", { name: "Finish guide" }).click();
   await page.getByRole("button", { name: "Open rescue team walkthrough" }).click();
   await expect(page.getByRole("heading", { name: "Open the rescue queue" })).toBeVisible();
 });
@@ -142,6 +142,12 @@ test("signed-in volunteers skip the profile walkthrough slide", async ({ page })
   await expect(page.getByRole("heading", { name: "Find a nearby case" })).toBeVisible();
   await expect(page.locator("#portal-tutorial-step")).toHaveText("Step 1 of 2");
   await expect(page.getByRole("heading", { name: "Create your volunteer profile" })).toHaveCount(0);
+  await expect(page.locator(".nearby-panel")).toHaveClass(/portal-tutorial-focus/);
+  await expect(page.locator("#portal-tutorial-dialog")).toHaveClass(/interactive-volunteer-tutorial/);
+  await expect.poll(() => page.locator("#portal-tutorial-dialog").evaluate(dialog => dialog.open && !dialog.matches(":modal"))).toBe(true);
+  await page.getByRole("button", { name: "Next step" }).click();
+  await expect(page.getByRole("heading", { name: "Share a safe observation" })).toBeVisible();
+  await expect(page.locator(".volunteer-guide")).toHaveClass(/portal-tutorial-focus/);
 });
 
 test("desktop and phone tutorial guides the user through real reporting controls", async ({ page }) => {
