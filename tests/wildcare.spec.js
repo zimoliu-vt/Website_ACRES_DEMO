@@ -120,6 +120,10 @@ test("desktop and phone have detailed volunteer and rescue team walkthroughs", a
 });
 
 test("signed-in volunteers skip the profile walkthrough slide", async ({ page }) => {
+  let volunteerResponseRequests = 0;
+  page.on("request", request => {
+    if (/\/volunteer-(offer|arrive|assessment)$/.test(new URL(request.url()).pathname)) volunteerResponseRequests += 1;
+  });
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     sessionStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
@@ -132,7 +136,7 @@ test("signed-in volunteers skip the profile walkthrough slide", async ({ page })
       lat: 1.3521,
       lng: 103.8198,
       areaName: "Central Singapore",
-      radius: 5,
+      radius: 30,
       animalPreferences: ["Bird"],
       canTravelToIslands: false
     }));
@@ -145,9 +149,15 @@ test("signed-in volunteers skip the profile walkthrough slide", async ({ page })
   await expect(page.locator(".nearby-panel")).toHaveClass(/portal-tutorial-focus/);
   await expect(page.locator("#portal-tutorial-dialog")).toHaveClass(/interactive-volunteer-tutorial/);
   await expect.poll(() => page.locator("#portal-tutorial-dialog").evaluate(dialog => dialog.open && !dialog.matches(":modal"))).toBe(true);
-  await page.getByRole("button", { name: "Next step" }).click();
+  await expect(page.locator("#portal-tutorial-practice")).toContainText("no response, arrival, or update will be saved");
+  const practiceAction = page.getByRole("button", { name: /Offer to observe/ }).first();
+  await expect(practiceAction).toBeVisible();
+  await practiceAction.click();
+  await expect(page.locator("#toast")).toContainText("Practice only");
   await expect(page.getByRole("heading", { name: "Share a safe observation" })).toBeVisible();
   await expect(page.locator(".volunteer-guide")).toHaveClass(/portal-tutorial-focus/);
+  await expect(practiceAction).toBeVisible();
+  expect(volunteerResponseRequests).toBe(0);
 });
 
 test("desktop and phone tutorial guides the user through real reporting controls", async ({ page }) => {

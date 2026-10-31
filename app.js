@@ -1029,6 +1029,24 @@ async function searchVolunteerArea() {
 async function handleVolunteerAction(action, reportId) {
   const report = reports.find(item => item.id === reportId);
   if (!report || !volunteer) return;
+  if (portalTutorialDialog.open && portalTutorialType === "volunteer") {
+    if (action === "assess") {
+      volunteerAssessmentReportId = report.id;
+      volunteerPhotoDataUrl = "";
+      document.querySelector("#volunteer-assessment-form").reset();
+      document.querySelector("#volunteer-photo-preview").hidden = true;
+      document.querySelector("#assessment-case-id").textContent = `Practice case ${report.id}`;
+      document.querySelector("#assessment-location").textContent = `${report.area} · nothing will be saved`;
+      document.querySelector("#volunteer-assessment-dialog").showModal();
+      return;
+    }
+    if (action === "claim" && portalTutorialStep < activePortalTutorialSteps.length - 1) {
+      portalTutorialStep += 1;
+      renderPortalTutorial();
+    }
+    showToast("Practice only — no volunteer response was sent or saved.");
+    return;
+  }
   if (action === "claim") {
     try {
       const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/volunteer-offer`, { method: "POST" });
@@ -1150,6 +1168,7 @@ function renderPortalTutorial() {
   document.querySelector("#portal-tutorial-step").textContent = `Step ${portalTutorialStep + 1} of ${steps.length}`;
   document.querySelector("#portal-tutorial-title").textContent = current.title;
   document.querySelector("#portal-tutorial-copy").textContent = current.copy;
+  document.querySelector("#portal-tutorial-practice").hidden = portalTutorialType !== "volunteer";
   document.querySelector("#portal-tutorial-points").innerHTML = current.points.map(point => `<li>${escapeHtml(point)}</li>`).join("");
   document.querySelector("#portal-tutorial-progress").innerHTML = steps.map((_step, index) => `<i class="${index === portalTutorialStep ? "active" : ""}"></i>`).join("");
   document.querySelector("#portal-tutorial-back").hidden = portalTutorialStep === 0;
@@ -1860,6 +1879,12 @@ document.querySelector("#volunteer-assessment-form").addEventListener("submit", 
   const data = new FormData(event.currentTarget);
   const outcome = data.get("outcome");
   if (["serious", "deceased"].includes(outcome) && !volunteerPhotoDataUrl) return showToast("Please add a photo for a serious or deceased report.");
+  if (portalTutorialDialog.open && portalTutorialType === "volunteer") {
+    document.querySelector("#volunteer-assessment-dialog").close();
+    clearVolunteerPhoto();
+    showToast("Practice complete — no observation was submitted or saved.");
+    return;
+  }
   try {
     const updated = await apiFetch(`/reports/${encodeURIComponent(report.id)}/volunteer-assessment`, {
       method: "POST",
