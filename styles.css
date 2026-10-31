@@ -882,7 +882,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .map-search { min-height: 44px; }
   .phone-layout .map-search input { min-height: 34px; }
   .phone-layout .map-search button { min-height: 36px; }
-  .phone-layout .map-actions { grid-column: 2; grid-row: 1; gap: 7px; justify-content: flex-start; }
+  .phone-layout .map-actions { grid-column: 2; grid-row: 1; gap: 7px; justify-content: flex-start; transform: translateX(5px); }
   .phone-layout .map-style-switch { min-height: 44px; }
   .phone-layout .map-style-switch button { min-height: 34px; padding: 7px 10px; }
   .phone-layout .icon-button { width: 44px; height: 44px; }

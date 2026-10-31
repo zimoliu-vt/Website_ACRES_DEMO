@@ -317,6 +317,11 @@ test("phone landscape keeps the compact phone interface", async ({ page }) => {
     return style.gridTemplateColumns.split(" ").length === 1 && box.height > box.width;
   })).toBe(true);
   await expect.poll(() => page.evaluate(() => {
+    const actions = document.querySelector(".map-actions").getBoundingClientRect();
+    const nav = document.querySelector(".mode-switch").getBoundingClientRect();
+    return actions.right < nav.left && nav.left - actions.right <= 8;
+  })).toBe(true);
+  await expect.poll(() => page.evaluate(() => {
     const hint = document.querySelector("#map-hint").getBoundingClientRect();
     const photo = document.querySelector("#phone-photo-start").getBoundingClientRect();
     const nav = document.querySelector(".mode-switch").getBoundingClientRect();
