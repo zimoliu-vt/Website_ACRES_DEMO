@@ -18,7 +18,11 @@ function syncPhoneLayout(event = phoneViewport) {
   const reporterActive = document.querySelector("#reporter-view")?.classList.contains("active");
   document.body?.classList.toggle("phone-report-map", Boolean(isPhone && reporterActive));
   const locationSearch = document.querySelector("#map-search-input");
-  if (locationSearch) locationSearch.placeholder = isPhone ? "Search street, park or area" : "Search street, park or postcode";
+  if (locationSearch) locationSearch.placeholder = isPhone ? "Search a location" : "Search street, park or postcode";
+  const mapHint = document.querySelector("#map-hint");
+  if (mapHint && /Select the animal’s location|Or tap the map/.test(mapHint.textContent)) {
+    mapHint.innerHTML = isPhone ? "<span>＋</span> Or tap the map to add location" : "<span>＋</span> Select the animal’s location on the map";
+  }
 }
 
 syncPhoneLayout();
@@ -1424,8 +1428,10 @@ function showNearbyArea(latitude, longitude, accuracy = 200, remember = true) {
     }
     map?.flyTo([approximateLat, approximateLng], 15, { duration: .8 });
     const hint = document.querySelector("#map-hint");
-    hint.innerHTML = "<span>＋</span> Map zoomed near you — tap the animal’s exact location";
-    showToast("Zoomed to your nearby area. Now tap where you saw the animal.");
+    hint.innerHTML = phoneViewport.matches
+      ? "<span>＋</span> Near you — tap the animal’s exact spot"
+      : "<span>＋</span> Map zoomed near you — tap the animal’s exact location";
+    showToast(phoneViewport.matches ? "Tap the exact spot where you saw it." : "Zoomed to your nearby area. Now tap where you saw the animal.");
     return true;
 }
 
@@ -1437,7 +1443,9 @@ function requestNearbyLocation({ automatic = false } = {}) {
   }, () => {
     if (automatic) {
       map.flyTo([1.3521, 103.8198], 13, { duration: .6 });
-      document.querySelector("#map-hint").innerHTML = "<span>＋</span> Location access unavailable — search or tap the animal’s location";
+      document.querySelector("#map-hint").innerHTML = phoneViewport.matches
+        ? "<span>＋</span> Location unavailable — search or tap the map"
+        : "<span>＋</span> Location access unavailable — search or tap the animal’s location";
     }
     showToast("We could not access your location. Use the pin button to try again, or tap the map.");
   }, {
@@ -1463,7 +1471,9 @@ function maybeAutoLocate() {
   // resolving permission. Start closer immediately, then move to their
   // approximate area when geolocation succeeds.
   map.flyTo([1.3521, 103.8198], 13, { duration: .45 });
-  document.querySelector("#map-hint").innerHTML = "<span>⌖</span> Finding your nearby area…";
+  document.querySelector("#map-hint").innerHTML = phoneViewport.matches
+    ? "<span>⌖</span> Finding your location…"
+    : "<span>⌖</span> Finding your nearby area…";
   requestNearbyLocation({ automatic: true });
 }
 

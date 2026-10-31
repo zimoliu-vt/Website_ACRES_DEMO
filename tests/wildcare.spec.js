@@ -40,7 +40,7 @@ test.beforeEach(async ({ page }) => {
   await mockBackend(page);
 });
 
-test("first entry requests an approximate location and starts in satellite mode", async ({ page }) => {
+test("first entry requests an approximate location and starts in satellite mode", async ({ page, isMobile }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
@@ -59,17 +59,17 @@ test("first entry requests an approximate location and starts in satellite mode"
     });
   });
   await page.goto(`/?auto-location-test=${Date.now()}`);
-  await expect(page.locator("#map-hint")).toContainText("Map zoomed near you");
+  await expect(page.locator("#map-hint")).toContainText(isMobile ? "Near you" : "Map zoomed near you");
   await expect(page.locator("#map path.leaflet-interactive")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Satellite" })).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => page.locator(".report-marker").first().evaluate(element => getComputedStyle(element).marginTop)).toBe("-32px");
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-geolocation-calls"))).toBe("1");
   await page.reload();
-  await expect(page.locator("#map-hint")).toContainText("Map zoomed near you");
+  await expect(page.locator("#map-hint")).toContainText(isMobile ? "Near you" : "Map zoomed near you");
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-geolocation-calls"))).toBe("1");
 });
 
-test("failed automatic location falls back closer and retries after reload", async ({ page }) => {
+test("failed automatic location falls back closer and retries after reload", async ({ page, isMobile }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem("wildcare-demo-warning-ack-v1", "true");
     localStorage.setItem("wildcare-phone-tutorial-seen-v1", "true");
@@ -83,10 +83,10 @@ test("failed automatic location falls back closer and retries after reload", asy
     });
   });
   await page.goto(`/?auto-location-fallback-test=${Date.now()}`);
-  await expect(page.locator("#map-hint")).toContainText("Location access unavailable");
+  await expect(page.locator("#map-hint")).toContainText(isMobile ? "Location unavailable" : "Location access unavailable");
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-failed-geolocation-calls"))).toBe("1");
   await page.reload();
-  await expect(page.locator("#map-hint")).toContainText("Location access unavailable");
+  await expect(page.locator("#map-hint")).toContainText(isMobile ? "Location unavailable" : "Location access unavailable");
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("test-failed-geolocation-calls"))).toBe("2");
 });
 
@@ -170,7 +170,7 @@ test("automatically detects phone-sized layouts", async ({ page, isMobile }) => 
   await expect.poll(() => page.locator(".mode-switch").evaluate(element => getComputedStyle(element).position)).toBe(isMobile ? "fixed" : "static");
   await expect.poll(() => page.locator(".demo-banner small").evaluate(element => getComputedStyle(element).display)).toBe(isMobile ? "none" : "block");
   await expect.poll(() => page.locator(".intro-panel").evaluate(element => getComputedStyle(element).display)).toBe(isMobile ? "none" : "flex");
-  await expect(page.locator("#map-search-input")).toHaveAttribute("placeholder", isMobile ? "Search street, park or area" : "Search street, park or postcode");
+  await expect(page.locator("#map-search-input")).toHaveAttribute("placeholder", isMobile ? "Search a location" : "Search street, park or postcode");
   await expect(page.locator("body")).toHaveClass(isMobile ? /phone-report-map/ : /^(?!.*phone-report-map)/);
   await expect.poll(() => page.locator("body").evaluate(element => getComputedStyle(element).overflowY)).toBe(isMobile ? "hidden" : "visible");
   if (isMobile) {
@@ -249,7 +249,7 @@ test("phone can start with a photo and fall back to current location", async ({ 
     body: JSON.stringify({ isAnimal: true, animal: "Bird", animalConfidence: .9, condition: "Not sure", conditionConfidence: .9, rescueNeeded: false, rescueProbability: .1, model: "test" })
   }));
   await enterDemo(page);
-  await expect(page.getByRole("button", { name: "Take photo to start" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Take a photo" })).toBeVisible();
   await page.getByLabel("Open camera or choose an animal photo").setInputFiles({
     name: "camera-photo.png",
     mimeType: "image/png",
