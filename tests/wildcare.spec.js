@@ -611,8 +611,9 @@ test("new report clears old reporting and team search context", async ({ page })
 test("private developer console signs in and runs fixed diagnostics", async ({ page }) => {
   let users = [{ id: "user-1", username: "riverwatch", createdAt: new Date().toISOString(), name: "River Watcher", contact: "river@example.test", experience: ["Wildlife first aid"] }];
   await page.route("**/api/auth/dev", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ token: "demo-dev-token" }) }));
-  await page.route("**/api/dev/status", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, reports: { active: 3, photos: 2 }, volunteers: 1 }) }));
+  await page.route("**/api/dev/status", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, reports: { active: 3, total: 4, photos: 2 }, volunteers: 1, loggedActions: 12, jevConfigured: true, uptimeSeconds: 3720 }) }));
   await page.route("**/api/dev/logs?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ id: 1, action: "POST /reports", details: { status: 201 }, created_at: new Date().toISOString() }]) }));
+  await page.route("**/api/dev/reports", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([{ id: "WC-DEV-1", animal: "Bird", condition: "Unable to fly", status: "Acknowledged", priority: "High", location: "Bukit Panjang", hasPhoto: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }]) }));
   await page.route("**/api/dev/users", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(users) }));
   await page.route("**/api/dev/users/user-1", async route => {
     const body = route.request().postDataJSON();
@@ -628,6 +629,11 @@ test("private developer console signs in and runs fixed diagnostics", async ({ p
   await page.getByRole("button", { name: "Open console" }).click();
   await expect(page.getByRole("heading", { name: "System overview" })).toBeVisible();
   await expect(page.getByText("POST /reports")).toBeVisible();
+  await expect(page.getByText("WC-DEV-1")).toBeVisible();
+  await expect(page.getByText("Bukit Panjang")).toBeVisible();
+  await page.getByLabel("Search reports").fill("missing report");
+  await expect(page.getByText("No reports match these filters.")).toBeVisible();
+  await page.getByLabel("Search reports").fill("");
   await expect(page.getByText("River Watcher")).toBeVisible();
   await expect(page.getByText("@riverwatch")).toBeVisible();
   await page.getByRole("button", { name: "Remove" }).click();

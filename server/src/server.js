@@ -272,6 +272,21 @@ app.get("/dev/logs", requireDev, async (request, response) => {
   response.json(rows);
 });
 
+app.get("/dev/reports", requireDev, async (_request, response) => {
+  const { rows } = await pool.query("SELECT id, payload, created_at, updated_at FROM reports ORDER BY updated_at DESC LIMIT 250");
+  response.json(rows.map(row => ({
+    id: row.payload?.id || row.id,
+    animal: row.payload?.animal || "Unknown animal",
+    condition: row.payload?.condition || "Not specified",
+    status: row.payload?.status || "New",
+    priority: row.payload?.priority || "Normal",
+    location: row.payload?.locationName || row.payload?.address || "Location not named",
+    hasPhoto: Boolean(row.payload?.photo),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  })));
+});
+
 app.get("/dev/users", requireDev, async (_request, response) => {
   const { rows } = await pool.query(`SELECT a.id, a.username, a.created_at, v.payload
     FROM accounts a LEFT JOIN volunteers v ON v.id = a.id

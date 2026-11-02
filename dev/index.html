@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>WildCare Developer Console</title>
     <link rel="stylesheet" href="/styles.css?v=41" />
-    <link rel="stylesheet" href="/dev/dev.css?v=3" />
+    <link rel="stylesheet" href="/dev/dev.css?v=4" />
   </head>
   <body class="dev-page">
     <header class="dev-header">
@@ -36,7 +36,16 @@
           </section>
           <section class="dev-panel">
             <div class="dev-panel-head"><div><h2>Backend activity</h2><p>Recent server actions. Visitor identifiers are anonymized.</p></div><button id="refresh-dev-logs" class="secondary-button" type="button">Refresh</button></div>
+            <label class="dev-search">Search activity<input id="dev-log-search" type="search" placeholder="Action or detail…" /></label>
             <div id="dev-logs" class="dev-logs" aria-live="polite"></div>
+          </section>
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Report inspector</h2><p>Inspect report metadata and status without loading stored photos.</p></div><button id="refresh-dev-reports" class="secondary-button" type="button">Refresh</button></div>
+            <div class="dev-report-tools">
+              <label class="dev-search">Search reports<input id="dev-report-search" type="search" placeholder="Reference, animal or location…" /></label>
+              <label class="dev-search">Status<select id="dev-report-status"><option value="">All statuses</option></select></label>
+            </div>
+            <div id="dev-reports" class="dev-reports" aria-live="polite"></div>
           </section>
           <section class="dev-panel">
             <div class="dev-panel-head"><div><h2>Volunteer users</h2><p>View registered demo accounts. Removing an account requires the developer password again.</p></div><button id="refresh-dev-users" class="secondary-button" type="button">Refresh</button></div>
@@ -56,6 +65,6 @@
         <button class="danger-button" type="submit">Remove user</button>
       </form>
     </dialog>
-    <script src="/dev/dev.js?v=3"></script>
+    <script src="/dev/dev.js?v=4"></script>
   </body>
 </html>

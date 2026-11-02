@@ -1,6 +1,8 @@
 const TOKEN_KEY = "wildcare-dev-token";
 let devToken = sessionStorage.getItem(TOKEN_KEY) || "";
 let pendingUserRemoval = null;
+let devLogs = [];
+let devReports = [];
 
 async function devFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
@@ -19,19 +21,56 @@ function exactTime(value) {
   return new Intl.DateTimeFormat("en-SG", { dateStyle: "medium", timeStyle: "medium", timeZone: "Asia/Singapore" }).format(new Date(value));
 }
 
+function uptimeLabel(seconds = 0) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return [days ? `${days}d` : "", hours ? `${hours}h` : "", `${minutes}m`].filter(Boolean).join(" ");
+}
+
 async function loadStatus() {
   const status = await devFetch("/dev/status");
   document.querySelector("#dev-stats").innerHTML = [
     ["Service", status.ok ? "Online" : "Unavailable"],
     ["Active reports", status.reports.active],
+    ["Total reports", status.reports.total],
     ["Stored photos", status.reports.photos],
-    ["Volunteers", status.volunteers]
+    ["Volunteers", status.volunteers],
+    ["Logged actions", status.loggedActions],
+    ["Jev analysis", status.jevConfigured ? "Configured" : "Not configured"],
+    ["API uptime", uptimeLabel(status.uptimeSeconds)]
   ].map(([label, value]) => `<article class="dev-stat"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></article>`).join("");
 }
 
+function renderLogs() {
+  const query = document.querySelector("#dev-log-search").value.trim().toLowerCase();
+  const logs = query ? devLogs.filter(log => `${log.action} ${JSON.stringify(log.details || {})}`.toLowerCase().includes(query)) : devLogs;
+  document.querySelector("#dev-logs").innerHTML = logs.length ? logs.map(log => `<article class="dev-log"><span>•</span><div><strong>${escapeHtml(log.action)}</strong><small>${escapeHtml(JSON.stringify(log.details || {}))}</small></div><time>${escapeHtml(exactTime(log.created_at))}</time></article>`).join("") : `<p class="dev-empty">${query ? "No activity matches this search." : "No backend activity has been recorded yet."}</p>`;
+}
+
 async function loadLogs() {
-  const logs = await devFetch("/dev/logs?limit=80");
-  document.querySelector("#dev-logs").innerHTML = logs.length ? logs.map(log => `<article class="dev-log"><span>•</span><div><strong>${escapeHtml(log.action)}</strong><small>${escapeHtml(JSON.stringify(log.details || {}))}</small></div><time>${escapeHtml(exactTime(log.created_at))}</time></article>`).join("") : '<p class="dev-empty">No backend activity has been recorded yet.</p>';
+  devLogs = await devFetch("/dev/logs?limit=80");
+  renderLogs();
+}
+
+function renderReports() {
+  const query = document.querySelector("#dev-report-search").value.trim().toLowerCase();
+  const status = document.querySelector("#dev-report-status").value;
+  const reports = devReports.filter(report => (!status || report.status === status) && (!query || `${report.id} ${report.animal} ${report.condition} ${report.location}`.toLowerCase().includes(query)));
+  document.querySelector("#dev-reports").innerHTML = reports.length ? reports.map(report => `<article class="dev-report">
+    <div class="dev-report-main"><strong>${escapeHtml(report.id)}</strong><span class="dev-status">${escapeHtml(report.status)}</span><small>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</small><small>${escapeHtml(report.location)}</small></div>
+    <div class="dev-report-meta"><span>${report.hasPhoto ? "Photo" : "No photo"}</span><span>${escapeHtml(report.priority || "Normal")} priority</span><time>${escapeHtml(exactTime(report.updatedAt || report.createdAt))}</time></div>
+  </article>`).join("") : '<p class="dev-empty">No reports match these filters.</p>';
+}
+
+async function loadReports() {
+  devReports = await devFetch("/dev/reports");
+  const select = document.querySelector("#dev-report-status");
+  const current = select.value;
+  const statuses = [...new Set(devReports.map(report => report.status).filter(Boolean))].sort();
+  select.innerHTML = '<option value="">All statuses</option>' + statuses.map(status => `<option value="${escapeHtml(status)}">${escapeHtml(status)}</option>`).join("");
+  if (statuses.includes(current)) select.value = current;
+  renderReports();
 }
 
 async function loadUsers() {
@@ -67,7 +106,7 @@ function closeRemoveUser() {
 
 async function openConsole() {
   try {
-    await Promise.all([loadStatus(), loadLogs(), loadUsers()]);
+    await Promise.all([loadStatus(), loadLogs(), loadReports(), loadUsers()]);
     document.querySelector("#dev-login").hidden = true;
     document.querySelector("#dev-console").hidden = false;
   } catch {
@@ -103,6 +142,10 @@ document.querySelector("#dev-logout").addEventListener("click", () => {
 });
 
 document.querySelector("#refresh-dev-logs").addEventListener("click", loadLogs);
+document.querySelector("#dev-log-search").addEventListener("input", renderLogs);
+document.querySelector("#refresh-dev-reports").addEventListener("click", loadReports);
+document.querySelector("#dev-report-search").addEventListener("input", renderReports);
+document.querySelector("#dev-report-status").addEventListener("change", renderReports);
 document.querySelector("#refresh-dev-users").addEventListener("click", loadUsers);
 document.querySelector("#close-remove-user").addEventListener("click", closeRemoveUser);
 document.querySelector("#remove-user-dialog").addEventListener("cancel", event => {
