@@ -625,12 +625,11 @@ test("private developer console signs in and runs fixed diagnostics", async ({ p
   await expect(page.getByLabel("Photo tools")).toBeChecked();
   await page.getByText("Photo tools", { exact: true }).click();
   await expect(page.getByLabel("Photo tools")).not.toBeChecked();
-  await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByText("Saved. Reload the public website to see the changes.")).toBeVisible();
-  expect(features.photoTools).toBe(false);
+  await expect(page.getByText("Saved automatically. Reload the public website to see the changes.")).toBeVisible();
+  await expect.poll(() => features.photoTools).toBe(false);
+  await expect(page.getByRole("button", { name: "Save changes" })).toHaveCount(0);
   await page.getByRole("button", { name: "Restore all" }).click();
   await expect(page.getByLabel("Photo tools")).toBeChecked();
-  await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => features.photoTools).toBe(true);
   await expect(page.getByText("POST /reports")).toBeVisible();
   await expect(page.getByText("WC-DEV-1")).toBeVisible();

@@ -214,27 +214,27 @@ document.querySelector("#dev-report-status").addEventListener("change", renderRe
 loadMoreNearBottom(document.querySelector("#dev-logs"), loadLogs);
 loadMoreNearBottom(document.querySelector("#dev-reports"), loadReports);
 loadMoreNearBottom(document.querySelector("#dev-users"), loadUsers);
-document.querySelector("#restore-dev-features").addEventListener("click", () => {
-  featureNames.forEach(name => { document.querySelector(`#dev-feature-form [name="${name}"]`).checked = true; });
-  document.querySelector("#dev-feature-status").textContent = "All features selected. Save changes to restore them live.";
-});
-document.querySelector("#dev-feature-form").addEventListener("submit", async event => {
-  event.preventDefault();
-  const button = event.currentTarget.querySelector('[type="submit"]');
+async function saveFeatureSettings() {
+  const form = document.querySelector("#dev-feature-form");
   const status = document.querySelector("#dev-feature-status");
-  const features = Object.fromEntries(featureNames.map(name => [name, event.currentTarget.elements[name].checked]));
-  button.disabled = true;
-  button.textContent = "Saving…";
-  status.textContent = "Saving feature settings…";
+  const inputs = featureNames.map(name => form.elements[name]);
+  const features = Object.fromEntries(featureNames.map(name => [name, form.elements[name].checked]));
+  inputs.forEach(input => { input.disabled = true; });
+  status.textContent = "Saving…";
   try {
     await devFetch("/dev/settings", { method: "PUT", body: JSON.stringify({ features }) });
-    status.textContent = "Saved. Reload the public website to see the changes.";
+    status.textContent = "Saved automatically. Reload the public website to see the changes.";
   } catch (error) {
-    status.textContent = error.message;
+    await loadFeatureSettings().catch(() => {});
+    status.textContent = `Could not save: ${error.message}`;
   } finally {
-    button.disabled = false;
-    button.textContent = "Save changes";
+    inputs.forEach(input => { input.disabled = false; });
   }
+}
+featureNames.forEach(name => document.querySelector(`#dev-feature-form [name="${name}"]`).addEventListener("change", saveFeatureSettings));
+document.querySelector("#restore-dev-features").addEventListener("click", async () => {
+  featureNames.forEach(name => { document.querySelector(`#dev-feature-form [name="${name}"]`).checked = true; });
+  await saveFeatureSettings();
 });
 document.querySelector("#refresh-dev-users").addEventListener("click", loadUsers);
 document.querySelector("#close-remove-user").addEventListener("click", closeRemoveUser);
