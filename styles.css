@@ -33,9 +33,11 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .brand small { margin-top: 5px; font-size: 9px; text-transform: uppercase; letter-spacing: .22em; font-weight: 800; }
 .demo-chip { margin-left: 4px; padding: 5px 8px; border-radius: 7px; color: #fff; background: #c52f2f; font-size: 9px; font-weight: 950; letter-spacing: .12em; box-shadow: 0 3px 8px rgba(197,47,47,.22); }
 .header-tools { margin-left: auto; position: relative; display: flex; align-items: center; gap: 10px; }
-.help-hint { position: absolute; top: 50%; right: 46px; z-index: 2; padding: 6px 9px; transform: translateY(-50%); border: 1px solid #d7e0da; border-radius: 9px; color: var(--forest); background: rgba(255,254,250,.94); box-shadow: 0 5px 16px rgba(23,63,53,.12); white-space: nowrap; font-size: 10px; font-weight: 800; pointer-events: none; animation: helpHintIn .22s ease-out both; }
+.help-hint { position: absolute; top: calc(100% + 9px); right: 0; z-index: 2; padding: 6px 9px; border: 1px solid #d7e0da; border-radius: 9px; color: var(--forest); background: rgba(255,254,250,.97); box-shadow: 0 5px 16px rgba(23,63,53,.12); white-space: nowrap; font-size: 10px; font-weight: 800; pointer-events: none; animation: helpHintIn .22s ease-out both; }
+.help-hint::before { content: ""; position: absolute; right: 14px; bottom: 100%; border: 6px solid transparent; border-bottom-color: #d7e0da; }
+.help-hint::after { content: ""; position: absolute; right: 15px; bottom: 100%; border: 5px solid transparent; border-bottom-color: rgba(255,254,250,.97); }
 .help-hint[hidden] { display: none; }
-@keyframes helpHintIn { from { opacity: 0; transform: translate(5px,-50%); } to { opacity: 1; transform: translate(0,-50%); } }
+@keyframes helpHintIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 .phone-help { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--forest); background: #f3f6f1; font-size: 17px; font-weight: 900; }
 .phone-help:hover, .phone-help:focus-visible { border-color: #afc1b7; background: #fff; outline: 3px solid rgba(23,63,53,.1); }
 .mode-switch { display: flex; gap: 5px; padding: 5px; border-radius: 999px; background: #ecede7; }
@@ -741,6 +743,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .brand strong { font-size: 21px; }
   .phone-layout .header-tools { margin-left: auto; }
   .phone-layout .phone-help { width: 38px; height: 38px; margin-left: auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--forest); background: #f3f6f1; font-size: 17px; font-weight: 900; }
+  .phone-layout .help-hint { display: none !important; }
   .phone-layout .portal-tutorial-dialog { width: calc(100% - 16px); max-height: calc(100dvh - 16px); border-radius: 24px; }
   .phone-layout .portal-tutorial-content { min-height: min(650px, calc(100dvh - 16px)); padding: 30px 22px 20px; }
   .phone-layout .portal-tutorial-dialog.interactive-portal-tutorial { inset: auto 8px 86px 8px; width: auto; max-height: 44dvh; overflow: auto; }

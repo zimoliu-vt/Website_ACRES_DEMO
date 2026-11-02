@@ -1642,25 +1642,6 @@ document.querySelector("#new-report-worker").addEventListener("click", () => {
   setTimeout(() => document.querySelector("#map-search-input").focus({ preventScroll: true }), 450);
   showToast("New report started. Choose a location first.");
 });
-document.querySelector("#reset-demo").addEventListener("click", async () => {
-  if (portalTutorialDialog.open && portalTutorialType === "worker") {
-    showToast("Practice only — the shared demo was not reset.");
-    return;
-  }
-  if (!window.confirm("Reset all shared demo reports?\n\nThis restores the starting cases for everyone using this demo. Volunteer accounts are not deleted.")) return;
-  try {
-    reports = await apiFetch("/reports/reset", { method: "POST" });
-    selectedReportId = null;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
-    drawReportMarkers();
-    renderDashboard();
-    renderVolunteerPortal();
-    showToast("Shared demo reports have been reset.");
-  } catch (error) {
-    showToast(error.message);
-  }
-});
-
 function showNearbyArea(latitude, longitude, accuracy = 200, remember = true) {
   if (!map || !window.L) return false;
     if (!isSingaporePoint(latitude, longitude)) {

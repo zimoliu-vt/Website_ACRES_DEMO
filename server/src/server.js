@@ -536,13 +536,6 @@ app.post("/reports/:id/restore", requireWorker, async (request, response) => {
   response.json(report);
 });
 
-app.post("/reports/reset", requireWorker, async (_request, response) => {
-  await pool.query("DELETE FROM reports");
-  await seedDatabase();
-  const { rows } = await pool.query("SELECT payload FROM reports ORDER BY created_at DESC");
-  response.json(rows.map(row => row.payload));
-});
-
 app.post("/auth/worker", (request, response) => {
   if (!safeEqual(request.body?.pin || "", demoPin)) return response.status(401).json({ error: "Incorrect demo PIN" });
   const remembered = request.body?.remember === true;
