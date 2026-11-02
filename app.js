@@ -9,6 +9,7 @@ const AUTO_LOCATION_CACHE_KEY = "wildcare-auto-location-area-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
 const defaultSiteFeatures = { volunteerPortal: true, photoTools: true, tutorials: true, locationSearch: true };
+let currentSiteConfig = { demoBannerVisible: true, demoNoticeVisible: true, maintenance: false, announcement: "" };
 if (window.location.pathname === "/rescue") history.replaceState({}, "", "/");
 
 const phoneViewport = window.matchMedia("(max-width: 620px), (max-width: 950px) and (max-height: 600px)");
@@ -205,8 +206,10 @@ async function loadSiteFeatures() {
   try {
     const result = await apiFetch("/settings");
     applySiteFeatures({ ...defaultSiteFeatures, ...(result.features || {}) });
-    const config = result.config || {};
+    const config = { ...currentSiteConfig, ...(result.config || {}) };
+    currentSiteConfig = config;
     document.querySelector(".demo-banner").hidden = config.demoBannerVisible === false;
+    if (config.demoNoticeVisible === false && demoWarningDialog.open) demoWarningDialog.close();
     if (config.announcement) document.querySelector(".demo-banner small").textContent = config.announcement;
     if (config.maintenance) {
       document.querySelectorAll("dialog[open]").forEach(dialog => dialog.close());
@@ -2178,7 +2181,7 @@ document.addEventListener("visibilitychange", () => {
   const livePortalOpen = document.querySelector("#volunteer-view.active, #worker-view.active");
   if (document.visibilityState === "visible" && livePortalOpen) loadBackendReports(true);
 });
-if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();
+if (currentSiteConfig.demoNoticeVisible !== false && sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();
 else {
   maybeAutoLocate();
   maybeShowHelpHint();

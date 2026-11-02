@@ -78,6 +78,7 @@ async function loadFeatureSettings() {
   publicForm.elements.maintenance.checked = Boolean(result.config?.maintenance);
   publicForm.elements.announcement.value = result.config?.announcement || "";
   publicForm.elements.demoBannerVisible.checked = result.config?.demoBannerVisible !== false;
+  publicForm.elements.demoNoticeVisible.checked = result.config?.demoNoticeVisible !== false;
 }
 
 async function loadSettingsHistory() {
@@ -255,7 +256,7 @@ async function savePublicConfig() {
   const status = document.querySelector("#dev-public-status");
   status.textContent = "Saving…";
   try {
-    await devFetch("/dev/config", { method: "PUT", body: JSON.stringify({ maintenance: form.elements.maintenance.checked, announcement: form.elements.announcement.value, demoBannerVisible: form.elements.demoBannerVisible.checked, password: form.elements.password.value }) });
+    await devFetch("/dev/config", { method: "PUT", body: JSON.stringify({ maintenance: form.elements.maintenance.checked, announcement: form.elements.announcement.value, demoBannerVisible: form.elements.demoBannerVisible.checked, demoNoticeVisible: form.elements.demoNoticeVisible.checked, password: form.elements.password.value }) });
     form.elements.password.value = "";
     document.querySelector("#banner-password-wrap").hidden = true;
     status.textContent = "Saved automatically.";
@@ -263,7 +264,7 @@ async function savePublicConfig() {
   } catch (error) { status.textContent = error.message; }
 }
 document.querySelector("#dev-public-form").addEventListener("change", event => {
-  if (event.target.name === "demoBannerVisible" && !event.target.checked) { document.querySelector("#banner-password-wrap").hidden = false; document.querySelector("#dev-public-status").textContent = "Enter your password to confirm hiding the demo banner."; return; }
+  if (["demoBannerVisible", "demoNoticeVisible"].includes(event.target.name) && !event.target.checked) { document.querySelector("#banner-password-wrap").hidden = false; document.querySelector("#dev-public-status").textContent = "Warning: visitors may miss that this is only a demo. Enter your password to confirm removing this warning."; return; }
   savePublicConfig();
 });
 document.querySelector('#dev-public-form [name="announcement"]').addEventListener("input", () => { clearTimeout(publicSaveTimer); publicSaveTimer = setTimeout(savePublicConfig, 600); });

@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>WildCare Developer Console</title>
     <link rel="stylesheet" href="/styles.css?v=41" />
-  <link rel="stylesheet" href="/dev/dev.css?v=11" />
+  <link rel="stylesheet" href="/dev/dev.css?v=12" />
   </head>
   <body class="dev-page">
     <header class="dev-header">
@@ -37,6 +37,7 @@
               <label class="dev-feature-switch"><span><strong>Maintenance mode</strong><small>Temporarily replaces the public experience with a maintenance notice</small></span><input name="maintenance" type="checkbox" /><i aria-hidden="true"></i></label>
               <label>Public announcement<input name="announcement" maxlength="180" placeholder="Optional message shown to visitors" /></label>
               <label class="dev-feature-switch"><span><strong>Show demo banner</strong><small>Hiding it requires your developer password again</small></span><input name="demoBannerVisible" type="checkbox" /><i aria-hidden="true"></i></label>
+              <label class="dev-feature-switch"><span><strong>Show first-entry demo notice</strong><small>The large demo warning visitors acknowledge when entering</small></span><input name="demoNoticeVisible" type="checkbox" /><i aria-hidden="true"></i></label>
               <label id="banner-password-wrap" hidden>Developer password<input name="password" type="password" autocomplete="current-password" /></label>
               <p id="dev-public-status" role="status">Changes save automatically.</p>
             </form>
@@ -97,6 +98,6 @@
         <button class="danger-button" type="submit">Remove user</button>
       </form>
     </dialog>
-  <script src="/dev/dev.js?v=11"></script>
+  <script src="/dev/dev.js?v=12"></script>
   </body>
 </html>

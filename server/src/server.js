@@ -23,7 +23,7 @@ const defaultSiteFeatures = Object.freeze({
   tutorials: true,
   locationSearch: true
 });
-const defaultSiteConfig = Object.freeze({ maintenance: false, announcement: "", demoBannerVisible: true });
+const defaultSiteConfig = Object.freeze({ maintenance: false, announcement: "", demoBannerVisible: true, demoNoticeVisible: true });
 
 if (!jwtSecret || jwtSecret.length < 24) throw new Error("JWT_SECRET must contain at least 24 characters");
 
@@ -323,9 +323,11 @@ app.put("/dev/config", requireDev, async (request, response) => {
   const config = {
     maintenance: Boolean(request.body?.maintenance),
     announcement: String(request.body?.announcement || "").trim().slice(0, 180),
-    demoBannerVisible: request.body?.demoBannerVisible !== false
+    demoBannerVisible: request.body?.demoBannerVisible !== false,
+    demoNoticeVisible: request.body?.demoNoticeVisible !== false
   };
-  if (!config.demoBannerVisible && previous.demoBannerVisible && !safeEqual(request.body?.password || "", devPassword)) return response.status(401).json({ error: "Enter the developer password to hide the demo banner." });
+  const removesWarning = (!config.demoBannerVisible && previous.demoBannerVisible) || (!config.demoNoticeVisible && previous.demoNoticeVisible);
+  if (removesWarning && !safeEqual(request.body?.password || "", devPassword)) return response.status(401).json({ error: "Enter the developer password to remove a demo warning." });
   await pool.query("INSERT INTO site_settings (key, value, updated_at) VALUES ('config', $1, now()) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now()", [config]);
   await recordAudit("Developer updated public configuration", { previous, next: config, undoable: true });
   response.json({ config });
