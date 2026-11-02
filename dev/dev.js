@@ -28,6 +28,10 @@ function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
 }
 
+function safeClass(value = "") {
+  return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function exactTime(value) {
   return new Intl.DateTimeFormat("en-SG", { dateStyle: "medium", timeStyle: "medium", timeZone: "Asia/Singapore" }).format(new Date(value));
 }
@@ -50,13 +54,13 @@ async function loadStatus() {
     ["Logged actions", status.loggedActions],
     ["Jev analysis", status.jevConfigured ? "Configured" : "Not configured"],
     ["API uptime", uptimeLabel(status.uptimeSeconds)]
-  ].map(([label, value]) => `<article class="dev-stat"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></article>`).join("");
+  ].map(([label, value]) => `<article class="dev-stat dev-stat-${safeClass(label)}"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></article>`).join("");
 }
 
 function renderLogs() {
   const query = document.querySelector("#dev-log-search").value.trim().toLowerCase();
   const logs = query ? devLogs.filter(log => `${log.action} ${JSON.stringify(log.details || {})}`.toLowerCase().includes(query)) : devLogs;
-  document.querySelector("#dev-logs").innerHTML = logs.length ? logs.map(log => `<article class="dev-log"><span>•</span><div><strong>${escapeHtml(log.action)}</strong><small>${escapeHtml(JSON.stringify(log.details || {}))}</small></div><time>${escapeHtml(exactTime(log.created_at))}</time></article>`).join("") : `<p class="dev-empty">${query ? "No activity matches this search." : "No backend activity has been recorded yet."}</p>`;
+  document.querySelector("#dev-logs").innerHTML = logs.length ? logs.map(log => `<article class="dev-log dev-log-${safeClass(log.action)}"><span>•</span><div><strong>${escapeHtml(log.action)}</strong><small>${escapeHtml(JSON.stringify(log.details || {}))}</small></div><time>${escapeHtml(exactTime(log.created_at))}</time></article>`).join("") : `<p class="dev-empty">${query ? "No activity matches this search." : "No backend activity has been recorded yet."}</p>`;
 }
 
 async function loadLogs({ append = false } = {}) {
@@ -75,9 +79,15 @@ function renderReports() {
   const query = document.querySelector("#dev-report-search").value.trim().toLowerCase();
   const status = document.querySelector("#dev-report-status").value;
   const reports = devReports.filter(report => (!status || report.status === status) && (!query || `${report.id} ${report.animal} ${report.condition} ${report.location}`.toLowerCase().includes(query)));
+  const active = reports.filter(report => !["Resolved", "Completed", "Deleted"].includes(report.status)).length;
+  const urgent = reports.filter(report => ["High", "Urgent", "Critical"].includes(report.priority)).length;
+  const photos = reports.filter(report => report.hasPhoto).length;
+  document.querySelector("#dev-report-summary").innerHTML = [
+    ["visible", `${reports.length} shown`], ["active", `${active} active`], ["urgent", `${urgent} priority`], ["photos", `${photos} with photos`]
+  ].map(([kind, text]) => `<span class="dev-summary-${kind}">${escapeHtml(text)}</span>`).join("");
   document.querySelector("#dev-reports").innerHTML = reports.length ? reports.map(report => `<article class="dev-report">
-    <div class="dev-report-main"><strong>${escapeHtml(report.id)}</strong><span class="dev-status">${escapeHtml(report.status)}</span><small>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</small><small>${escapeHtml(report.location)}</small></div>
-    <div class="dev-report-meta"><span>${report.hasPhoto ? "Photo" : "No photo"}</span><span>${escapeHtml(report.priority || "Normal")} priority</span><time>${escapeHtml(exactTime(report.updatedAt || report.createdAt))}</time></div>
+    <div class="dev-report-main"><strong>${escapeHtml(report.id)}</strong><span class="dev-status dev-status-${safeClass(report.status)}">${escapeHtml(report.status)}</span><small>${escapeHtml(report.animal)} · ${escapeHtml(report.condition)}</small><small>${escapeHtml(report.location)}</small></div>
+    <div class="dev-report-meta"><span class="dev-photo-${report.hasPhoto ? "yes" : "no"}">${report.hasPhoto ? "Photo" : "No photo"}</span><span class="dev-priority dev-priority-${safeClass(report.priority || "Normal")}">${escapeHtml(report.priority || "Normal")} priority</span><time>${escapeHtml(exactTime(report.updatedAt || report.createdAt))}</time></div>
   </article>`).join("") : '<p class="dev-empty">No reports match these filters.</p>';
 }
 

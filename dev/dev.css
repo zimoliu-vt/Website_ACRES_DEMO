@@ -13,6 +13,13 @@
 .dev-stat { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: white; }
 .dev-stat small { display: block; color: var(--muted); font-size: 10px; font-weight: 850; text-transform: uppercase; letter-spacing: .07em; }
 .dev-stat strong { display: block; margin-top: 8px; color: var(--forest); font: 600 26px Georgia,serif; }
+.dev-stat { border-top: 4px solid #93aaa0; }
+.dev-stat-service, .dev-stat-jev-analysis { border-top-color: #37a66a; background: #f4fbf6; }
+.dev-stat-active-reports { border-top-color: #e0a428; background: #fffaf0; }
+.dev-stat-total-reports, .dev-stat-stored-photos { border-top-color: #4387c8; background: #f4f9ff; }
+.dev-stat-volunteers { border-top-color: #1c9b91; background: #f1fbfa; }
+.dev-stat-logged-actions { border-top-color: #8b65bd; background: #faf7ff; }
+.dev-stat-api-uptime { border-top-color: #60736a; }
 .dev-grid { display: grid; gap: 18px; }
 .dev-panel { padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
 .dev-panel h2 { margin-bottom: 5px; color: var(--forest); }
@@ -25,10 +32,19 @@
 .dev-check strong, .dev-log strong { display: block; color: var(--forest); font-size: 11px; }
 .dev-check small, .dev-log small { color: var(--muted); font-size: 9px; line-height: 1.5; }
 .dev-log code { color: var(--forest-2); font-size: 9px; }
+.dev-log > span { color: #6b7f76; }
+.dev-log[class*="failed"] > span, .dev-log[class*="removed"] > span, .dev-log[class*="delete"] > span { color: #c13b32; }
+.dev-log[class*="signed-in"] > span, .dev-log[class*="created"] > span, .dev-log[class*="submitted"] > span { color: #2c9860; }
+.dev-log[class*="diagnostic"] > span, .dev-log[class*="updated"] > span { color: #397fbd; }
 .dev-users { margin-top: 18px; display: grid; gap: 9px; }
 .dev-search { display: grid; gap: 6px; margin-top: 16px; color: var(--forest); font-size: 10px; font-weight: 850; }
 .dev-search input, .dev-search select { min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--forest); font: inherit; font-size: 12px; }
 .dev-report-tools { display: grid; grid-template-columns: 1fr 190px; gap: 12px; }
+.dev-summary-chips { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 7px; }
+.dev-summary-chips span, .dev-report-meta > span { padding: 5px 8px; border-radius: 999px; background: #eef2ef; color: #52635b; font-size: 9px; font-weight: 850; }
+.dev-summary-active { background: #fff2cc !important; color: #805d00 !important; }
+.dev-summary-urgent { background: #ffe4e1 !important; color: #a22c25 !important; }
+.dev-summary-photos { background: #e5f1ff !important; color: #245f96 !important; }
 .dev-reports { margin-top: 18px; display: grid; gap: 9px; }
 .dev-scroll-list { max-height: 560px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding-right: 5px; }
 .dev-scroll-list::after { content: "Scroll to load up to 100 more"; display: block; padding: 10px; color: var(--muted); font-size: 9px; text-align: center; }
@@ -37,6 +53,13 @@
 .dev-report-main strong { color: var(--forest); font-size: 12px; }
 .dev-report-main small { grid-column: 1 / -1; color: var(--muted); font-size: 10px; }
 .dev-status { justify-self: start; padding: 4px 7px; border-radius: 999px; background: #e1eee8; color: var(--forest); font-size: 9px; font-weight: 850; }
+.dev-status-new, .dev-status-submitted { background: #e5f1ff; color: #245f96; }
+.dev-status-acknowledged, .dev-status-assigned, .dev-status-in-progress { background: #fff2cc; color: #805d00; }
+.dev-status-resolved, .dev-status-completed { background: #dcf4e5; color: #257247; }
+.dev-status-deleted { background: #ecebea; color: #67605d; }
+.dev-priority-high, .dev-priority-urgent, .dev-priority-critical { background: #ffe4e1 !important; color: #a22c25 !important; }
+.dev-priority-normal { background: #e8f2ed !important; color: #356a50 !important; }
+.dev-photo-yes { background: #e5f1ff !important; color: #245f96 !important; }
 .dev-report-meta { display: flex; flex-wrap: wrap; align-content: center; justify-content: flex-end; gap: 6px 10px; color: var(--muted); font-size: 9px; }
 .dev-user { padding: 14px; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 12px; background: white; }
 .dev-user strong { display: block; color: var(--forest); font-size: 12px; }
