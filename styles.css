@@ -406,6 +406,8 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .interactive-portal-tutorial .portal-tutorial-copy { margin-bottom: 12px; }
 .interactive-portal-tutorial .portal-tutorial-points { gap: 6px; }
 .interactive-portal-tutorial .portal-tutorial-points li { padding: 8px 10px; }
+.interactive-report-tutorial .portal-tutorial-content { padding-top: 38px; }
+.interactive-report-tutorial .tutorial-skip { top: 9px; right: 12px; padding: 6px 9px; border-radius: 999px; background: #eef2ed; }
 .portal-tutorial-focus { outline: 4px solid var(--lime); outline-offset: 6px; border-radius: 20px; box-shadow: 0 18px 50px rgba(10,31,26,.24); }
 
 .interactive-guide { border: 2px solid var(--lime); border-radius: 16px; color: #fff; background: rgba(23,63,53,.97); box-shadow: 0 16px 38px rgba(10,31,26,.3); }
