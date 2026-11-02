@@ -14,13 +14,34 @@ let loadingReports = false;
 let userOffset = 0;
 let userHasMore = true;
 let loadingUsers = false;
+let sessionCheckRunning = false;
 const featureNames = ["volunteerPortal", "photoTools", "tutorials", "locationSearch"];
+
+function lockConsole(message = "Your developer session expired. Sign in again.") {
+  devToken = "";
+  sessionStorage.removeItem(TOKEN_KEY);
+  pendingUserRemoval = null;
+  devLogs = [];
+  devReports = [];
+  devUsers = [];
+  if (document.querySelector("#remove-user-dialog")?.open) document.querySelector("#remove-user-dialog").close();
+  ["#dev-stats", "#dev-alerts", "#dev-storage", "#dev-settings-history", "#dev-logs", "#dev-report-summary", "#dev-reports", "#dev-users", "#dev-check-results"].forEach(selector => {
+    const element = document.querySelector(selector);
+    if (element) element.replaceChildren();
+  });
+  document.querySelector("#dev-console").hidden = true;
+  document.querySelector("#dev-login").hidden = false;
+  const error = document.querySelector("#dev-login-error");
+  error.textContent = message;
+  error.hidden = !message;
+}
 
 async function devFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (devToken) headers.Authorization = `Bearer ${devToken}`;
   const response = await fetch(`/api${path}`, { ...options, headers });
   const result = await response.json().catch(() => ({}));
+  if ([401, 403].includes(response.status) && path !== "/auth/dev") lockConsole();
   if (!response.ok) throw new Error(result.error || "The developer service is unavailable.");
   return result;
 }
@@ -93,6 +114,13 @@ async function loadSettingsHistory() {
   const result = await devFetch("/dev/settings-history");
   document.querySelector("#dev-settings-history").innerHTML = result.items.length ? result.items.map(item => `<article><div><strong>${escapeHtml(item.action)}</strong><small>${escapeHtml(exactTime(item.created_at))}</small></div><button type="button" data-undo-setting="${item.id}">Undo</button></article>`).join("") : '<p class="dev-empty">No reversible settings changes yet.</p>';
   document.querySelectorAll("[data-undo-setting]").forEach(button => button.addEventListener("click", async () => { button.disabled = true; await devFetch(`/dev/settings-history/${button.dataset.undoSetting}/undo`, { method: "POST" }); await Promise.all([loadFeatureSettings(), loadSettingsHistory(), loadLogs()]); }));
+}
+
+async function loadHousekeeping() {
+  const result = await devFetch("/dev/housekeeping");
+  document.querySelector("#housekeeping-overview").innerHTML = `
+    <article><strong>${escapeHtml(result.expiredSessions)}</strong><span>expired session record${result.expiredSessions === 1 ? "" : "s"} ready to remove</span></article>
+    <article><strong>${escapeHtml(result.oldActivityEntries)}</strong><span>activity entr${result.oldActivityEntries === 1 ? "y" : "ies"} ready to shorten</span></article>`;
 }
 
 function renderLogs() {
@@ -193,15 +221,19 @@ function closeRemoveUser() {
 
 async function openConsole() {
   try {
-    await Promise.all([loadStatus(), loadFeatureSettings(), loadSettingsHistory(), loadLogs(), loadReports(), loadUsers()]);
+    await Promise.all([loadStatus(), loadFeatureSettings(), loadSettingsHistory(), loadHousekeeping(), loadLogs(), loadReports(), loadUsers()]);
     document.querySelector("#dev-login").hidden = true;
     document.querySelector("#dev-console").hidden = false;
   } catch {
-    devToken = "";
-    sessionStorage.removeItem(TOKEN_KEY);
-    document.querySelector("#dev-login").hidden = false;
-    document.querySelector("#dev-console").hidden = true;
+    lockConsole();
   }
+}
+
+async function checkDevSession() {
+  if (!devToken || document.querySelector("#dev-console").hidden || sessionCheckRunning) return;
+  sessionCheckRunning = true;
+  try { await devFetch("/dev/status"); } catch {}
+  finally { sessionCheckRunning = false; }
 }
 
 document.querySelector("#dev-login-form").addEventListener("submit", async event => {
@@ -221,12 +253,12 @@ document.querySelector("#dev-login-form").addEventListener("submit", async event
 });
 
 document.querySelector("#dev-logout").addEventListener("click", () => {
-  devToken = "";
-  sessionStorage.removeItem(TOKEN_KEY);
-  document.querySelector("#dev-console").hidden = true;
-  document.querySelector("#dev-login").hidden = false;
+  lockConsole("");
   document.querySelector("#dev-password").focus();
 });
+
+window.addEventListener("focus", checkDevSession);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDevSession(); });
 
 document.querySelector("#refresh-dev-logs").addEventListener("click", loadLogs);
 document.querySelector("#dev-log-search").addEventListener("input", renderLogs);
@@ -278,6 +310,21 @@ document.querySelector("#dev-public-form").addEventListener("change", event => {
 document.querySelector('#dev-public-form [name="announcement"]').addEventListener("input", () => { clearTimeout(publicSaveTimer); publicSaveTimer = setTimeout(savePublicConfig, 600); });
 document.querySelector('#dev-public-form [name="password"]').addEventListener("change", savePublicConfig);
 document.querySelector("#refresh-settings-history").addEventListener("click", loadSettingsHistory);
+document.querySelector("#run-housekeeping").addEventListener("click", async event => {
+  const button = event.currentTarget;
+  const status = document.querySelector("#housekeeping-status");
+  button.disabled = true;
+  status.textContent = "Running safe housekeeping…";
+  try {
+    const result = await devFetch("/dev/housekeeping", { method: "POST" });
+    status.textContent = `${result.expiredSessionsRemoved} expired session record${result.expiredSessionsRemoved === 1 ? "" : "s"} removed. ${result.activityEntriesCompressed} old activity entr${result.activityEntriesCompressed === 1 ? "y" : "ies"} shortened into a summary.`;
+    await Promise.all([loadHousekeeping(), loadStatus(), loadLogs()]);
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
 document.querySelector("#add-sample-report").addEventListener("click", async () => { const status = document.querySelector("#sample-report-status"); status.textContent = "Adding one sample report…"; try { const result = await devFetch("/dev/sample-report", { method: "POST" }); status.textContent = `${result.report.id} added. No existing reports were removed.`; await Promise.all([loadStatus(), loadReports(), loadLogs()]); } catch (error) { status.textContent = error.message; } });
 document.querySelector("#refresh-dev-users").addEventListener("click", loadUsers);
 document.querySelector("#close-remove-user").addEventListener("click", closeRemoveUser);

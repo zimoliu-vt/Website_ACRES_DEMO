@@ -66,6 +66,12 @@ async function initialiseDatabase() {
       details jsonb NOT NULL DEFAULT '{}'::jsonb,
       created_at timestamptz NOT NULL DEFAULT now()
     );
+    CREATE TABLE IF NOT EXISTS login_sessions (
+      id text PRIMARY KEY,
+      role text NOT NULL,
+      expires_at timestamptz NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
     CREATE TABLE IF NOT EXISTS site_settings (
       key text PRIMARY KEY,
       value jsonb NOT NULL,
@@ -98,8 +104,15 @@ async function verifyPassword(password, encoded) {
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
 
+async function issueToken(role, expiresIn, subject = null) {
+  const id = crypto.randomUUID();
+  const seconds = typeof expiresIn === "number" ? expiresIn : ({ "2h": 7200, "8h": 28800, "15d": 1296000, "30d": 2592000 }[expiresIn] || 7200);
+  await pool.query("INSERT INTO login_sessions (id, role, expires_at) VALUES ($1, $2, now() + ($3 * interval '1 second'))", [id, role, seconds]);
+  return jwt.sign({ jti: id, ...(subject ? { sub: subject } : {}), role }, jwtSecret, { expiresIn });
+}
+
 function volunteerToken(id) {
-  return jwt.sign({ sub: id, role: "volunteer" }, jwtSecret, { expiresIn: "30d" });
+  return issueToken("volunteer", "30d", id);
 }
 
 function requireVolunteerOwner(request, response, next) {
@@ -171,6 +184,32 @@ async function purgeExpiredTrash() {
       AND (payload->>'deleteAfter')::bigint <= $1`, [Date.now()]);
   if (result.rowCount) console.log(`Permanently deleted ${result.rowCount} expired trashed report(s)`);
   return result.rowCount;
+}
+
+async function runStorageHousekeeping() {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const sessions = await client.query("DELETE FROM login_sessions WHERE expires_at <= now()");
+    const oldLogs = await client.query(`SELECT action, count(*)::int AS count
+      FROM audit_logs
+      WHERE created_at < now() - interval '90 days' AND coalesce(details->>'summary','false') <> 'true'
+      GROUP BY action ORDER BY action`);
+    let compressed = 0;
+    if (oldLogs.rows.length) {
+      const removed = await client.query("DELETE FROM audit_logs WHERE created_at < now() - interval '90 days' AND coalesce(details->>'summary','false') <> 'true'");
+      compressed = removed.rowCount;
+      await client.query("INSERT INTO audit_logs (action, details) VALUES ($1, $2)", ["Older activity compressed", { summary: true, compressed, counts: Object.fromEntries(oldLogs.rows.map(row => [row.action, row.count])) }]);
+    }
+    await client.query("COMMIT");
+    if (sessions.rowCount || compressed) await recordAudit("Storage housekeeping completed", { expiredSessionsRemoved: sessions.rowCount, activityEntriesCompressed: compressed });
+    return { expiredSessionsRemoved: sessions.rowCount, activityEntriesCompressed: compressed };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 function requireWorker(request, response, next) {
@@ -273,7 +312,7 @@ app.post("/auth/dev", async (request, response) => {
   }
   devLoginRequests.delete(address);
   await recordAudit("Developer signed in");
-  response.json({ token: jwt.sign({ role: "dev" }, jwtSecret, { expiresIn: "2h" }) });
+  response.json({ token: await issueToken("dev", "2h") });
 });
 
 app.get("/dev/status", requireDev, async (_request, response) => {
@@ -355,6 +394,18 @@ app.post("/dev/sample-report", requireDev, async (_request, response) => {
   await pool.query("INSERT INTO reports (id, payload) VALUES ($1, $2)", [report.id, report]);
   await recordAudit("Developer added one sample report", { reportId: report.id });
   response.status(201).json({ report });
+});
+
+app.get("/dev/housekeeping", requireDev, async (_request, response) => {
+  const { rows } = await pool.query(`SELECT
+    count(*) FILTER (WHERE expires_at <= now())::int AS expired_sessions,
+    (SELECT count(*)::int FROM audit_logs WHERE created_at < now() - interval '90 days' AND coalesce(details->>'summary','false') <> 'true') AS old_activity
+    FROM login_sessions`);
+  response.json({ expiredSessions: rows[0].expired_sessions, oldActivityEntries: rows[0].old_activity, activityRetentionDays: 90 });
+});
+
+app.post("/dev/housekeeping", requireDev, async (_request, response) => {
+  response.json(await runStorageHousekeeping());
 });
 
 app.get("/dev/logs", requireDev, async (request, response) => {
@@ -627,10 +678,10 @@ app.post("/reports/:id/restore", requireWorker, async (request, response) => {
   response.json(report);
 });
 
-app.post("/auth/worker", (request, response) => {
+app.post("/auth/worker", async (request, response) => {
   if (!safeEqual(request.body?.pin || "", demoPin)) return response.status(401).json({ error: "Incorrect demo PIN" });
   const remembered = request.body?.remember === true;
-  response.json({ token: jwt.sign({ role: "worker" }, jwtSecret, { expiresIn: remembered ? "15d" : "8h" }), remembered });
+  response.json({ token: await issueToken("worker", remembered ? "15d" : "8h"), remembered });
 });
 
 app.post("/auth/volunteer-signup", async (request, response) => {
@@ -652,7 +703,7 @@ app.post("/auth/volunteer-signup", async (request, response) => {
     await client.query("INSERT INTO accounts (id, username, password_hash, role) VALUES ($1, $2, $3, 'volunteer')", [id, username, passwordHash]);
     await client.query("INSERT INTO volunteers (id, payload) VALUES ($1, $2)", [id, saved]);
     await client.query("COMMIT");
-    response.status(201).json({ token: volunteerToken(id), volunteer: saved });
+    response.status(201).json({ token: await volunteerToken(id), volunteer: saved });
   } catch (error) {
     await client.query("ROLLBACK");
     if (error.code === "23505") return response.status(409).json({ error: "That username is already in use" });
@@ -669,7 +720,7 @@ app.post("/auth/volunteer-signin", async (request, response) => {
   if (!rows[0] || !(await verifyPassword(password, rows[0].password_hash))) return response.status(401).json({ error: "Incorrect username or password" });
   const volunteerResult = await pool.query("SELECT payload FROM volunteers WHERE id = $1", [rows[0].id]);
   if (!volunteerResult.rows[0]) return response.status(404).json({ error: "Volunteer profile not found" });
-  response.json({ token: volunteerToken(rows[0].id), volunteer: volunteerResult.rows[0].payload });
+  response.json({ token: await volunteerToken(rows[0].id), volunteer: volunteerResult.rows[0].payload });
 });
 
 app.post("/reports/:id/volunteer-offer", requireVolunteer, async (request, response) => {
@@ -833,6 +884,8 @@ app.use((error, _request, response, _next) => {
 
 await initialiseDatabase();
 await purgeExpiredTrash();
+await runStorageHousekeeping();
 setInterval(() => purgeExpiredTrash().catch(error => console.error("Trash cleanup failed:", error.message)), 60 * 60 * 1000).unref();
+setInterval(() => runStorageHousekeeping().catch(error => console.error("Storage housekeeping failed:", error.message)), 24 * 60 * 60 * 1000).unref();
 app.listen(port, "0.0.0.0", () => console.log(`WildCare demo API listening on ${port}`));
 

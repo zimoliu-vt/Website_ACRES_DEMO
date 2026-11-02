@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>WildCare Developer Console</title>
     <link rel="stylesheet" href="/styles.css?v=41" />
-  <link rel="stylesheet" href="/dev/dev.css?v=13" />
+  <link rel="stylesheet" href="/dev/dev.css?v=14" />
   </head>
   <body class="dev-page">
     <header class="dev-header">
@@ -45,6 +45,11 @@
           <section class="dev-panel">
             <div class="dev-panel-head"><div><h2>Storage overview</h2><p>How much server space the database and uploaded photos currently use.</p></div></div>
             <div id="dev-storage" class="dev-storage"></div>
+          </section>
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Safe storage housekeeping</h2><p>Runs automatically each day. Reports, photos, accounts, and sample data are never removed here.</p></div><button id="run-housekeeping" class="secondary-button" type="button">Run now</button></div>
+            <div id="housekeeping-overview" class="dev-housekeeping" aria-live="polite"><p class="dev-empty">Checking housekeeping status…</p></div>
+            <p id="housekeeping-status" class="dev-empty" role="status">Expired session records are removed; activity older than 90 days is replaced by a short summary.</p>
           </section>
           <section class="dev-panel">
             <div class="dev-panel-head"><div><h2>Sample reports</h2><p>Add one clearly labelled practice case. Existing reports are never removed.</p></div><button id="add-sample-report" class="secondary-button" type="button">+ Add sample report</button></div>
@@ -102,6 +107,6 @@
         <button class="danger-button" type="submit">Remove user</button>
       </form>
     </dialog>
-  <script src="/dev/dev.js?v=13"></script>
+  <script src="/dev/dev.js?v=14"></script>
   </body>
 </html>
