@@ -16,7 +16,7 @@
     <script defer src="https://analytics.liusida.com/umami/script.js" data-website-id="3421d06e-63c1-4985-a7e3-1ce278eb85b4" data-domains="wildcare.liuzimo.cn" data-exclude-search="true"></script>
     <link rel="preconnect" href="https://unpkg.com" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="styles.css?v=77" />
+    <link rel="stylesheet" href="styles.css?v=78" />
   </head>
   <body class="phone-report-map">
     <div class="demo-banner" role="note" aria-label="Demo warning">
@@ -389,6 +389,12 @@
             <span><strong>I understand that this photo can be seen by others.</strong><small>The rescue team and people using this shared demo may see it.</small></span>
           </label>
           <div id="jev-analysis" class="jev-analysis" role="status" aria-live="polite" hidden></div>
+          <fieldset id="photo-concern-override" class="photo-concern-override" hidden>
+            <legend>Jev did not detect a visible rescue concern</legend>
+            <p>This photo cannot be used by itself. Confirm both statements and describe what Jev may have missed.</p>
+            <label><input id="photo-actual-animal-input" name="photoActualAnimal" type="checkbox" /><span><strong>This photo shows the actual animal I observed at this location.</strong><small>Do not use an example or unrelated image.</small></span></label>
+            <label><input id="photo-observed-concern-input" name="photoObservedConcern" type="checkbox" /><span><strong>I personally observed a real concern that may not be visible in the photo.</strong><small>Explain the concern in the description below.</small></span></label>
+          </fieldset>
         </section>
 
         <div class="photo-or-divider" role="note">
@@ -458,6 +464,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="app.js?v=86"></script>
+    <script src="app.js?v=87"></script>
   </body>
 </html>

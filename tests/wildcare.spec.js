@@ -423,6 +423,11 @@ test("photo uploads are normalized to dimensions accepted by Jev", async ({ page
   await expect(page.getByLabel("I understand that this photo can be seen by others.")).toBeVisible();
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeDisabled();
   await page.getByLabel("I understand that this photo can be seen by others.").check();
+  await expect(page.locator("#photo-concern-override")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Send demo report/ })).toBeDisabled();
+  await page.getByLabel("This photo shows the actual animal I observed at this location.").check();
+  await page.getByLabel("I personally observed a real concern that may not be visible in the photo.").check();
+  await page.getByLabel(/Describe what you can see/).fill("The bird repeatedly fell when attempting to fly.");
   await expect(page.getByRole("button", { name: /Send demo report/ })).toBeEnabled();
 });
 

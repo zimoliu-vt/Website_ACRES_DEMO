@@ -356,6 +356,9 @@ function clearSelectedPhoto() {
   document.querySelector("#photo-preview-image").removeAttribute("src");
   document.querySelector("#photo-sharing-consent").hidden = true;
   document.querySelector("#photo-sharing-consent-input").checked = false;
+  document.querySelector("#photo-concern-override").hidden = true;
+  document.querySelector("#photo-actual-animal-input").checked = false;
+  document.querySelector("#photo-observed-concern-input").checked = false;
   const analysis = document.querySelector("#jev-analysis");
   analysis.hidden = true;
   analysis.className = "jev-analysis";
@@ -373,8 +376,12 @@ function updateReportSubmitState() {
   const hasSelectedPhoto = Boolean(selectedPhotoDataUrl);
   const hasUsablePhoto = Boolean(selectedPhotoDataUrl && photoAnalysis?.isAnimal);
   const hasPhotoConsent = document.querySelector("#photo-sharing-consent-input").checked;
+  const concernOverrideRequired = Boolean(hasUsablePhoto && photoAnalysis?.rescueNeeded === false);
+  const hasConcernOverride = document.querySelector("#photo-actual-animal-input").checked
+    && document.querySelector("#photo-observed-concern-input").checked
+    && hasNotes;
   const manualReady = !hasSelectedPhoto && hasAnimal && hasCondition && hasNotes;
-  const photoReady = hasUsablePhoto && hasPhotoConsent && hasAnimal && hasCondition;
+  const photoReady = hasUsablePhoto && hasPhotoConsent && hasAnimal && hasCondition && (!concernOverrideRequired || hasConcernOverride);
   const ready = Boolean(selectedLocation && (randomReportMode || manualReady || photoReady));
   button.disabled = !ready;
   requirements.textContent = ready
@@ -385,6 +392,8 @@ function updateReportSubmitState() {
         ? "Wait for the photo check, or remove the photo and describe the animal manually."
         : hasSelectedPhoto && !hasPhotoConsent
           ? "Confirm that others may see the photo to continue."
+        : concernOverrideRequired && !hasConcernOverride
+          ? "Jev found no visible rescue concern. Confirm both statements and describe what you observed."
         : !hasAnimal || !hasCondition || (!hasSelectedPhoto && !hasNotes)
           ? "Choose the animal type and condition, then describe what you can see."
           : "Add a photo, or complete the animal details manually.";
@@ -424,6 +433,10 @@ async function analyzeAnimalPhoto() {
   status.hidden = false;
   status.className = "jev-analysis checking";
   status.textContent = "Jev is checking whether this is an animal…";
+  const concernOverride = document.querySelector("#photo-concern-override");
+  concernOverride.hidden = true;
+  document.querySelector("#photo-actual-animal-input").checked = false;
+  document.querySelector("#photo-observed-concern-input").checked = false;
   photoAnalysis = null;
   try {
     const result = await apiFetch("/analyze-animal", { method: "POST", body: JSON.stringify({ image: selectedPhotoDataUrl }) });
@@ -438,11 +451,12 @@ async function analyzeAnimalPhoto() {
     const animalInput = document.querySelector(`[name="animal"][value="${CSS.escape(animal)}"]`);
     if (animalInput) animalInput.checked = true;
     document.querySelector("#report-form").elements.condition.value = condition;
-    status.className = "jev-analysis";
+    status.className = result.rescueNeeded ? "jev-analysis" : "jev-analysis rejected";
     const rescueCopy = result.rescueNeeded
       ? `Jev sees a possible need for rescue attention (${Math.round(result.rescueProbability * 100)}% confidence).`
-      : `Jev does not see a clear rescue need in this photo (${Math.round((1 - result.rescueProbability) * 100)}% confidence).`;
+      : `Jev did not detect a visible rescue concern in this photo (${Math.round((1 - result.rescueProbability) * 100)}% confidence).`;
     status.textContent = `Jev found an animal and suggested ${animal.toLowerCase()} · ${condition.toLowerCase()}. ${rescueCopy} Please check before sending.`;
+    concernOverride.hidden = result.rescueNeeded;
   } catch (error) {
     status.className = "jev-analysis error";
     status.textContent = error.message;
@@ -1666,6 +1680,13 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     document.querySelector("#photo-sharing-consent").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
+  if (!randomReportMode && selectedPhotoDataUrl && photoAnalysis?.rescueNeeded === false
+      && (!event.currentTarget.elements.photoActualAnimal.checked || !event.currentTarget.elements.photoObservedConcern.checked || !notes)) {
+    error.textContent = "Jev did not detect a visible rescue concern. Confirm both statements and describe the concern you personally observed.";
+    error.hidden = false;
+    document.querySelector("#photo-concern-override").scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   if (!selectedAnimal || !condition || (!selectedPhotoDataUrl && !notes)) {
     error.textContent = !selectedAnimal ? "Choose the animal type." : !condition ? "Select what seems to be wrong." : "Describe what you can safely observe when no photo is attached.";
     error.hidden = false;
@@ -1701,6 +1722,11 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   };
   reportDraft.photo = selectedPhotoDataUrl;
   if (selectedPhotoDataUrl) reportDraft.photoSharingConsentAt = Date.now();
+  if (selectedPhotoDataUrl && photoAnalysis?.rescueNeeded === false) reportDraft.photoConcernOverride = {
+    actualAnimalConfirmed: Boolean(data.get("photoActualAnimal")),
+    observedConcernConfirmed: Boolean(data.get("photoObservedConcern")),
+    confirmedAt: Date.now()
+  };
   if (photoAnalysis) reportDraft.aiAssessment = {
     provider: "JEV",
     model: photoAnalysis.model,
