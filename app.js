@@ -4,6 +4,7 @@ const PHONE_TUTORIAL_KEY = "wildcare-phone-tutorial-seen-v1";
 const DESKTOP_TUTORIAL_KEY = "wildcare-desktop-tutorial-seen-v1";
 const VOLUNTEER_TUTORIAL_KEY = "wildcare-volunteer-tutorial-seen-v1";
 const TEAM_TUTORIAL_KEY = "wildcare-team-tutorial-seen-v1";
+const HELP_HINT_KEY = "wildcare-help-hint-shown-v1";
 const AUTO_LOCATION_CACHE_KEY = "wildcare-auto-location-area-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
@@ -669,7 +670,6 @@ function switchView(viewName) {
     renderDashboard();
   }
   if (viewName === "volunteer") renderVolunteerPortal();
-  if (["volunteer", "worker"].includes(viewName)) setTimeout(() => maybeShowPortalTutorial(viewName), 120);
 }
 
 function openWorkerLogin() {
@@ -1374,14 +1374,26 @@ function maybeShowPhoneTutorial() {
   if (sessionStorage.getItem(reportingTutorialKey()) !== "true") openPhoneTutorial();
 }
 
+function hideHelpHint() {
+  document.querySelector("#help-hint").hidden = true;
+}
+
+function maybeShowHelpHint() {
+  if (sessionStorage.getItem(HELP_HINT_KEY) === "true") return;
+  sessionStorage.setItem(HELP_HINT_KEY, "true");
+  document.querySelector("#help-hint").hidden = false;
+  setTimeout(hideHelpHint, 6500);
+}
+
 demoWarningDialog.addEventListener("cancel", event => event.preventDefault());
 document.querySelector("#acknowledge-demo").addEventListener("click", () => {
   sessionStorage.setItem(DEMO_WARNING_KEY, "true");
   demoWarningDialog.close();
   maybeAutoLocate();
-  maybeShowPhoneTutorial();
+  maybeShowHelpHint();
 });
 document.querySelector("#phone-help").addEventListener("click", () => {
+  hideHelpHint();
   const activeView = document.querySelector(".view.active")?.id;
   if (activeView === "volunteer-view") openPortalTutorial("volunteer");
   else if (activeView === "worker-view") openPortalTutorial("worker");
@@ -2020,5 +2032,5 @@ document.addEventListener("visibilitychange", () => {
 if (sessionStorage.getItem(DEMO_WARNING_KEY) !== "true") demoWarningDialog.showModal();
 else {
   maybeAutoLocate();
-  maybeShowPhoneTutorial();
+  maybeShowHelpHint();
 }

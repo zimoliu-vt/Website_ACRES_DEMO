@@ -103,6 +103,8 @@ test("desktop and phone have detailed volunteer and rescue team walkthroughs", a
   });
   await page.goto(`/?portal-tutorial-test=${Date.now()}`);
   await page.getByRole("button", { name: "Volunteer" }).click();
+  await expect(page.locator("#portal-tutorial-dialog")).not.toBeVisible();
+  await page.getByRole("button", { name: "Open volunteer walkthrough" }).click();
   await expect(page.getByRole("heading", { name: "Create your volunteer profile" })).toBeVisible();
   await page.getByRole("button", { name: "Next step" }).click();
   await expect(page.getByRole("heading", { name: "Find a nearby case" })).toBeVisible();
@@ -113,6 +115,8 @@ test("desktop and phone have detailed volunteer and rescue team walkthroughs", a
   await page.getByRole("link", { name: "Rescue team sign-in" }).click();
   await page.getByLabel("Demo PIN").fill("0000");
   await page.getByRole("button", { name: "Open dashboard" }).click();
+  await expect(page.locator("#portal-tutorial-dialog")).not.toBeVisible();
+  await page.getByRole("button", { name: "Open rescue team walkthrough" }).click();
   await expect(page.getByRole("heading", { name: "Open the rescue queue" })).toBeVisible();
   await expect(page.locator("#portal-tutorial-dialog")).toHaveClass(/interactive-team-tutorial/);
   await expect(page.locator(".queue-panel")).toHaveClass(/portal-tutorial-focus/);
@@ -161,6 +165,8 @@ test("signed-in volunteers skip the profile walkthrough slide", async ({ page })
   });
   await page.goto(`/?returning-volunteer-tutorial=${Date.now()}`);
   await page.getByRole("button", { name: "Volunteer" }).click();
+  await expect(page.locator("#portal-tutorial-dialog")).not.toBeVisible();
+  await page.getByRole("button", { name: "Open volunteer walkthrough" }).click();
   await expect(page.getByRole("heading", { name: "Find a nearby case" })).toBeVisible();
   await expect(page.locator("#portal-tutorial-step")).toHaveText("Step 1 of 2");
   await expect(page.getByRole("heading", { name: "Create your volunteer profile" })).toHaveCount(0);
@@ -241,6 +247,16 @@ test("desktop and phone tutorial guides the user through real reporting controls
     sessionStorage.setItem("wildcare-auto-location-requested-v1", "true");
   });
   await page.goto(`/?tutorial-test=${Date.now()}`);
+  await expect(page.locator("#phone-tutorial-dialog")).not.toBeVisible();
+  await expect(page.locator("#help-hint")).toBeVisible();
+  await expect(page.locator("#help-hint")).toHaveCSS("pointer-events", "none");
+  await expect.poll(() => page.evaluate(() => {
+    const hint = document.querySelector("#help-hint").getBoundingClientRect();
+    const help = document.querySelector("#phone-help").getBoundingClientRect();
+    return hint.right <= help.left;
+  })).toBe(true);
+  await page.getByRole("button", { name: "Open reporting tutorial" }).click();
+  await expect(page.locator("#help-hint")).toBeHidden();
   await expect(page.getByRole("heading", { name: "Make a report yourself" })).toBeVisible();
   await expect(page.locator(".tutorial-practice-warning")).toContainText("No report will be submitted, saved, or added to the rescue-team queue.");
   await page.getByRole("button", { name: "Start walkthrough" }).click();
