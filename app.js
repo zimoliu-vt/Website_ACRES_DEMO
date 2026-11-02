@@ -1343,6 +1343,7 @@ const demoWarningDialog = document.querySelector("#demo-warning-dialog");
 const phoneTutorialDialog = document.querySelector("#phone-tutorial-dialog");
 const portalTutorialDialog = document.querySelector("#portal-tutorial-dialog");
 let interactiveTutorialActive = false;
+let reportingIntroStep = 0;
 let portalTutorialType = "volunteer";
 let portalTutorialStep = 0;
 let activePortalTutorialSteps = [];
@@ -1358,6 +1359,23 @@ const portalTutorials = {
     { icon: "↻", title: "Manage the case", copy: "Move the simulated case through the rescue workflow.", points: ["Update statuses from New through Resolved.", "Reopening a resolved case requires confirmation.", "All actions are part of this demo and do not dispatch a real team."] }
   ]
 };
+const reportingIntroSteps = [
+  { icon: "⌖", title: "Choose the animal’s location", copy: "Start by showing where the animal was seen.", points: ["Search for a street, park, or postcode.", "Use your approximate location if it is helpful.", "Tap the map to place the report at the animal’s exact spot."] },
+  { icon: "◎", title: "Add a photo or description", copy: "Share enough information for the demo rescue team to understand the situation.", points: ["Take or upload a photo only when it is safe.", "Choose the animal type and what appears to be wrong.", "Without a photo, add a short description of what you can see."] },
+  { icon: "✓", title: "Review the demo report", copy: "Check the location and details before reaching the final button.", points: ["The walkthrough highlights each required field.", "You can go back and correct anything first.", "Practice mode stops before saving or sending the report."] }
+];
+
+function renderReportingIntro() {
+  const current = reportingIntroSteps[reportingIntroStep];
+  document.querySelector("#report-intro-icon").textContent = current.icon;
+  document.querySelector("#report-intro-step").textContent = `Step ${reportingIntroStep + 1} of ${reportingIntroSteps.length}`;
+  document.querySelector("#tutorial-title").textContent = current.title;
+  document.querySelector("#report-intro-copy").textContent = current.copy;
+  document.querySelector("#report-intro-points").innerHTML = current.points.map(point => `<li>${escapeHtml(point)}</li>`).join("");
+  document.querySelector("#report-intro-progress").innerHTML = reportingIntroSteps.map((_step, index) => `<i class="${index === reportingIntroStep ? "active" : ""}"></i>`).join("");
+  document.querySelector("#report-intro-back").hidden = reportingIntroStep === 0;
+  document.querySelector("#phone-tutorial-next").textContent = reportingIntroStep === reportingIntroSteps.length - 1 ? "Start interactive practice" : "Next step";
+}
 
 function portalTutorialKey(type) {
   return type === "worker" ? TEAM_TUTORIAL_KEY : VOLUNTEER_TUTORIAL_KEY;
@@ -1436,6 +1454,8 @@ function maybeShowPortalTutorial(type) {
 
 function openPhoneTutorial() {
   if (phoneTutorialDialog.open) return;
+  reportingIntroStep = 0;
+  renderReportingIntro();
   phoneTutorialDialog.showModal();
 }
 
@@ -1446,6 +1466,7 @@ function reportingTutorialKey() {
 function completePhoneTutorial() {
   sessionStorage.setItem(reportingTutorialKey(), "true");
   interactiveTutorialActive = false;
+  reportingIntroStep = 0;
   if (phoneTutorialDialog.open) phoneTutorialDialog.close();
   document.querySelector("#map-tutorial-guide").hidden = true;
   document.querySelector("#report-tutorial-guide").hidden = true;
@@ -1541,7 +1562,15 @@ document.querySelector("#phone-help").addEventListener("click", () => {
   else openPhoneTutorial();
 });
 document.querySelector("#skip-phone-tutorial").addEventListener("click", completePhoneTutorial);
-document.querySelector("#phone-tutorial-next").addEventListener("click", startInteractiveTutorial);
+document.querySelector("#report-intro-back").addEventListener("click", () => {
+  reportingIntroStep = Math.max(0, reportingIntroStep - 1);
+  renderReportingIntro();
+});
+document.querySelector("#phone-tutorial-next").addEventListener("click", () => {
+  if (reportingIntroStep === reportingIntroSteps.length - 1) return startInteractiveTutorial();
+  reportingIntroStep += 1;
+  renderReportingIntro();
+});
 document.querySelector("#skip-map-tutorial").addEventListener("click", completePhoneTutorial);
 document.querySelector("#finish-interactive-tutorial").addEventListener("click", completePhoneTutorial);
 phoneTutorialDialog.addEventListener("cancel", event => {

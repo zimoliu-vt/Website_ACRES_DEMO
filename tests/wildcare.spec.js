@@ -246,9 +246,14 @@ test("desktop and phone tutorial guides the user through real reporting controls
   }
   await page.getByRole("button", { name: "Open reporting tutorial" }).click();
   await expect(page.locator("#help-hint")).toBeHidden();
-  await expect(page.getByRole("heading", { name: "Make a report yourself" })).toBeVisible();
-  await expect(page.locator(".tutorial-practice-warning")).toContainText("No report will be submitted, saved, or added to the rescue-team queue.");
-  await page.getByRole("button", { name: "Start walkthrough" }).click();
+  await expect(page.getByRole("heading", { name: "Choose the animal’s location" })).toBeVisible();
+  await expect(page.locator("#phone-tutorial-dialog .portal-tutorial-practice")).toContainText(/no report will be submitted, saved, or added to the rescue-team queue/i);
+  await expect(page.locator("#report-intro-points")).toContainText("Tap the map");
+  await page.getByRole("button", { name: "Next step" }).click();
+  await expect(page.getByRole("heading", { name: "Add a photo or description" })).toBeVisible();
+  await page.getByRole("button", { name: "Next step" }).click();
+  await expect(page.getByRole("heading", { name: "Review the demo report" })).toBeVisible();
+  await page.getByRole("button", { name: "Start interactive practice" }).click();
   await expect(page.getByText("Choose the animal’s location")).toBeVisible();
   await expect(page.locator("#map-tutorial-guide")).toContainText("nothing will be submitted or saved");
   await page.locator("#map").click();
@@ -277,7 +282,7 @@ test("desktop and phone tutorial guides the user through real reporting controls
   await expect(page.locator("#report-dialog")).not.toBeVisible();
   expect(reportPosts).toBe(0);
   await page.getByRole("button", { name: "Open reporting tutorial" }).click();
-  await expect(page.getByRole("heading", { name: "Make a report yourself" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose the animal’s location" })).toBeVisible();
 });
 
 test("automatically detects phone-sized layouts", async ({ page, isMobile }) => {

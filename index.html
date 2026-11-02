@@ -267,17 +267,18 @@
       </div>
     </dialog>
 
-    <dialog id="phone-tutorial-dialog" class="phone-tutorial-dialog" aria-labelledby="tutorial-title">
-      <div class="phone-tutorial-content">
+    <dialog id="phone-tutorial-dialog" class="phone-tutorial-dialog portal-tutorial-dialog report-intro-tutorial" aria-labelledby="tutorial-title">
+      <div class="phone-tutorial-content portal-tutorial-content">
         <button id="skip-phone-tutorial" class="tutorial-skip" type="button">Skip</button>
-        <div class="tutorial-step active">
-          <span class="tutorial-icon" aria-hidden="true">⌕</span>
-          <p class="eyebrow">Interactive guide</p>
-          <h2 id="tutorial-title">Make a report yourself</h2>
-          <p>We’ll point out the real controls while you choose a location and describe the animal. Nothing will be submitted automatically.</p>
-          <div class="tutorial-practice-warning"><span aria-hidden="true">!</span><strong>Practice only</strong><small>No report will be submitted, saved, or added to the rescue-team queue.</small></div>
-        </div>
-        <div class="tutorial-actions">
+        <span id="report-intro-icon" class="portal-tutorial-icon" aria-hidden="true">⌖</span>
+        <p id="report-intro-step" class="eyebrow">Step 1 of 3</p>
+        <h2 id="tutorial-title">Choose the animal’s location</h2>
+        <p id="report-intro-copy" class="portal-tutorial-copy"></p>
+        <p class="portal-tutorial-practice"><strong>Practice only</strong> — no report will be submitted, saved, or added to the rescue-team queue.</p>
+        <ul id="report-intro-points" class="portal-tutorial-points"></ul>
+        <div id="report-intro-progress" class="tutorial-progress" aria-label="Reporting walkthrough progress"></div>
+        <div class="portal-tutorial-actions">
+          <button id="report-intro-back" class="secondary-button" type="button">Back</button>
           <button id="phone-tutorial-next" class="primary-button" type="button">Start walkthrough</button>
         </div>
       </div>
@@ -464,6 +465,6 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="app.js?v=92"></script>
+  <script src="app.js?v=93"></script>
   </body>
 </html>
