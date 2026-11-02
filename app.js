@@ -1375,6 +1375,14 @@ function renderReportingIntro() {
   document.querySelector("#report-intro-progress").innerHTML = reportingIntroSteps.map((_step, index) => `<i class="${index === reportingIntroStep ? "active" : ""}"></i>`).join("");
   document.querySelector("#report-intro-back").hidden = reportingIntroStep === 0;
   document.querySelector("#phone-tutorial-next").textContent = reportingIntroStep === reportingIntroSteps.length - 1 ? "Start interactive practice" : "Next step";
+  document.querySelectorAll(".portal-tutorial-focus").forEach(element => element.classList.remove("portal-tutorial-focus"));
+  const target = reportingIntroStep === 0
+    ? document.querySelector(".map-toolbar")
+    : reportingIntroStep === 1
+      ? document.querySelector("#phone-photo-start")
+      : document.querySelector("#map");
+  target?.classList.add("portal-tutorial-focus");
+  setTimeout(() => target?.scrollIntoView({ block: "center" }), 80);
 }
 
 function portalTutorialKey(type) {
@@ -1455,8 +1463,9 @@ function maybeShowPortalTutorial(type) {
 function openPhoneTutorial() {
   if (phoneTutorialDialog.open) return;
   reportingIntroStep = 0;
+  phoneTutorialDialog.classList.add("interactive-portal-tutorial", "interactive-report-tutorial");
   renderReportingIntro();
-  phoneTutorialDialog.showModal();
+  phoneTutorialDialog.show();
 }
 
 function reportingTutorialKey() {
@@ -1467,6 +1476,8 @@ function completePhoneTutorial() {
   sessionStorage.setItem(reportingTutorialKey(), "true");
   interactiveTutorialActive = false;
   reportingIntroStep = 0;
+  document.querySelectorAll(".portal-tutorial-focus").forEach(element => element.classList.remove("portal-tutorial-focus"));
+  phoneTutorialDialog.classList.remove("interactive-portal-tutorial", "interactive-report-tutorial");
   if (phoneTutorialDialog.open) phoneTutorialDialog.close();
   document.querySelector("#map-tutorial-guide").hidden = true;
   document.querySelector("#report-tutorial-guide").hidden = true;
@@ -1475,6 +1486,8 @@ function completePhoneTutorial() {
 }
 
 function startInteractiveTutorial() {
+  document.querySelectorAll(".portal-tutorial-focus").forEach(element => element.classList.remove("portal-tutorial-focus"));
+  phoneTutorialDialog.classList.remove("interactive-portal-tutorial", "interactive-report-tutorial");
   phoneTutorialDialog.close();
   interactiveTutorialActive = true;
   const mapPanel = document.querySelector(".map-panel");
