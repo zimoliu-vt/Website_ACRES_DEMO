@@ -41,6 +41,12 @@
 .dev-feature-switch:has(input:focus-visible) { outline: 3px solid rgba(47,155,97,.22); }
 .dev-feature-actions { margin-top: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .dev-feature-actions p { margin-right: auto; color: var(--muted); font-size: 10px; }
+.dev-alerts { margin: 14px 0; display: grid; gap: 8px; }
+.dev-alert { padding: 12px 14px; border-radius: 12px; font-size: 11px; font-weight: 800; }
+.dev-alert-green { color: #216d45; background: #dcf4e5; }.dev-alert-amber { color: #805d00; background: #fff2cc; }.dev-alert-red { color: #9f2923; background: #ffe4e1; }
+.dev-public-form { margin-top: 16px; display: grid; gap: 12px; }.dev-public-form > label:not(.dev-feature-switch) { display: grid; gap: 6px; color: var(--forest); font-size: 10px; font-weight: 850; }.dev-public-form input[type="text"],.dev-public-form input:not([type]) ,.dev-public-form input[type="password"] { padding: 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; }.dev-public-form > p { color: var(--muted); font-size: 10px; }
+.dev-storage { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }.dev-storage article { padding: 16px; border-radius: 12px; background: #e8f2ed; }.dev-storage strong,.dev-storage small { display:block }.dev-storage strong { color: var(--forest); font-size: 20px }.dev-storage small { color: var(--muted); font-size: 9px }
+.dev-history { margin-top: 16px; display:grid; gap:8px }.dev-history article { padding:12px; display:grid; grid-template-columns:1fr auto; gap:10px; border:1px solid var(--line); border-radius:11px }.dev-history strong,.dev-history small { display:block }.dev-history small { color:var(--muted); font-size:9px; margin-top:3px }.dev-history button { align-self:center; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:white; color:var(--forest); font-weight:850 }
 .dev-check-results, .dev-logs { margin-top: 18px; display: grid; gap: 8px; }
 .dev-check, .dev-log { padding: 12px 14px; display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: start; border: 1px solid var(--line); border-radius: 11px; background: white; }
 .dev-check > span { color: #28714e; font-weight: 900; }

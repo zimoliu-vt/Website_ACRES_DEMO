@@ -63,6 +63,9 @@ async function loadStatus() {
     ["Jev analysis", status.jevConfigured ? "Configured" : "Not configured"],
     ["API uptime", uptimeLabel(status.uptimeSeconds)]
   ].map(([label, value]) => `<article class="dev-stat dev-tone-${statTone(label, value)}"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></article>`).join("");
+  document.querySelector("#dev-alerts").innerHTML = status.alerts.map(alert => `<div class="dev-alert dev-alert-${safeClass(alert.level)}">${escapeHtml(alert.message)}</div>`).join("");
+  const size = bytes => bytes < 1024 * 1024 ? `${Math.max(0, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  document.querySelector("#dev-storage").innerHTML = [["Database", size(status.storage.databaseBytes)], ["Stored photos", size(status.storage.photoBytes)]].map(([label,value]) => `<article><small>${label}</small><strong>${value}</strong></article>`).join("");
 }
 
 async function loadFeatureSettings() {
@@ -71,6 +74,16 @@ async function loadFeatureSettings() {
     document.querySelector(`#dev-feature-form [name="${name}"]`).checked = result.features[name] !== false;
   });
   document.querySelector("#dev-feature-status").textContent = "Current live settings loaded.";
+  const publicForm = document.querySelector("#dev-public-form");
+  publicForm.elements.maintenance.checked = Boolean(result.config?.maintenance);
+  publicForm.elements.announcement.value = result.config?.announcement || "";
+  publicForm.elements.demoBannerVisible.checked = result.config?.demoBannerVisible !== false;
+}
+
+async function loadSettingsHistory() {
+  const result = await devFetch("/dev/settings-history");
+  document.querySelector("#dev-settings-history").innerHTML = result.items.length ? result.items.map(item => `<article><div><strong>${escapeHtml(item.action)}</strong><small>${escapeHtml(exactTime(item.created_at))}</small></div><button type="button" data-undo-setting="${item.id}">Undo</button></article>`).join("") : '<p class="dev-empty">No reversible settings changes yet.</p>';
+  document.querySelectorAll("[data-undo-setting]").forEach(button => button.addEventListener("click", async () => { button.disabled = true; await devFetch(`/dev/settings-history/${button.dataset.undoSetting}/undo`, { method: "POST" }); await Promise.all([loadFeatureSettings(), loadSettingsHistory(), loadLogs()]); }));
 }
 
 function renderLogs() {
@@ -171,7 +184,7 @@ function closeRemoveUser() {
 
 async function openConsole() {
   try {
-    await Promise.all([loadStatus(), loadFeatureSettings(), loadLogs(), loadReports(), loadUsers()]);
+    await Promise.all([loadStatus(), loadFeatureSettings(), loadSettingsHistory(), loadLogs(), loadReports(), loadUsers()]);
     document.querySelector("#dev-login").hidden = true;
     document.querySelector("#dev-console").hidden = false;
   } catch {
@@ -236,6 +249,27 @@ document.querySelector("#restore-dev-features").addEventListener("click", async 
   featureNames.forEach(name => { document.querySelector(`#dev-feature-form [name="${name}"]`).checked = true; });
   await saveFeatureSettings();
 });
+let publicSaveTimer;
+async function savePublicConfig() {
+  const form = document.querySelector("#dev-public-form");
+  const status = document.querySelector("#dev-public-status");
+  status.textContent = "Saving…";
+  try {
+    await devFetch("/dev/config", { method: "PUT", body: JSON.stringify({ maintenance: form.elements.maintenance.checked, announcement: form.elements.announcement.value, demoBannerVisible: form.elements.demoBannerVisible.checked, password: form.elements.password.value }) });
+    form.elements.password.value = "";
+    document.querySelector("#banner-password-wrap").hidden = true;
+    status.textContent = "Saved automatically.";
+    await loadSettingsHistory();
+  } catch (error) { status.textContent = error.message; }
+}
+document.querySelector("#dev-public-form").addEventListener("change", event => {
+  if (event.target.name === "demoBannerVisible" && !event.target.checked) { document.querySelector("#banner-password-wrap").hidden = false; document.querySelector("#dev-public-status").textContent = "Enter your password to confirm hiding the demo banner."; return; }
+  savePublicConfig();
+});
+document.querySelector('#dev-public-form [name="announcement"]').addEventListener("input", () => { clearTimeout(publicSaveTimer); publicSaveTimer = setTimeout(savePublicConfig, 600); });
+document.querySelector('#dev-public-form [name="password"]').addEventListener("change", savePublicConfig);
+document.querySelector("#refresh-settings-history").addEventListener("click", loadSettingsHistory);
+document.querySelector("#add-sample-report").addEventListener("click", async () => { const status = document.querySelector("#sample-report-status"); status.textContent = "Adding one sample report…"; try { const result = await devFetch("/dev/sample-report", { method: "POST" }); status.textContent = `${result.report.id} added. No existing reports were removed.`; await Promise.all([loadStatus(), loadReports(), loadLogs()]); } catch (error) { status.textContent = error.message; } });
 document.querySelector("#refresh-dev-users").addEventListener("click", loadUsers);
 document.querySelector("#close-remove-user").addEventListener("click", closeRemoveUser);
 document.querySelector("#remove-user-dialog").addEventListener("cancel", event => {

@@ -205,6 +205,16 @@ async function loadSiteFeatures() {
   try {
     const result = await apiFetch("/settings");
     applySiteFeatures({ ...defaultSiteFeatures, ...(result.features || {}) });
+    const config = result.config || {};
+    document.querySelector(".demo-banner").hidden = config.demoBannerVisible === false;
+    if (config.announcement) document.querySelector(".demo-banner small").textContent = config.announcement;
+    if (config.maintenance) {
+      document.querySelectorAll("dialog[open]").forEach(dialog => dialog.close());
+      const notice = document.createElement("div");
+      notice.className = "maintenance-screen";
+      notice.innerHTML = '<div><p class="eyebrow">Demo maintenance</p><h1>WildCare will be back shortly.</h1><p>The demo is temporarily paused while changes are being made.</p></div>';
+      document.body.append(notice);
+    }
   } catch {
     applySiteFeatures(defaultSiteFeatures);
   }

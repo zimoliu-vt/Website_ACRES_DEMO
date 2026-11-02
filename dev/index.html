@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>WildCare Developer Console</title>
     <link rel="stylesheet" href="/styles.css?v=41" />
-  <link rel="stylesheet" href="/dev/dev.css?v=10" />
+  <link rel="stylesheet" href="/dev/dev.css?v=11" />
   </head>
   <body class="dev-page">
     <header class="dev-header">
@@ -29,7 +29,26 @@
       <section id="dev-console" hidden>
         <div class="dev-title-row"><div><p class="eyebrow">Private developer tools</p><h1>System overview</h1></div><button id="dev-logout" class="secondary-button" type="button">Log out</button></div>
         <div id="dev-stats" class="dev-stats" aria-live="polite"></div>
+        <div id="dev-alerts" class="dev-alerts" aria-live="polite"></div>
         <div class="dev-grid">
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Public controls</h2><p>Maintenance and announcements save automatically.</p></div><span class="dev-safe-badge">Reversible</span></div>
+            <form id="dev-public-form" class="dev-public-form">
+              <label class="dev-feature-switch"><span><strong>Maintenance mode</strong><small>Temporarily replaces the public experience with a maintenance notice</small></span><input name="maintenance" type="checkbox" /><i aria-hidden="true"></i></label>
+              <label>Public announcement<input name="announcement" maxlength="180" placeholder="Optional message shown to visitors" /></label>
+              <label class="dev-feature-switch"><span><strong>Show demo banner</strong><small>Hiding it requires your developer password again</small></span><input name="demoBannerVisible" type="checkbox" /><i aria-hidden="true"></i></label>
+              <label id="banner-password-wrap" hidden>Developer password<input name="password" type="password" autocomplete="current-password" /></label>
+              <p id="dev-public-status" role="status">Changes save automatically.</p>
+            </form>
+          </section>
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Storage overview</h2><p>Useful thresholds, not decorative colours.</p></div><button id="add-sample-report" class="secondary-button" type="button">+ Add one sample report</button></div>
+            <div id="dev-storage" class="dev-storage"></div><p id="sample-report-status" role="status" class="dev-empty"></p>
+          </section>
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Settings history</h2><p>Recent configuration changes only. Reports and users are never affected.</p></div><button id="refresh-settings-history" class="secondary-button" type="button">Refresh</button></div>
+            <div id="dev-settings-history" class="dev-history"></div>
+          </section>
           <section class="dev-panel dev-feature-panel">
             <div class="dev-panel-head"><div><h2>Website features</h2><p>Hide or restore public features without deleting their code or data.</p></div><span class="dev-safe-badge">Reversible</span></div>
             <form id="dev-feature-form">
@@ -78,6 +97,6 @@
         <button class="danger-button" type="submit">Remove user</button>
       </form>
     </dialog>
-  <script src="/dev/dev.js?v=10"></script>
+  <script src="/dev/dev.js?v=11"></script>
   </body>
 </html>

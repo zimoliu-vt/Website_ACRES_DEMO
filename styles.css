@@ -29,6 +29,7 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .demo-banner strong { font-size: 13px; font-weight: 950; letter-spacing: .07em; }
 .demo-banner strong span { margin-right: 5px; }
 .demo-banner small { padding-left: 14px; border-left: 1px solid rgba(255,255,255,.5); font-size: 11px; font-weight: 700; }
+.maintenance-screen { position:fixed; inset:0; z-index:10000; display:grid; place-items:center; padding:30px; background:#f7f6ef; text-align:center }.maintenance-screen div { max-width:620px }.maintenance-screen h1 { color:var(--forest); font-family:Georgia,serif; font-size:clamp(38px,7vw,76px) }.maintenance-screen p:not(.eyebrow) { color:var(--muted); font-size:18px }
 .site-header { height: 78px; padding: 0 clamp(20px, 5vw, 72px); display: flex; align-items: center; justify-content: space-between; background: rgba(255, 254, 250, .94); border-bottom: 1px solid var(--line); position: relative; z-index: 10; backdrop-filter: blur(14px); }
 .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--forest); text-decoration: none; }
 .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50% 50% 46% 54%; background: var(--forest); color: var(--lime); font-size: 22px; transform: rotate(-8deg); }

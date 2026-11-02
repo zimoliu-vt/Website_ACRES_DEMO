@@ -23,6 +23,7 @@ const defaultSiteFeatures = Object.freeze({
   tutorials: true,
   locationSearch: true
 });
+const defaultSiteConfig = Object.freeze({ maintenance: false, announcement: "", demoBannerVisible: true });
 
 if (!jwtSecret || jwtSecret.length < 24) throw new Error("JWT_SECRET must contain at least 24 characters");
 
@@ -72,6 +73,7 @@ async function initialiseDatabase() {
     );
   `);
   await pool.query("INSERT INTO site_settings (key, value) VALUES ('features', $1) ON CONFLICT (key) DO NOTHING", [defaultSiteFeatures]);
+  await pool.query("INSERT INTO site_settings (key, value) VALUES ('config', $1) ON CONFLICT (key) DO NOTHING", [defaultSiteConfig]);
   const { rows } = await pool.query("SELECT count(*)::int AS count FROM reports");
   if (rows[0].count === 0) {
     await seedDatabase();
@@ -248,8 +250,13 @@ async function readSiteFeatures() {
   return { ...defaultSiteFeatures, ...(rows[0]?.value || {}) };
 }
 
+async function readSiteConfig() {
+  const { rows } = await pool.query("SELECT value FROM site_settings WHERE key = 'config'");
+  return { ...defaultSiteConfig, ...(rows[0]?.value || {}) };
+}
+
 app.get("/settings", async (_request, response) => {
-  response.json({ features: await readSiteFeatures() });
+  response.json({ features: await readSiteFeatures(), config: await readSiteConfig() });
 });
 
 app.post("/auth/dev", async (request, response) => {
@@ -270,11 +277,16 @@ app.post("/auth/dev", async (request, response) => {
 });
 
 app.get("/dev/status", requireDev, async (_request, response) => {
-  const [{ rows: reportRows }, { rows: volunteerRows }, { rows: logRows }] = await Promise.all([
+  const [{ rows: reportRows }, { rows: volunteerRows }, { rows: logRows }, { rows: storageRows }] = await Promise.all([
     pool.query("SELECT count(*)::int AS total, count(*) FILTER (WHERE payload->>'status' <> 'Resolved')::int AS active, count(*) FILTER (WHERE coalesce(payload->>'photo','') <> '')::int AS photos FROM reports"),
     pool.query("SELECT count(*)::int AS total FROM volunteers"),
-    pool.query("SELECT count(*)::int AS total FROM audit_logs")
+    pool.query("SELECT count(*)::int AS total FROM audit_logs"),
+    pool.query("SELECT pg_database_size(current_database())::bigint AS database_bytes, coalesce(sum(length(coalesce(payload->>'photo',''))),0)::bigint AS photo_bytes FROM reports")
   ]);
+  const alerts = [];
+  if (!jevApiKey) alerts.push({ level: "amber", message: "Photo analysis is not configured." });
+  if (Number(storageRows[0].database_bytes) > 250 * 1024 * 1024) alerts.push({ level: "amber", message: "Database storage is above 250 MB." });
+  if (!alerts.length) alerts.push({ level: "green", message: "All monitored services are working normally." });
   response.json({
     ok: true,
     service: "wildcare-demo-api",
@@ -283,12 +295,14 @@ app.get("/dev/status", requireDev, async (_request, response) => {
     reports: reportRows[0],
     volunteers: volunteerRows[0].total,
     loggedActions: logRows[0].total,
+    storage: { databaseBytes: Number(storageRows[0].database_bytes), photoBytes: Number(storageRows[0].photo_bytes) },
+    alerts,
     checkedAt: Date.now()
   });
 });
 
 app.get("/dev/settings", requireDev, async (_request, response) => {
-  response.json({ features: await readSiteFeatures() });
+  response.json({ features: await readSiteFeatures(), config: await readSiteConfig() });
 });
 
 app.put("/dev/settings", requireDev, async (request, response) => {
@@ -298,9 +312,47 @@ app.put("/dev/settings", requireDev, async (request, response) => {
     if (typeof submitted[key] !== "boolean") return response.status(400).json({ error: `Invalid feature setting: ${key}` });
     features[key] = submitted[key];
   }
+  const previous = await readSiteFeatures();
   await pool.query("INSERT INTO site_settings (key, value, updated_at) VALUES ('features', $1, now()) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now()", [features]);
-  await recordAudit("Developer updated website features", { features });
+  await recordAudit("Developer updated website features", { previous, next: features, undoable: true });
   response.json({ features });
+});
+
+app.put("/dev/config", requireDev, async (request, response) => {
+  const previous = await readSiteConfig();
+  const config = {
+    maintenance: Boolean(request.body?.maintenance),
+    announcement: String(request.body?.announcement || "").trim().slice(0, 180),
+    demoBannerVisible: request.body?.demoBannerVisible !== false
+  };
+  if (!config.demoBannerVisible && previous.demoBannerVisible && !safeEqual(request.body?.password || "", devPassword)) return response.status(401).json({ error: "Enter the developer password to hide the demo banner." });
+  await pool.query("INSERT INTO site_settings (key, value, updated_at) VALUES ('config', $1, now()) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now()", [config]);
+  await recordAudit("Developer updated public configuration", { previous, next: config, undoable: true });
+  response.json({ config });
+});
+
+app.get("/dev/settings-history", requireDev, async (_request, response) => {
+  const { rows } = await pool.query("SELECT id, action, details, created_at FROM audit_logs WHERE details->>'undoable' = 'true' ORDER BY id DESC LIMIT 20");
+  response.json({ items: rows });
+});
+
+app.post("/dev/settings-history/:id/undo", requireDev, async (request, response) => {
+  const { rows } = await pool.query("SELECT action, details FROM audit_logs WHERE id = $1 AND details->>'undoable' = 'true'", [request.params.id]);
+  const item = rows[0];
+  if (!item?.details?.previous) return response.status(404).json({ error: "This change cannot be undone." });
+  const key = item.action.includes("features") ? "features" : "config";
+  await pool.query("UPDATE site_settings SET value = $2, updated_at = now() WHERE key = $1", [key, item.details.previous]);
+  await recordAudit("Developer undid settings change", { originalId: request.params.id, restored: item.details.previous });
+  response.json({ restored: true });
+});
+
+app.post("/dev/sample-report", requireDev, async (_request, response) => {
+  const { rows } = await pool.query("SELECT coalesce(max(substring(id from 4)::int), 1000) + 1 AS next FROM reports WHERE id ~ '^WC-[0-9]+$'");
+  const createdAt = Date.now();
+  const report = { id: `WC-${rows[0].next}`, animal: "Bird", condition: "Not sure", notes: "Individually added sample report.", reporter: "Demo sample", contact: "", lat: 1.3521, lng: 103.8198, area: "Central Singapore", status: "New", createdAt, history: [{ label: "Sample report added", at: createdAt }] };
+  await pool.query("INSERT INTO reports (id, payload) VALUES ($1, $2)", [report.id, report]);
+  await recordAudit("Developer added one sample report", { reportId: report.id });
+  response.status(201).json({ report });
 });
 
 app.get("/dev/logs", requireDev, async (request, response) => {

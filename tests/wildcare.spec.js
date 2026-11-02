@@ -600,11 +600,13 @@ test("private developer console signs in and runs fixed diagnostics", async ({ p
   let users = [{ id: "user-1", username: "riverwatch", createdAt: new Date().toISOString(), name: "River Watcher", contact: "river@example.test", experience: ["Wildlife first aid"] }];
   let features = { volunteerPortal: true, photoTools: true, tutorials: true, locationSearch: true };
   await page.route("**/api/auth/dev", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ token: "demo-dev-token" }) }));
-  await page.route("**/api/dev/status", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, reports: { active: 3, total: 4, photos: 2 }, volunteers: 1, loggedActions: 12, jevConfigured: true, uptimeSeconds: 3720 }) }));
+  await page.route("**/api/dev/status", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, reports: { active: 3, total: 4, photos: 2 }, volunteers: 1, loggedActions: 12, jevConfigured: true, uptimeSeconds: 3720, storage: { databaseBytes: 10485760, photoBytes: 524288 }, alerts: [{ level: "green", message: "All monitored services are working normally." }] }) }));
   await page.route("**/api/dev/settings", async route => {
     if (route.request().method() === "PUT") features = route.request().postDataJSON().features;
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ features }) });
   });
+  await page.route("**/api/dev/settings-history", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) }));
+  await page.route("**/api/dev/config", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ config: route.request().postDataJSON() }) }));
   await page.route("**/api/dev/logs?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [{ id: 1, action: "POST /reports", details: { status: 201 }, created_at: new Date().toISOString() }], hasMore: false, offset: 0 }) }));
   await page.route("**/api/dev/reports?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [{ id: "WC-DEV-1", animal: "Bird", condition: "Unable to fly", status: "Acknowledged", priority: "High", location: "Bukit Panjang", hasPhoto: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }], hasMore: false, offset: 0 }) }));
   await page.route("**/api/dev/users?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: users, hasMore: false, offset: 0 }) }));
