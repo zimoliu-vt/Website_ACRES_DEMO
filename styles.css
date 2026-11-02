@@ -20,6 +20,10 @@ body { margin: 0; color: var(--ink); background: var(--cream); font-family: Inte
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 button, a, input, select, textarea { touch-action: manipulation; }
+.feature-no-volunteer [data-view="volunteer"], .feature-no-volunteer #volunteer-view { display: none !important; }
+.feature-no-photo .photo-first-step, .feature-no-photo .photo-or-divider, .feature-no-photo #phone-photo-start { display: none !important; }
+.feature-no-tutorials #phone-help, .feature-no-tutorials .help-hint { display: none !important; }
+.feature-no-location-search .map-search-wrap { display: none !important; }
 
 .demo-banner { min-height: 48px; padding: 8px 20px; display: flex; align-items: center; justify-content: center; gap: 14px; color: #fff; background: #c52f2f; border-bottom: 3px solid #8f1717; text-align: center; box-shadow: 0 3px 14px rgba(143,23,23,.22); }
 .demo-banner strong { font-size: 13px; font-weight: 950; letter-spacing: .07em; }

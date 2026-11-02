@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>WildCare Developer Console</title>
     <link rel="stylesheet" href="/styles.css?v=41" />
-    <link rel="stylesheet" href="/dev/dev.css?v=8" />
+    <link rel="stylesheet" href="/dev/dev.css?v=9" />
   </head>
   <body class="dev-page">
     <header class="dev-header">
@@ -30,6 +30,18 @@
         <div class="dev-title-row"><div><p class="eyebrow">Private developer tools</p><h1>System overview</h1></div><button id="dev-logout" class="secondary-button" type="button">Log out</button></div>
         <div id="dev-stats" class="dev-stats" aria-live="polite"></div>
         <div class="dev-grid">
+          <section class="dev-panel dev-feature-panel">
+            <div class="dev-panel-head"><div><h2>Website features</h2><p>Hide or restore public features without deleting their code or data.</p></div><span class="dev-safe-badge">Reversible</span></div>
+            <form id="dev-feature-form">
+              <div class="dev-feature-grid">
+                <label class="dev-feature-switch"><span><strong>Volunteer portal</strong><small>Volunteer sign-in, registration, and nearby cases</small></span><input name="volunteerPortal" type="checkbox" /><i aria-hidden="true"></i></label>
+                <label class="dev-feature-switch"><span><strong>Photo tools</strong><small>Photo upload, preview, and Jev analysis</small></span><input name="photoTools" type="checkbox" /><i aria-hidden="true"></i></label>
+                <label class="dev-feature-switch"><span><strong>Tutorials and help</strong><small>Question-mark walkthroughs and guidance</small></span><input name="tutorials" type="checkbox" /><i aria-hidden="true"></i></label>
+                <label class="dev-feature-switch"><span><strong>Location search</strong><small>Street, park, and postcode search above the map</small></span><input name="locationSearch" type="checkbox" /><i aria-hidden="true"></i></label>
+              </div>
+              <div class="dev-feature-actions"><p id="dev-feature-status" role="status">Changes affect the public website after it is reloaded.</p><button id="restore-dev-features" class="secondary-button" type="button">Restore all</button><button class="primary-button" type="submit">Save changes</button></div>
+            </form>
+          </section>
           <section class="dev-panel">
             <div class="dev-panel-head"><div><h2>Diagnostic checks</h2><p>Runs fixed, read-only checks against the live service.</p></div><button id="run-dev-checks" class="primary-button" type="button">Run checks</button></div>
             <div id="dev-check-results" class="dev-check-results"><p class="dev-empty">No checks run in this session.</p></div>
@@ -66,6 +78,6 @@
         <button class="danger-button" type="submit">Remove user</button>
       </form>
     </dialog>
-    <script src="/dev/dev.js?v=8"></script>
+    <script src="/dev/dev.js?v=9"></script>
   </body>
 </html>

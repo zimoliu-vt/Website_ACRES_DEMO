@@ -17,6 +17,12 @@ const scrypt = promisify(crypto.scrypt);
 const analysisRequests = new Map();
 const devLoginRequests = new Map();
 const trashRetentionMs = 30 * 24 * 60 * 60 * 1000;
+const defaultSiteFeatures = Object.freeze({
+  volunteerPortal: true,
+  photoTools: true,
+  tutorials: true,
+  locationSearch: true
+});
 
 if (!jwtSecret || jwtSecret.length < 24) throw new Error("JWT_SECRET must contain at least 24 characters");
 
@@ -59,7 +65,13 @@ async function initialiseDatabase() {
       details jsonb NOT NULL DEFAULT '{}'::jsonb,
       created_at timestamptz NOT NULL DEFAULT now()
     );
+    CREATE TABLE IF NOT EXISTS site_settings (
+      key text PRIMARY KEY,
+      value jsonb NOT NULL,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
   `);
+  await pool.query("INSERT INTO site_settings (key, value) VALUES ('features', $1) ON CONFLICT (key) DO NOTHING", [defaultSiteFeatures]);
   const { rows } = await pool.query("SELECT count(*)::int AS count FROM reports");
   if (rows[0].count === 0) {
     await seedDatabase();
@@ -231,6 +243,15 @@ app.get("/health", async (_request, response) => {
   response.json({ ok: true, service: "wildcare-demo-api" });
 });
 
+async function readSiteFeatures() {
+  const { rows } = await pool.query("SELECT value FROM site_settings WHERE key = 'features'");
+  return { ...defaultSiteFeatures, ...(rows[0]?.value || {}) };
+}
+
+app.get("/settings", async (_request, response) => {
+  response.json({ features: await readSiteFeatures() });
+});
+
 app.post("/auth/dev", async (request, response) => {
   if (!devPassword) return response.status(503).json({ error: "Developer access is not configured" });
   const now = Date.now();
@@ -264,6 +285,22 @@ app.get("/dev/status", requireDev, async (_request, response) => {
     loggedActions: logRows[0].total,
     checkedAt: Date.now()
   });
+});
+
+app.get("/dev/settings", requireDev, async (_request, response) => {
+  response.json({ features: await readSiteFeatures() });
+});
+
+app.put("/dev/settings", requireDev, async (request, response) => {
+  const submitted = request.body?.features || {};
+  const features = {};
+  for (const key of Object.keys(defaultSiteFeatures)) {
+    if (typeof submitted[key] !== "boolean") return response.status(400).json({ error: `Invalid feature setting: ${key}` });
+    features[key] = submitted[key];
+  }
+  await pool.query("INSERT INTO site_settings (key, value, updated_at) VALUES ('features', $1, now()) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = now()", [features]);
+  await recordAudit("Developer updated website features", { features });
+  response.json({ features });
 });
 
 app.get("/dev/logs", requireDev, async (request, response) => {

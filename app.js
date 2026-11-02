@@ -8,6 +8,7 @@ const HELP_HINT_KEY = "wildcare-help-hint-shown-v1";
 const AUTO_LOCATION_CACHE_KEY = "wildcare-auto-location-area-v1";
 const VOLUNTEER_KEY = "wildcare-demo-volunteer-v1";
 const API_BASE = "/api";
+const defaultSiteFeatures = { volunteerPortal: true, photoTools: true, tutorials: true, locationSearch: true };
 if (window.location.pathname === "/rescue") history.replaceState({}, "", "/");
 
 const phoneViewport = window.matchMedia("(max-width: 620px), (max-width: 950px) and (max-height: 600px)");
@@ -190,6 +191,23 @@ async function apiFetch(path, options = {}) {
     throw new Error(result.error || "The demo backend is unavailable.");
   }
   return response.status === 204 ? null : response.json();
+}
+
+function applySiteFeatures(features = defaultSiteFeatures) {
+  const root = document.documentElement;
+  root.classList.toggle("feature-no-volunteer", features.volunteerPortal === false);
+  root.classList.toggle("feature-no-photo", features.photoTools === false);
+  root.classList.toggle("feature-no-tutorials", features.tutorials === false);
+  root.classList.toggle("feature-no-location-search", features.locationSearch === false);
+}
+
+async function loadSiteFeatures() {
+  try {
+    const result = await apiFetch("/settings");
+    applySiteFeatures({ ...defaultSiteFeatures, ...(result.features || {}) });
+  } catch {
+    applySiteFeatures(defaultSiteFeatures);
+  }
 }
 
 async function loadBackendReports(silent = false) {
@@ -2138,6 +2156,7 @@ document.addEventListener("click", event => {
 });
 
 initMap();
+loadSiteFeatures();
 renderDashboard();
 renderVolunteerPortal();
 loadBackendReports();

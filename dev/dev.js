@@ -14,6 +14,7 @@ let loadingReports = false;
 let userOffset = 0;
 let userHasMore = true;
 let loadingUsers = false;
+const featureNames = ["volunteerPortal", "photoTools", "tutorials", "locationSearch"];
 
 async function devFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
@@ -62,6 +63,14 @@ async function loadStatus() {
     ["Jev analysis", status.jevConfigured ? "Configured" : "Not configured"],
     ["API uptime", uptimeLabel(status.uptimeSeconds)]
   ].map(([label, value]) => `<article class="dev-stat dev-tone-${statTone(label, value)}"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></article>`).join("");
+}
+
+async function loadFeatureSettings() {
+  const result = await devFetch("/dev/settings");
+  featureNames.forEach(name => {
+    document.querySelector(`#dev-feature-form [name="${name}"]`).checked = result.features[name] !== false;
+  });
+  document.querySelector("#dev-feature-status").textContent = "Current live settings loaded.";
 }
 
 function renderLogs() {
@@ -162,7 +171,7 @@ function closeRemoveUser() {
 
 async function openConsole() {
   try {
-    await Promise.all([loadStatus(), loadLogs(), loadReports(), loadUsers()]);
+    await Promise.all([loadStatus(), loadFeatureSettings(), loadLogs(), loadReports(), loadUsers()]);
     document.querySelector("#dev-login").hidden = true;
     document.querySelector("#dev-console").hidden = false;
   } catch {
@@ -205,6 +214,28 @@ document.querySelector("#dev-report-status").addEventListener("change", renderRe
 loadMoreNearBottom(document.querySelector("#dev-logs"), loadLogs);
 loadMoreNearBottom(document.querySelector("#dev-reports"), loadReports);
 loadMoreNearBottom(document.querySelector("#dev-users"), loadUsers);
+document.querySelector("#restore-dev-features").addEventListener("click", () => {
+  featureNames.forEach(name => { document.querySelector(`#dev-feature-form [name="${name}"]`).checked = true; });
+  document.querySelector("#dev-feature-status").textContent = "All features selected. Save changes to restore them live.";
+});
+document.querySelector("#dev-feature-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const button = event.currentTarget.querySelector('[type="submit"]');
+  const status = document.querySelector("#dev-feature-status");
+  const features = Object.fromEntries(featureNames.map(name => [name, event.currentTarget.elements[name].checked]));
+  button.disabled = true;
+  button.textContent = "Saving…";
+  status.textContent = "Saving feature settings…";
+  try {
+    await devFetch("/dev/settings", { method: "PUT", body: JSON.stringify({ features }) });
+    status.textContent = "Saved. Reload the public website to see the changes.";
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Save changes";
+  }
+});
 document.querySelector("#refresh-dev-users").addEventListener("click", loadUsers);
 document.querySelector("#close-remove-user").addEventListener("click", closeRemoveUser);
 document.querySelector("#remove-user-dialog").addEventListener("cancel", event => {

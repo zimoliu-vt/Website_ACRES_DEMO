@@ -14,6 +14,7 @@ async function mockBackend(page) {
     body: "window.__umamiEvents=[];window.umami={track(...args){window.__umamiEvents.push(['track',...args])},identify(...args){window.__umamiEvents.push(['identify',...args])}};"
   }));
   await page.route("**/api/reports", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(reports) }));
+  await page.route("**/api/settings", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ features: { volunteerPortal: true, photoTools: true, tutorials: true, locationSearch: true } }) }));
   await page.route("**/api/auth/worker", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ token: "demo-worker-token" }) }));
 }
 
@@ -597,8 +598,13 @@ test("new report clears old reporting and team search context", async ({ page })
 
 test("private developer console signs in and runs fixed diagnostics", async ({ page }) => {
   let users = [{ id: "user-1", username: "riverwatch", createdAt: new Date().toISOString(), name: "River Watcher", contact: "river@example.test", experience: ["Wildlife first aid"] }];
+  let features = { volunteerPortal: true, photoTools: true, tutorials: true, locationSearch: true };
   await page.route("**/api/auth/dev", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ token: "demo-dev-token" }) }));
   await page.route("**/api/dev/status", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, reports: { active: 3, total: 4, photos: 2 }, volunteers: 1, loggedActions: 12, jevConfigured: true, uptimeSeconds: 3720 }) }));
+  await page.route("**/api/dev/settings", async route => {
+    if (route.request().method() === "PUT") features = route.request().postDataJSON().features;
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ features }) });
+  });
   await page.route("**/api/dev/logs?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [{ id: 1, action: "POST /reports", details: { status: 201 }, created_at: new Date().toISOString() }], hasMore: false, offset: 0 }) }));
   await page.route("**/api/dev/reports?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [{ id: "WC-DEV-1", animal: "Bird", condition: "Unable to fly", status: "Acknowledged", priority: "High", location: "Bukit Panjang", hasPhoto: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }], hasMore: false, offset: 0 }) }));
   await page.route("**/api/dev/users?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: users, hasMore: false, offset: 0 }) }));
@@ -615,6 +621,17 @@ test("private developer console signs in and runs fixed diagnostics", async ({ p
   await page.getByLabel("Password", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Open console" }).click();
   await expect(page.getByRole("heading", { name: "System overview" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Website features" })).toBeVisible();
+  await expect(page.getByLabel("Photo tools")).toBeChecked();
+  await page.getByText("Photo tools", { exact: true }).click();
+  await expect(page.getByLabel("Photo tools")).not.toBeChecked();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByText("Saved. Reload the public website to see the changes.")).toBeVisible();
+  expect(features.photoTools).toBe(false);
+  await page.getByRole("button", { name: "Restore all" }).click();
+  await expect(page.getByLabel("Photo tools")).toBeChecked();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect.poll(() => features.photoTools).toBe(true);
   await expect(page.getByText("POST /reports")).toBeVisible();
   await expect(page.getByText("WC-DEV-1")).toBeVisible();
   await expect(page.getByText("Bukit Panjang")).toBeVisible();
@@ -631,4 +648,20 @@ test("private developer console signs in and runs fixed diagnostics", async ({ p
   await page.getByRole("button", { name: "Run checks" }).click();
   await expect(page.getByText("Database connection")).toBeVisible();
   await expect(page.getByText("Connected")).toBeVisible();
+});
+
+test("public feature settings hide optional tools without deleting them", async ({ page }) => {
+  await page.route("**/api/settings", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ features: { volunteerPortal: false, photoTools: false, tutorials: false, locationSearch: false } })
+  }));
+  await enterDemo(page);
+  await expect(page.locator("html")).toHaveClass(/feature-no-volunteer/);
+  await expect(page.locator("html")).toHaveClass(/feature-no-photo/);
+  await expect(page.locator("html")).toHaveClass(/feature-no-tutorials/);
+  await expect(page.locator("html")).toHaveClass(/feature-no-location-search/);
+  await expect(page.locator('[data-view="volunteer"]')).toBeHidden();
+  await expect(page.locator("#phone-help")).toBeHidden();
+  await expect(page.locator(".map-search-wrap")).toBeHidden();
 });
