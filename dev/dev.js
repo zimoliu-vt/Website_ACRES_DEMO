@@ -3,6 +3,13 @@ let devToken = sessionStorage.getItem(TOKEN_KEY) || "";
 let pendingUserRemoval = null;
 let devLogs = [];
 let devReports = [];
+const DEV_PAGE_SIZE = 100;
+let logOffset = 0;
+let reportOffset = 0;
+let logHasMore = true;
+let reportHasMore = true;
+let loadingLogs = false;
+let loadingReports = false;
 
 async function devFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
@@ -48,9 +55,16 @@ function renderLogs() {
   document.querySelector("#dev-logs").innerHTML = logs.length ? logs.map(log => `<article class="dev-log"><span>•</span><div><strong>${escapeHtml(log.action)}</strong><small>${escapeHtml(JSON.stringify(log.details || {}))}</small></div><time>${escapeHtml(exactTime(log.created_at))}</time></article>`).join("") : `<p class="dev-empty">${query ? "No activity matches this search." : "No backend activity has been recorded yet."}</p>`;
 }
 
-async function loadLogs() {
-  devLogs = await devFetch("/dev/logs?limit=80");
+async function loadLogs({ append = false } = {}) {
+  if (loadingLogs || (append && !logHasMore)) return;
+  loadingLogs = true;
+  if (!append) logOffset = 0;
+  const result = await devFetch(`/dev/logs?limit=${DEV_PAGE_SIZE}&offset=${append ? logOffset : 0}`);
+  devLogs = append ? [...devLogs, ...result.items] : result.items;
+  logOffset = devLogs.length;
+  logHasMore = result.hasMore;
   renderLogs();
+  loadingLogs = false;
 }
 
 function renderReports() {
@@ -63,14 +77,27 @@ function renderReports() {
   </article>`).join("") : '<p class="dev-empty">No reports match these filters.</p>';
 }
 
-async function loadReports() {
-  devReports = await devFetch("/dev/reports");
+async function loadReports({ append = false } = {}) {
+  if (loadingReports || (append && !reportHasMore)) return;
+  loadingReports = true;
+  if (!append) reportOffset = 0;
+  const result = await devFetch(`/dev/reports?limit=${DEV_PAGE_SIZE}&offset=${append ? reportOffset : 0}`);
+  devReports = append ? [...devReports, ...result.items] : result.items;
+  reportOffset = devReports.length;
+  reportHasMore = result.hasMore;
   const select = document.querySelector("#dev-report-status");
   const current = select.value;
   const statuses = [...new Set(devReports.map(report => report.status).filter(Boolean))].sort();
   select.innerHTML = '<option value="">All statuses</option>' + statuses.map(status => `<option value="${escapeHtml(status)}">${escapeHtml(status)}</option>`).join("");
   if (statuses.includes(current)) select.value = current;
   renderReports();
+  loadingReports = false;
+}
+
+function loadMoreNearBottom(element, loader) {
+  element.addEventListener("scroll", () => {
+    if (element.scrollHeight - element.scrollTop - element.clientHeight < 140) loader({ append: true });
+  });
 }
 
 async function loadUsers() {
@@ -146,6 +173,8 @@ document.querySelector("#dev-log-search").addEventListener("input", renderLogs);
 document.querySelector("#refresh-dev-reports").addEventListener("click", loadReports);
 document.querySelector("#dev-report-search").addEventListener("input", renderReports);
 document.querySelector("#dev-report-status").addEventListener("change", renderReports);
+loadMoreNearBottom(document.querySelector("#dev-logs"), loadLogs);
+loadMoreNearBottom(document.querySelector("#dev-reports"), loadReports);
 document.querySelector("#refresh-dev-users").addEventListener("click", loadUsers);
 document.querySelector("#close-remove-user").addEventListener("click", closeRemoveUser);
 document.querySelector("#remove-user-dialog").addEventListener("cancel", event => {

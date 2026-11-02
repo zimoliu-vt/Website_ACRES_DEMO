@@ -267,14 +267,17 @@ app.get("/dev/status", requireDev, async (_request, response) => {
 });
 
 app.get("/dev/logs", requireDev, async (request, response) => {
-  const limit = Math.min(200, Math.max(10, Number(request.query.limit) || 80));
-  const { rows } = await pool.query("SELECT id, action, details, created_at FROM audit_logs ORDER BY id DESC LIMIT $1", [limit]);
-  response.json(rows);
+  const limit = Math.min(100, Math.max(10, Number(request.query.limit) || 100));
+  const offset = Math.max(0, Number(request.query.offset) || 0);
+  const { rows } = await pool.query("SELECT id, action, details, created_at FROM audit_logs ORDER BY id DESC LIMIT $1 OFFSET $2", [limit + 1, offset]);
+  response.json({ items: rows.slice(0, limit), hasMore: rows.length > limit, offset });
 });
 
 app.get("/dev/reports", requireDev, async (_request, response) => {
-  const { rows } = await pool.query("SELECT id, payload, created_at, updated_at FROM reports ORDER BY updated_at DESC LIMIT 250");
-  response.json(rows.map(row => ({
+  const limit = Math.min(100, Math.max(10, Number(_request.query.limit) || 100));
+  const offset = Math.max(0, Number(_request.query.offset) || 0);
+  const { rows } = await pool.query("SELECT id, payload, created_at, updated_at FROM reports ORDER BY updated_at DESC LIMIT $1 OFFSET $2", [limit + 1, offset]);
+  response.json({ items: rows.slice(0, limit).map(row => ({
     id: row.payload?.id || row.id,
     animal: row.payload?.animal || "Unknown animal",
     condition: row.payload?.condition || "Not specified",
@@ -284,7 +287,7 @@ app.get("/dev/reports", requireDev, async (_request, response) => {
     hasPhoto: Boolean(row.payload?.photo),
     createdAt: row.created_at,
     updatedAt: row.updated_at
-  })));
+  })), hasMore: rows.length > limit, offset });
 });
 
 app.get("/dev/users", requireDev, async (_request, response) => {
