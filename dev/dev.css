@@ -13,13 +13,15 @@
 .dev-stat { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: white; }
 .dev-stat small { display: block; color: var(--muted); font-size: 10px; font-weight: 850; text-transform: uppercase; letter-spacing: .07em; }
 .dev-stat strong { display: block; margin-top: 8px; color: var(--forest); font: 600 26px Georgia,serif; }
-.dev-stat { border-top: 4px solid #93aaa0; }
-.dev-stat-service, .dev-stat-jev-analysis { border-top-color: #37a66a; background: #f4fbf6; }
-.dev-stat-active-reports { border-top-color: #e0a428; background: #fffaf0; }
-.dev-stat-total-reports, .dev-stat-stored-photos { border-top-color: #4387c8; background: #f4f9ff; }
-.dev-stat-volunteers { border-top-color: #1c9b91; background: #f1fbfa; }
-.dev-stat-logged-actions { border-top-color: #8b65bd; background: #faf7ff; }
-.dev-stat-api-uptime { border-top-color: #60736a; }
+.dev-stat { position: relative; border-top: 4px solid #9eaaa4; background: white; }
+.dev-stat::after { position: absolute; top: 14px; right: 14px; font-size: 11px; font-weight: 900; }
+.dev-tone-good { border-top-color: #2f9b61; background: #f3fbf6; }
+.dev-tone-good::after { content: "● Working"; color: #267b4e; }
+.dev-tone-attention { border-top-color: #dfa323; background: #fffaf0; }
+.dev-tone-attention::after { content: "● Attention"; color: #8a6400; }
+.dev-tone-danger { border-top-color: #c94339; background: #fff5f4; }
+.dev-tone-danger::after { content: "● Problem"; color: #a82f28; }
+.dev-tone-neutral::after { content: "Information"; color: #7a8881; font-size: 9px; }
 .dev-grid { display: grid; gap: 18px; }
 .dev-panel { padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
 .dev-panel h2 { margin-bottom: 5px; color: var(--forest); }

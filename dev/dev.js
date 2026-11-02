@@ -43,6 +43,13 @@ function uptimeLabel(seconds = 0) {
   return [days ? `${days}d` : "", hours ? `${hours}h` : "", `${minutes}m`].filter(Boolean).join(" ");
 }
 
+function statTone(label, value) {
+  if (label === "Service") return value === "Online" ? "good" : "danger";
+  if (label === "Jev analysis") return value === "Configured" ? "good" : "danger";
+  if (label === "Active reports" && Number(value) > 0) return "attention";
+  return "neutral";
+}
+
 async function loadStatus() {
   const status = await devFetch("/dev/status");
   document.querySelector("#dev-stats").innerHTML = [
@@ -54,7 +61,7 @@ async function loadStatus() {
     ["Logged actions", status.loggedActions],
     ["Jev analysis", status.jevConfigured ? "Configured" : "Not configured"],
     ["API uptime", uptimeLabel(status.uptimeSeconds)]
-  ].map(([label, value]) => `<article class="dev-stat dev-stat-${safeClass(label)}"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></article>`).join("");
+  ].map(([label, value]) => `<article class="dev-stat dev-tone-${statTone(label, value)}"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></article>`).join("");
 }
 
 function renderLogs() {
