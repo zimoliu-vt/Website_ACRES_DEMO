@@ -3,6 +3,7 @@ let devToken = sessionStorage.getItem(TOKEN_KEY) || "";
 let pendingUserRemoval = null;
 let devLogs = [];
 let devReports = [];
+let devUsers = [];
 const DEV_PAGE_SIZE = 100;
 let logOffset = 0;
 let reportOffset = 0;
@@ -10,6 +11,9 @@ let logHasMore = true;
 let reportHasMore = true;
 let loadingLogs = false;
 let loadingReports = false;
+let userOffset = 0;
+let userHasMore = true;
+let loadingUsers = false;
 
 async function devFetch(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
@@ -100,8 +104,15 @@ function loadMoreNearBottom(element, loader) {
   });
 }
 
-async function loadUsers() {
-  const users = await devFetch("/dev/users");
+async function loadUsers({ append = false } = {}) {
+  if (loadingUsers || (append && !userHasMore)) return;
+  loadingUsers = true;
+  if (!append) userOffset = 0;
+  const result = await devFetch(`/dev/users?limit=${DEV_PAGE_SIZE}&offset=${append ? userOffset : 0}`);
+  devUsers = append ? [...devUsers, ...result.items] : result.items;
+  userOffset = devUsers.length;
+  userHasMore = result.hasMore;
+  const users = devUsers;
   document.querySelector("#dev-users").innerHTML = users.length ? users.map(user => {
     const details = [
       `@${user.username}`,
@@ -115,6 +126,7 @@ async function loadUsers() {
     const user = users.find(item => item.id === button.dataset.removeUser);
     if (user) openRemoveUser(user);
   }));
+  loadingUsers = false;
 }
 
 function openRemoveUser(user) {
@@ -175,6 +187,7 @@ document.querySelector("#dev-report-search").addEventListener("input", renderRep
 document.querySelector("#dev-report-status").addEventListener("change", renderReports);
 loadMoreNearBottom(document.querySelector("#dev-logs"), loadLogs);
 loadMoreNearBottom(document.querySelector("#dev-reports"), loadReports);
+loadMoreNearBottom(document.querySelector("#dev-users"), loadUsers);
 document.querySelector("#refresh-dev-users").addEventListener("click", loadUsers);
 document.querySelector("#close-remove-user").addEventListener("click", closeRemoveUser);
 document.querySelector("#remove-user-dialog").addEventListener("cancel", event => {

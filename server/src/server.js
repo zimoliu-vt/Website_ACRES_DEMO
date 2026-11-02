@@ -290,18 +290,20 @@ app.get("/dev/reports", requireDev, async (_request, response) => {
   })), hasMore: rows.length > limit, offset });
 });
 
-app.get("/dev/users", requireDev, async (_request, response) => {
+app.get("/dev/users", requireDev, async (request, response) => {
+  const limit = Math.min(100, Math.max(10, Number(request.query.limit) || 100));
+  const offset = Math.max(0, Number(request.query.offset) || 0);
   const { rows } = await pool.query(`SELECT a.id, a.username, a.created_at, v.payload
     FROM accounts a LEFT JOIN volunteers v ON v.id = a.id
-    WHERE a.role = 'volunteer' ORDER BY a.created_at DESC`);
-  response.json(rows.map(row => ({
+    WHERE a.role = 'volunteer' ORDER BY a.created_at DESC LIMIT $1 OFFSET $2`, [limit + 1, offset]);
+  response.json({ items: rows.slice(0, limit).map(row => ({
     id: row.id,
     username: row.username,
     createdAt: row.created_at,
     name: row.payload?.name || "Volunteer",
     contact: row.payload?.contact || "",
     experience: Array.isArray(row.payload?.experience) ? row.payload.experience : []
-  })));
+  })), hasMore: rows.length > limit, offset });
 });
 
 app.delete("/dev/users/:id", requireDev, async (request, response) => {

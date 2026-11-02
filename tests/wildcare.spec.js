@@ -248,13 +248,19 @@ test("desktop and phone tutorial guides the user through real reporting controls
   });
   await page.goto(`/?tutorial-test=${Date.now()}`);
   await expect(page.locator("#phone-tutorial-dialog")).not.toBeVisible();
-  await expect(page.locator("#help-hint")).toBeVisible();
-  await expect(page.locator("#help-hint")).toHaveCSS("pointer-events", "none");
-  await expect.poll(() => page.evaluate(() => {
-    const hint = document.querySelector("#help-hint").getBoundingClientRect();
-    const help = document.querySelector("#phone-help").getBoundingClientRect();
-    return hint.right <= help.left;
-  })).toBe(true);
+  const phoneLayout = await page.locator("html").getAttribute("data-layout") === "phone";
+  if (phoneLayout) {
+    await expect(page.locator("#help-hint")).toBeHidden();
+  } else {
+    await expect(page.locator("#help-hint")).toBeVisible();
+    await expect(page.locator("#help-hint")).toHaveCSS("pointer-events", "none");
+    await expect.poll(() => page.evaluate(() => {
+      const hint = document.querySelector("#help-hint").getBoundingClientRect();
+      const help = document.querySelector("#phone-help").getBoundingClientRect();
+      const switcher = document.querySelector(".mode-switch").getBoundingClientRect();
+      return hint.top >= help.bottom && (hint.left >= switcher.right || hint.top >= switcher.bottom);
+    })).toBe(true);
+  }
   await page.getByRole("button", { name: "Open reporting tutorial" }).click();
   await expect(page.locator("#help-hint")).toBeHidden();
   await expect(page.getByRole("heading", { name: "Make a report yourself" })).toBeVisible();
@@ -614,7 +620,7 @@ test("private developer console signs in and runs fixed diagnostics", async ({ p
   await page.route("**/api/dev/status", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, reports: { active: 3, total: 4, photos: 2 }, volunteers: 1, loggedActions: 12, jevConfigured: true, uptimeSeconds: 3720 }) }));
   await page.route("**/api/dev/logs?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [{ id: 1, action: "POST /reports", details: { status: 201 }, created_at: new Date().toISOString() }], hasMore: false, offset: 0 }) }));
   await page.route("**/api/dev/reports?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [{ id: "WC-DEV-1", animal: "Bird", condition: "Unable to fly", status: "Acknowledged", priority: "High", location: "Bukit Panjang", hasPhoto: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }], hasMore: false, offset: 0 }) }));
-  await page.route("**/api/dev/users", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(users) }));
+  await page.route("**/api/dev/users?**", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: users, hasMore: false, offset: 0 }) }));
   await page.route("**/api/dev/users/user-1", async route => {
     const body = route.request().postDataJSON();
     if (body.password !== "test-password") return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: "Incorrect developer password" }) });
