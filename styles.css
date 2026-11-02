@@ -254,6 +254,9 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
 .jev-analysis[hidden] { display: none; }
 .jev-analysis.checking { color: #6c5518; background: #fff2c9; }
 .jev-analysis.rejected, .jev-analysis.error { color: #8d2e27; background: #fff0ee; }
+.photo-authenticity { margin-top: 10px; padding: 11px 13px; border-radius: 11px; color: var(--forest); background: #e6f1ec; font-size: 10px; font-weight: 750; line-height: 1.5; }
+.photo-authenticity[hidden] { display: none; }
+.photo-authenticity.verify { color: #6c5518; background: #fff2c9; }
 .photo-concern-override { margin-top: 10px; padding: 13px; display: grid; gap: 9px; border: 2px solid #d88d86; border-radius: 12px; background: #fff4f2; }
 .photo-concern-override[hidden] { display: none; }
 .photo-concern-override legend { padding: 0 5px; color: #8d2e27; font-size: 11px; font-weight: 900; }
@@ -809,6 +812,7 @@ legend, .field { color: #293b35; font-size: 12px; font-weight: 800; }
   .phone-layout .photo-concern-override strong { font-size: 13px; }
   .phone-layout .photo-concern-override small { font-size: 12px; }
   .phone-layout .jev-analysis,
+  .phone-layout .photo-authenticity,
   .phone-layout .form-requirements { font-size: 13px; line-height: 1.45; }
   .phone-layout .privacy-copy { font-size: 12px; line-height: 1.4; }
 

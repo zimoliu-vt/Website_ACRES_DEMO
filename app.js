@@ -59,6 +59,7 @@ let autoLocationAttempted = false;
 let reverseLookupTimer = null;
 let selectedPhotoDataUrl = "";
 let photoAnalysis = null;
+let photoAuthenticity = null;
 let randomReportMode = false;
 let pendingReopen = null;
 let pendingTrashReport = null;
@@ -245,10 +246,10 @@ function compressPhoto(file) {
   });
 }
 
-function extractPhotoGps(file) {
+function extractPhotoMetadata(file) {
   return file.arrayBuffer().then(buffer => {
     const view = new DataView(buffer);
-    if (view.byteLength < 16 || view.getUint16(0, false) !== 0xffd8) return null;
+    if (view.byteLength < 16 || view.getUint16(0, false) !== 0xffd8) return { format: file.type || "unknown" };
     let marker = 2;
     while (marker + 4 < view.byteLength) {
       if (view.getUint8(marker) !== 0xff) break;
@@ -265,13 +266,13 @@ function extractPhotoGps(file) {
         const tiff = dataStart + 6;
         const byteOrder = view.getUint16(tiff, false);
         const littleEndian = byteOrder === 0x4949;
-        if (!littleEndian && byteOrder !== 0x4d4d) return null;
+        if (!littleEndian && byteOrder !== 0x4d4d) return { format: "jpeg" };
         const get16 = offset => view.getUint16(offset, littleEndian);
         const get32 = offset => view.getUint32(offset, littleEndian);
         const inRange = (offset, length = 1) => offset >= 0 && offset + length <= view.byteLength;
         const readIfd = offset => {
           if (!inRange(offset, 2)) return [];
-          const count = get16(offset);
+          const count = Math.min(get16(offset), 128);
           const entries = [];
           for (let index = 0; index < count; index += 1) {
             const entry = offset + 2 + index * 12;
@@ -280,10 +281,32 @@ function extractPhotoGps(file) {
           }
           return entries;
         };
-        if (!inRange(tiff + 8, 2) || get16(tiff + 2) !== 42) return null;
+        if (!inRange(tiff + 8, 2) || get16(tiff + 2) !== 42) return { format: "jpeg" };
         const ifd0 = tiff + get32(tiff + 4);
-        const gpsPointer = readIfd(ifd0).find(entry => entry.tag === 0x8825)?.value;
-        if (!gpsPointer) return null;
+        const ifd0Entries = readIfd(ifd0);
+        const readAscii = entry => {
+          if (!entry || entry.type !== 2 || !entry.count || entry.count > 256) return "";
+          const start = entry.count <= 4 ? entry.entry + 8 : tiff + entry.value;
+          if (!inRange(start, entry.count)) return "";
+          return Array.from({ length: entry.count }, (_unused, index) => view.getUint8(start + index))
+            .filter(byte => byte > 0)
+            .map(byte => String.fromCharCode(byte))
+            .join("")
+            .trim();
+        };
+        const ifd0Entry = tag => ifd0Entries.find(entry => entry.tag === tag);
+        const exifPointer = ifd0Entry(0x8769)?.value;
+        const exifEntries = exifPointer ? readIfd(tiff + exifPointer) : [];
+        const exifEntry = tag => exifEntries.find(entry => entry.tag === tag);
+        const metadata = {
+          format: "jpeg",
+          make: readAscii(ifd0Entry(0x010f)),
+          model: readAscii(ifd0Entry(0x0110)),
+          software: readAscii(ifd0Entry(0x0131)),
+          capturedAt: readAscii(exifEntry(0x9003)) || readAscii(ifd0Entry(0x0132))
+        };
+        const gpsPointer = ifd0Entry(0x8825)?.value;
+        if (!gpsPointer) return metadata;
         const gpsEntries = readIfd(tiff + gpsPointer);
         const entryFor = tag => gpsEntries.find(entry => entry.tag === tag);
         const readRef = entry => entry && String.fromCharCode(view.getUint8(entry.entry + 8)).toUpperCase();
@@ -301,15 +324,70 @@ function extractPhotoGps(file) {
         };
         let lat = readCoordinate(entryFor(2));
         let lng = readCoordinate(entryFor(4));
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return metadata;
         if (readRef(entryFor(1)) === "S") lat *= -1;
         if (readRef(entryFor(3)) === "W") lng *= -1;
-        return { lat, lng };
+        metadata.gps = { lat, lng };
+        return metadata;
       }
       marker += size + 2;
     }
-    return null;
-  }).catch(() => null);
+    return { format: file.type || "unknown" };
+  }).catch(() => ({ format: file.type || "unknown" }));
+}
+
+async function extractPhotoGps(file) {
+  const metadata = await extractPhotoMetadata(file);
+  return metadata.gps || null;
+}
+
+function parseExifDate(value) {
+  const match = String(value || "").match(/^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+  if (!match) return null;
+  const [, year, month, day, hour, minute, second] = match;
+  const parsed = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function assessPhotoAuthenticity(metadata) {
+  const cameraName = [metadata.make, metadata.model].filter(Boolean).join(" ").trim();
+  const captured = parseExifDate(metadata.capturedAt);
+  const editingSoftware = /photoshop|lightroom|gimp|canva|snapseed|screenshot|editor/i.test(metadata.software || "");
+  const ageMs = captured ? Date.now() - captured.getTime() : null;
+  const futureDate = ageMs !== null && ageMs < -24 * 60 * 60 * 1000;
+  const oldDate = ageMs !== null && ageMs > 30 * 24 * 60 * 60 * 1000;
+  const reasons = [];
+  if (!cameraName) reasons.push("no phone make or model was found");
+  if (!captured) reasons.push("no original capture time was found");
+  if (editingSoftware) reasons.push(`editing software is listed${metadata.software ? ` (${metadata.software})` : ""}`);
+  if (futureDate) reasons.push("the capture time is in the future");
+  if (oldDate) reasons.push("the capture time is more than 30 days old");
+  const requiresConfirmation = reasons.length > 0;
+  return {
+    cameraName,
+    capturedAt: captured?.toISOString() || "",
+    software: metadata.software || "",
+    hasSingaporeGps: Boolean(metadata.gps && isSingaporePoint(metadata.gps.lat, metadata.gps.lng)),
+    requiresConfirmation,
+    reasons
+  };
+}
+
+function renderPhotoAuthenticity(metadata) {
+  photoAuthenticity = assessPhotoAuthenticity(metadata);
+  const status = document.querySelector("#photo-authenticity");
+  status.hidden = false;
+  status.className = `photo-authenticity${photoAuthenticity.requiresConfirmation ? " verify" : ""}`;
+  const signals = [
+    photoAuthenticity.cameraName && `Camera: ${photoAuthenticity.cameraName}`,
+    photoAuthenticity.capturedAt && `Captured: ${new Date(photoAuthenticity.capturedAt).toLocaleString()}`,
+    photoAuthenticity.hasSingaporeGps && "Singapore GPS found"
+  ].filter(Boolean);
+  status.textContent = photoAuthenticity.requiresConfirmation
+    ? `Camera signature could not be fully verified: ${photoAuthenticity.reasons.join("; ")}. This does not prove the photo is false.`
+    : `Camera details appear consistent (${signals.join(" · ")}). Supporting signal only—not proof of authenticity.`;
+  syncPhotoConcernOverride();
+  updateReportSubmitState();
 }
 
 function requestReportLocationFromDevice() {
@@ -351,6 +429,7 @@ async function resolveLocationFromPhoto(file) {
 function clearSelectedPhoto() {
   selectedPhotoDataUrl = "";
   photoAnalysis = null;
+  photoAuthenticity = null;
   document.querySelector("#photo-input").value = "";
   document.querySelector("#photo-preview").hidden = true;
   document.querySelector("#photo-preview-image").removeAttribute("src");
@@ -362,7 +441,25 @@ function clearSelectedPhoto() {
   const analysis = document.querySelector("#jev-analysis");
   analysis.hidden = true;
   analysis.className = "jev-analysis";
+  document.querySelector("#photo-authenticity").hidden = true;
   updateReportSubmitState();
+}
+
+function photoConfirmationReasons() {
+  const reasons = [];
+  if (photoAnalysis?.isAnimal && photoAnalysis.rescueNeeded === false) reasons.push("Jev did not detect a visible rescue concern");
+  if (photoAuthenticity?.requiresConfirmation) reasons.push("the phone-camera signature could not be fully verified");
+  return reasons;
+}
+
+function syncPhotoConcernOverride() {
+  const reasons = selectedPhotoDataUrl ? photoConfirmationReasons() : [];
+  const panel = document.querySelector("#photo-concern-override");
+  panel.hidden = reasons.length === 0;
+  document.querySelector("#photo-concern-override-title").textContent = reasons.length === 1 ? reasons[0] : "Additional photo confirmation required";
+  document.querySelector("#photo-concern-override-copy").textContent = reasons.length
+    ? `${reasons.join(" and ")}. Confirm both statements and describe what you personally observed.`
+    : "Confirm both statements and describe what you personally observed.";
 }
 
 function updateReportSubmitState() {
@@ -376,7 +473,7 @@ function updateReportSubmitState() {
   const hasSelectedPhoto = Boolean(selectedPhotoDataUrl);
   const hasUsablePhoto = Boolean(selectedPhotoDataUrl && photoAnalysis?.isAnimal);
   const hasPhotoConsent = document.querySelector("#photo-sharing-consent-input").checked;
-  const concernOverrideRequired = Boolean(hasUsablePhoto && photoAnalysis?.rescueNeeded === false);
+  const concernOverrideRequired = Boolean(hasUsablePhoto && photoConfirmationReasons().length);
   const hasConcernOverride = document.querySelector("#photo-actual-animal-input").checked
     && document.querySelector("#photo-observed-concern-input").checked
     && hasNotes;
@@ -393,7 +490,7 @@ function updateReportSubmitState() {
         : hasSelectedPhoto && !hasPhotoConsent
           ? "Confirm that others may see the photo to continue."
         : concernOverrideRequired && !hasConcernOverride
-          ? "Jev found no visible rescue concern. Confirm both statements and describe what you observed."
+          ? "Additional photo confirmation is required. Confirm both statements and describe what you observed."
         : !hasAnimal || !hasCondition || (!hasSelectedPhoto && !hasNotes)
           ? "Choose the animal type and condition, then describe what you can see."
           : "Add a photo, or complete the animal details manually.";
@@ -433,10 +530,9 @@ async function analyzeAnimalPhoto() {
   status.hidden = false;
   status.className = "jev-analysis checking";
   status.textContent = "Jev is checking whether this is an animal…";
-  const concernOverride = document.querySelector("#photo-concern-override");
-  concernOverride.hidden = true;
   document.querySelector("#photo-actual-animal-input").checked = false;
   document.querySelector("#photo-observed-concern-input").checked = false;
+  syncPhotoConcernOverride();
   photoAnalysis = null;
   try {
     const result = await apiFetch("/analyze-animal", { method: "POST", body: JSON.stringify({ image: selectedPhotoDataUrl }) });
@@ -456,7 +552,7 @@ async function analyzeAnimalPhoto() {
       ? `Jev sees a possible need for rescue attention (${Math.round(result.rescueProbability * 100)}% confidence).`
       : `Jev did not detect a visible rescue concern in this photo (${Math.round((1 - result.rescueProbability) * 100)}% confidence).`;
     status.textContent = `Jev found an animal and suggested ${animal.toLowerCase()} · ${condition.toLowerCase()}. ${rescueCopy} Please check before sending.`;
-    concernOverride.hidden = result.rescueNeeded;
+    syncPhotoConcernOverride();
   } catch (error) {
     status.className = "jev-analysis error";
     status.textContent = error.message;
@@ -1680,9 +1776,9 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
     document.querySelector("#photo-sharing-consent").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  if (!randomReportMode && selectedPhotoDataUrl && photoAnalysis?.rescueNeeded === false
+  if (!randomReportMode && selectedPhotoDataUrl && photoConfirmationReasons().length
       && (!event.currentTarget.elements.photoActualAnimal.checked || !event.currentTarget.elements.photoObservedConcern.checked || !notes)) {
-    error.textContent = "Jev did not detect a visible rescue concern. Confirm both statements and describe the concern you personally observed.";
+    error.textContent = "Additional photo confirmation is required. Confirm both statements and describe the concern you personally observed.";
     error.hidden = false;
     document.querySelector("#photo-concern-override").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
@@ -1722,11 +1818,13 @@ document.querySelector("#report-form").addEventListener("submit", async event =>
   };
   reportDraft.photo = selectedPhotoDataUrl;
   if (selectedPhotoDataUrl) reportDraft.photoSharingConsentAt = Date.now();
-  if (selectedPhotoDataUrl && photoAnalysis?.rescueNeeded === false) reportDraft.photoConcernOverride = {
+  if (selectedPhotoDataUrl && photoConfirmationReasons().length) reportDraft.photoConcernOverride = {
     actualAnimalConfirmed: Boolean(data.get("photoActualAnimal")),
     observedConcernConfirmed: Boolean(data.get("photoObservedConcern")),
+    reasons: photoConfirmationReasons(),
     confirmedAt: Date.now()
   };
+  if (photoAuthenticity) reportDraft.photoAuthenticity = { ...photoAuthenticity, checkedAt: Date.now() };
   if (photoAnalysis) reportDraft.aiAssessment = {
     provider: "JEV",
     model: photoAnalysis.model,
@@ -1789,7 +1887,22 @@ document.querySelector("#photo-input").addEventListener("change", async event =>
   if (!file) return clearSelectedPhoto();
   helper.textContent = "Preparing photo preview…";
   try {
-    const locationPromise = resolveLocationFromPhoto(file);
+    const metadataPromise = extractPhotoMetadata(file);
+    const locationPromise = metadataPromise.then(metadata => {
+      renderPhotoAuthenticity(metadata);
+      if (metadata.gps && isSingaporePoint(metadata.gps.lat, metadata.gps.lng)) {
+        const usePhotoLocation = window.confirm("This photo contains a location in Singapore. Use it for this report?\n\nYou can still adjust the map pin afterwards.");
+        if (usePhotoLocation) {
+          map?.flyTo([metadata.gps.lat, metadata.gps.lng], 17, { duration: .7 });
+          chooseLocation(metadata.gps.lat, metadata.gps.lng);
+          showToast("Photo location added. Check it before sending.");
+          return;
+        }
+      } else if (metadata.gps) {
+        showToast("The photo location is outside Singapore, so it was not used.");
+      }
+      if (!selectedLocation) requestReportLocationFromDevice();
+    });
     selectedPhotoDataUrl = await compressPhoto(file);
     document.querySelector("#photo-preview-image").src = selectedPhotoDataUrl;
     document.querySelector("#photo-preview-name").textContent = file.name;

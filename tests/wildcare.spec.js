@@ -490,6 +490,38 @@ test("reads Singapore GPS coordinates from JPEG EXIF metadata", async ({ page })
   expect(gps.lng).toBeCloseTo(103.7622, 4);
 });
 
+test("reads phone camera signature from JPEG EXIF metadata", async ({ page }) => {
+  await enterDemo(page);
+  const metadata = await page.evaluate(async () => {
+    const tiff = new Uint8Array(160);
+    const view = new DataView(tiff.buffer);
+    const set16 = (offset, value) => view.setUint16(offset, value, true);
+    const set32 = (offset, value) => view.setUint32(offset, value, true);
+    tiff.set([0x49, 0x49], 0);
+    set16(2, 42); set32(4, 8); set16(8, 4);
+    const writeEntry = (offset, tag, type, count, value) => {
+      set16(offset, tag); set16(offset + 2, type); set32(offset + 4, count); set32(offset + 8, value);
+    };
+    writeEntry(10, 0x010f, 2, 6, 64);
+    writeEntry(22, 0x0110, 2, 10, 70);
+    writeEntry(34, 0x0131, 2, 6, 80);
+    writeEntry(46, 0x0132, 2, 20, 86);
+    tiff.set(new TextEncoder().encode("Apple\0"), 64);
+    tiff.set(new TextEncoder().encode("iPhone 15\0"), 70);
+    tiff.set(new TextEncoder().encode("17.4\0"), 80);
+    tiff.set(new TextEncoder().encode("2026:11:02 14:30:00\0"), 86);
+    const exif = new Uint8Array(6 + tiff.length);
+    exif.set([0x45, 0x78, 0x69, 0x66, 0, 0]); exif.set(tiff, 6);
+    const jpeg = new Uint8Array(2 + 4 + exif.length + 2);
+    jpeg.set([0xff, 0xd8, 0xff, 0xe1, (exif.length + 2) >> 8, (exif.length + 2) & 0xff], 0);
+    jpeg.set(exif, 6); jpeg.set([0xff, 0xd9], 6 + exif.length);
+    return extractPhotoMetadata(new File([jpeg], "phone.jpg", { type: "image/jpeg" }));
+  });
+  expect(metadata.make).toBe("Apple");
+  expect(metadata.model).toBe("iPhone 15");
+  expect(metadata.capturedAt).toBe("2026:11:02 14:30:00");
+});
+
 test("Umami records safe portal and click events", async ({ page }) => {
   await enterDemo(page);
   await page.getByRole("button", { name: "Volunteer" }).click();
