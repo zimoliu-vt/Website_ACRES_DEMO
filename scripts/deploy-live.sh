@@ -21,6 +21,7 @@ ssh -i "$WILDCARE_SSH_KEY" "$WILDCARE_SSH_TARGET" \
 
 echo "Testing the deployed server…"
 api_ready=false
+cache_headers_ok=false
 for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
   if curl --fail --silent "https://wildcare.liuzimo.cn/api/health" >/dev/null; then
     api_ready=true
@@ -28,7 +29,15 @@ for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
   fi
   sleep 1
 done
+if curl --fail --silent --show-error --head "https://wildcare.liuzimo.cn/app.js?cache-check=$(date +%s)" \
+  | tr -d '\r' \
+  | grep -qi '^cache-control:.*no-store'; then
+  cache_headers_ok=true
+else
+  echo "Live cache headers are missing no-store; refusing to verify a deployment that may remain stale." >&2
+fi
 if [ "$api_ready" = true ] \
+  && [ "$cache_headers_ok" = true ] \
   && PLAYWRIGHT_BASE_URL="https://wildcare.liuzimo.cn" npm run test:live; then
   echo "Live deployment verified."
 else
