@@ -65,7 +65,15 @@ async function loadStatus() {
   ].map(([label, value]) => `<article class="dev-stat dev-tone-${statTone(label, value)}"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></article>`).join("");
   document.querySelector("#dev-alerts").innerHTML = status.alerts.map(alert => `<div class="dev-alert dev-alert-${safeClass(alert.level)}">${escapeHtml(alert.message)}</div>`).join("");
   const size = bytes => bytes < 1024 * 1024 ? `${Math.max(0, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-  document.querySelector("#dev-storage").innerHTML = [["Database", size(status.storage.databaseBytes)], ["Stored photos", size(status.storage.photoBytes)]].map(([label,value]) => `<article><small>${label}</small><strong>${value}</strong></article>`).join("");
+  const storageItems = [
+    ["Database", status.storage.databaseBytes, 250 * 1024 * 1024, "reports, accounts, settings and history"],
+    ["Uploaded photos", status.storage.photoBytes, 100 * 1024 * 1024, "images attached to reports"]
+  ];
+  document.querySelector("#dev-storage").innerHTML = storageItems.map(([label, bytes, warningAt, description]) => {
+    const percent = Math.min(100, Math.round(bytes / warningAt * 100));
+    const tone = percent >= 100 ? "red" : percent >= 75 ? "amber" : "green";
+    return `<article class="dev-storage-${tone}"><small>${label}</small><strong>${size(bytes)}</strong><p>${escapeHtml(description)}</p><div class="dev-storage-bar"><i style="width:${percent}%"></i></div><em>${percent}% of the ${size(warningAt)} warning level</em></article>`;
+  }).join("");
 }
 
 async function loadFeatureSettings() {

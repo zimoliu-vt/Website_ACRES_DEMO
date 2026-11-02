@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>WildCare Developer Console</title>
     <link rel="stylesheet" href="/styles.css?v=41" />
-  <link rel="stylesheet" href="/dev/dev.css?v=12" />
+  <link rel="stylesheet" href="/dev/dev.css?v=13" />
   </head>
   <body class="dev-page">
     <header class="dev-header">
@@ -43,8 +43,12 @@
             </form>
           </section>
           <section class="dev-panel">
-            <div class="dev-panel-head"><div><h2>Storage overview</h2><p>Useful thresholds, not decorative colours.</p></div><button id="add-sample-report" class="secondary-button" type="button">+ Add one sample report</button></div>
-            <div id="dev-storage" class="dev-storage"></div><p id="sample-report-status" role="status" class="dev-empty"></p>
+            <div class="dev-panel-head"><div><h2>Storage overview</h2><p>How much server space the database and uploaded photos currently use.</p></div></div>
+            <div id="dev-storage" class="dev-storage"></div>
+          </section>
+          <section class="dev-panel">
+            <div class="dev-panel-head"><div><h2>Sample reports</h2><p>Add one clearly labelled practice case. Existing reports are never removed.</p></div><button id="add-sample-report" class="secondary-button" type="button">+ Add sample report</button></div>
+            <p id="sample-report-status" role="status" class="dev-empty">No sample report added in this session.</p>
           </section>
           <section class="dev-panel">
             <div class="dev-panel-head"><div><h2>Settings history</h2><p>Recent configuration changes only. Reports and users are never affected.</p></div><button id="refresh-settings-history" class="secondary-button" type="button">Refresh</button></div>
@@ -98,6 +102,6 @@
         <button class="danger-button" type="submit">Remove user</button>
       </form>
     </dialog>
-  <script src="/dev/dev.js?v=12"></script>
+  <script src="/dev/dev.js?v=13"></script>
   </body>
 </html>
