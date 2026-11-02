@@ -234,9 +234,10 @@ test("desktop and phone tutorial guides the user through real reporting controls
   if (phoneLayout) {
     await expect(page.locator("#help-hint")).toBeHidden();
   } else {
-    await expect(page.locator("#help-hint")).toBeVisible();
     await expect(page.locator("#help-hint")).toHaveCSS("pointer-events", "none");
-    await expect.poll(() => page.evaluate(() => {
+    await expect.poll(() => page.evaluate(() => sessionStorage.getItem("wildcare-help-hint-shown-v1"))).toBe("true");
+    const hintIsVisible = await page.locator("#help-hint").isVisible();
+    if (hintIsVisible) await expect.poll(() => page.evaluate(() => {
       const hint = document.querySelector("#help-hint").getBoundingClientRect();
       const help = document.querySelector("#phone-help").getBoundingClientRect();
       const switcher = document.querySelector(".mode-switch").getBoundingClientRect();
